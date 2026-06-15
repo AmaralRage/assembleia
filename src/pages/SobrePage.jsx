@@ -21,10 +21,17 @@ const exPresidentes = [
   },
   {
     nome: "Pastor Marcos Oliveira",
-    periodo: "2016 - 2023",
+    periodo: "2016 - 2020",
     foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
     resumo:
       "Trabalhou na modernização da comunicação da igreja e no fortalecimento dos projetos sociais.",
+  },
+  {
+    nome: "Mariana Vasconcelos",
+    periodo: "2020 - 2026",
+    foto: "https://admin.cnnbrasil.com.br/wp-content/uploads/sites/12/2023/07/IMG_4005.jpg?w=419&h=283&crop=0",
+    resumo:
+      "Evoluiu a igreja ao niveis modernos como sites, redes sociais e manteve projetos integros e alto rendimento.",
   },
 ];
 
@@ -101,7 +108,7 @@ const SobrePage = () => {
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
               {exPresidentes.map((presidente) => (
                 <motion.div
                   key={presidente.nome}

@@ -59,7 +59,7 @@ const AddressesPage = () => {
 
       <main className="min-h-screen pt-28 pb-24 bg-background">
         <div className="section-container">
-          
+
           <div className="flex flex-col items-center justify-center text-center mb-16">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -69,7 +69,7 @@ const AddressesPage = () => {
             >
               <Home className="w-8 h-8 text-red-500" />
             </motion.div>
-            <motion.h1 
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
@@ -78,7 +78,7 @@ const AddressesPage = () => {
             >
               Endereços
             </motion.h1>
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -88,7 +88,7 @@ const AddressesPage = () => {
             </motion.p>
           </div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
@@ -96,14 +96,17 @@ const AddressesPage = () => {
           >
             <div className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-border focus-within:ring-2 focus-within:ring-primary/20 transition-all">
               <Search className="w-5 h-5 text-muted-foreground ml-3" />
-              <Input 
+              <Input
                 type="text"
                 placeholder="Busque por cidade, estado ou nome da igreja..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 text-base shadow-none bg-transparent"
               />
-              <Button onClick={() => {}} className="rounded-lg px-6">
+              <Button
+                onClick={() => { }}
+                className="rounded-lg px-6 transition-all duration-300 hover:scale-110 hover:shadow-lg"
+              >
                 Buscar
               </Button>
             </div>
@@ -126,8 +129,8 @@ const AddressesPage = () => {
                     className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full"
                   >
                     <div className="h-48 w-full overflow-hidden relative">
-                      <img 
-                        src={address.image} 
+                      <img
+                        src={address.image}
                         alt={address.name}
                         className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                       />
@@ -138,7 +141,7 @@ const AddressesPage = () => {
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="p-6 flex flex-col flex-grow">
                       <h3 className="text-xl font-bold text-card-foreground mb-2">
                         {address.name}
@@ -146,28 +149,28 @@ const AddressesPage = () => {
                       <p className="text-muted-foreground flex-grow mb-6">
                         {address.fullAddress}
                       </p>
-                      
+
                       <div className="grid grid-cols-3 gap-3 mt-auto">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleCopy(address.fullAddress)}
                           className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border"
                         >
                           <Copy className="w-4 h-4 text-primary" />
                           <span className="text-xs font-medium text-foreground">Copiar</span>
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => window.open(address.mapUrl, '_blank')}
                           className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border"
                         >
                           <Map className="w-4 h-4 text-primary" />
                           <span className="text-xs font-medium text-foreground">Mapa</span>
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => toast('Mais informações em breve.')}
                           className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border"
