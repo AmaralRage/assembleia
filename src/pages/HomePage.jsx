@@ -51,7 +51,7 @@ const HomePage = () => {
       cargo: "Secretário",
       nome: "Irmão Carlos Mendes",
       descricao: "Responsável pela organização e documentação",
-      foto: "https://anibase.net/files/136cedcbcbf7023d15c3a34254920395"
+      foto: "https://ovicio.com.br/wp-content/uploads/2022/08/20220803-20220803_214217-555x555.jpg"
     },
     {
       cargo: "Tesoureira",

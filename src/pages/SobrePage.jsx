@@ -8,7 +8,7 @@ const exPresidentes = [
   {
     nome: "Pastor Antônio Souza",
     periodo: "1998 - 2008",
-    foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
+    foto: "https://upload.wikimedia.org/wikipedia/pt/thumb/3/37/Saitama_One_Punch-Man.png/330px-Saitama_One_Punch-Man.png",
     resumo:
       "Foi um líder dedicado à expansão da igreja, fortalecendo os ministérios e a comunhão entre os membros.",
   },
