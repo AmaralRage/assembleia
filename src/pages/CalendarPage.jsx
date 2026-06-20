@@ -1,0 +1,1003 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { Helmet } from "react-helmet-async";
+import { motion } from "framer-motion";
+import {
+  CalendarDays,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Loader2,
+  LockKeyhole,
+  LogIn,
+  LogOut,
+  MapPin,
+  Plus,
+  Save,
+  Trash2,
+  X,
+} from "lucide-react";
+import Header from "@/components/Header.jsx";
+import Footer from "@/components/Footer.jsx";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast, Toaster } from "sonner";
+import { supabase } from "@/lib/supabase";
+
+const ADMIN_EMAIL = "amaralaragao31@gmail.com";
+const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const monthNames = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+const toDateKey = (year, month, day) =>
+  `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+const getTodayKey = () => {
+  const today = new Date();
+  return toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+};
+
+const isPastDate = (dateKey) => Boolean(dateKey && dateKey < getTodayKey());
+
+const emptyForm = (date = "") => ({
+  title: "",
+  date,
+  time: "19:00",
+  location: "",
+  description: "",
+  category: "especial",
+});
+
+const categoryStyles = {
+  especial: "bg-primary/10 text-primary border-primary/20",
+  culto: "bg-amber-50 text-amber-700 border-amber-200",
+  jovens: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  reuniao: "bg-violet-50 text-violet-700 border-violet-200",
+};
+
+const fromDatabaseEvent = (event) => ({
+  id: event.id,
+  title: event.title,
+  date: event.event_date,
+  time: event.event_time?.slice(0, 5) || "",
+  location: event.location || "",
+  description: event.description || "",
+  category: event.category,
+});
+
+const toDatabaseEvent = (event) => ({
+  title: event.title.trim(),
+  event_date: event.date,
+  event_time: event.time || null,
+  location: event.location.trim(),
+  description: event.description.trim(),
+  category: event.category,
+});
+
+const CalendarPage = () => {
+  const today = useMemo(() => new Date(), []);
+  const [visibleDate, setVisibleDate] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1),
+  );
+  const [events, setEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [session, setSession] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: ADMIN_EMAIL, password: "" });
+  const [selectedDate, setSelectedDate] = useState(
+    toDateKey(today.getFullYear(), today.getMonth(), today.getDate()),
+  );
+  const [selectedEventId, setSelectedEventId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPastDateWarning, setShowPastDateWarning] = useState(false);
+  const [form, setForm] = useState(() => emptyForm(selectedDate));
+
+  const isAdmin =
+    session?.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+  useEffect(() => {
+    const loadCalendar = async () => {
+      const [{ data: sessionData }, { data, error }] = await Promise.all([
+        supabase.auth.getSession(),
+        supabase
+          .from("calendar_events")
+          .select("*")
+          .order("event_date", { ascending: true })
+          .order("event_time", { ascending: true }),
+      ]);
+
+      setSession(sessionData.session);
+
+      if (error) {
+        toast.error("Não foi possível carregar a agenda.");
+      } else {
+        setEvents(data.map(fromDatabaseEvent));
+      }
+
+      setIsLoadingEvents(false);
+    };
+
+    loadCalendar();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const year = visibleDate.getFullYear();
+  const month = visibleDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstWeekDay = new Date(year, month, 1).getDay();
+  const previousMonthDays = new Date(year, month, 0).getDate();
+
+  const calendarDays = useMemo(() => {
+    const cells = [];
+
+    for (let index = firstWeekDay - 1; index >= 0; index -= 1) {
+      const day = previousMonthDays - index;
+      const date = new Date(year, month - 1, day);
+      cells.push({
+        day,
+        dateKey: toDateKey(date.getFullYear(), date.getMonth(), day),
+        isCurrentMonth: false,
+      });
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      cells.push({
+        day,
+        dateKey: toDateKey(year, month, day),
+        isCurrentMonth: true,
+      });
+    }
+
+    let nextMonthDay = 1;
+    while (cells.length < 42) {
+      const date = new Date(year, month + 1, nextMonthDay);
+      cells.push({
+        day: nextMonthDay,
+        dateKey: toDateKey(
+          date.getFullYear(),
+          date.getMonth(),
+          nextMonthDay,
+        ),
+        isCurrentMonth: false,
+      });
+      nextMonthDay += 1;
+    }
+
+    return cells;
+  }, [daysInMonth, firstWeekDay, month, previousMonthDays, year]);
+
+  const selectedEvent = events.find((event) => event.id === selectedEventId);
+  const selectedDateEvents = events.filter(
+    (event) => event.date === selectedDate,
+  );
+
+  const formatLongDate = (dateKey) => {
+    if (!dateKey) return "";
+    return new Intl.DateTimeFormat("pt-BR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(`${dateKey}T12:00:00Z`));
+  };
+
+  const changeMonth = (offset) => {
+    const nextMonth = new Date(year, month + offset, 1);
+    const nextDateKey = toDateKey(
+      nextMonth.getFullYear(),
+      nextMonth.getMonth(),
+      1,
+    );
+    setVisibleDate(nextMonth);
+    setSelectedDate(nextDateKey);
+    setSelectedEventId(null);
+    setIsEditing(false);
+    setForm(emptyForm(nextDateKey));
+  };
+
+  const selectDay = (day) => {
+    setSelectedDate(day.dateKey);
+    setSelectedEventId(null);
+    setForm(emptyForm(day.dateKey));
+    setIsEditing(false);
+
+    if (!day.isCurrentMonth) {
+      const date = new Date(`${day.dateKey}T12:00:00`);
+      setVisibleDate(new Date(date.getFullYear(), date.getMonth(), 1));
+    }
+
+    if (!isAdmin) return;
+
+    if (isPastDate(day.dateKey)) {
+      setShowPastDateWarning(true);
+      return;
+    }
+
+    setIsEditing(true);
+  };
+
+  const selectEvent = (event, eventObject) => {
+    eventObject.stopPropagation();
+    setSelectedDate(event.date);
+    setSelectedEventId(event.id);
+    setIsEditing(false);
+  };
+
+  const startNewEvent = () => {
+    if (!isAdmin) {
+      setShowLogin(true);
+      return;
+    }
+
+    const date =
+      selectedDate ||
+      toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+    if (isPastDate(date)) {
+      setShowPastDateWarning(true);
+      return;
+    }
+
+    setSelectedEventId(null);
+    setForm(emptyForm(date));
+    setIsEditing(true);
+  };
+
+  const startEditing = () => {
+    if (!selectedEvent) return;
+
+    if (!isAdmin) {
+      setShowLogin(true);
+      return;
+    }
+
+    if (isPastDate(selectedEvent.date)) {
+      setShowPastDateWarning(true);
+      return;
+    }
+
+    setForm({ ...selectedEvent });
+    setIsEditing(true);
+  };
+
+  const closeForm = () => {
+    setIsEditing(false);
+    if (!selectedEventId) setForm(emptyForm(selectedDate));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!isAdmin) {
+      setShowLogin(true);
+      return;
+    }
+
+    if (!form.title.trim() || !form.date) {
+      toast.error("Informe o título e a data do evento.");
+      return;
+    }
+
+    if (isPastDate(form.date)) {
+      setShowPastDateWarning(true);
+      return;
+    }
+
+    const databaseEvent = toDatabaseEvent(form);
+
+    if (selectedEventId) {
+      const { data, error } = await supabase
+        .from("calendar_events")
+        .update(databaseEvent)
+        .eq("id", selectedEventId)
+        .select()
+        .single();
+
+      if (error) {
+        toast.error("Não foi possível atualizar o evento.");
+        return;
+      }
+
+      const updatedEvent = fromDatabaseEvent(data);
+      setEvents((currentEvents) =>
+        currentEvents.map((item) =>
+          item.id === selectedEventId ? updatedEvent : item,
+        ),
+      );
+      toast.success("Evento atualizado.");
+    } else {
+      const { data, error } = await supabase
+        .from("calendar_events")
+        .insert(databaseEvent)
+        .select()
+        .single();
+
+      if (error) {
+        toast.error("Não foi possível adicionar o evento.");
+        return;
+      }
+
+      const newEvent = fromDatabaseEvent(data);
+      setEvents((currentEvents) => [...currentEvents, newEvent]);
+      setSelectedEventId(newEvent.id);
+      toast.success("Evento adicionado ao calendário.");
+    }
+
+    const eventDate = new Date(`${form.date}T12:00:00`);
+    setVisibleDate(
+      new Date(eventDate.getFullYear(), eventDate.getMonth(), 1),
+    );
+    setSelectedDate(form.date);
+    setIsEditing(false);
+  };
+
+  const deleteEvent = async () => {
+    if (!selectedEventId || !isAdmin) return;
+
+    const { error } = await supabase
+      .from("calendar_events")
+      .delete()
+      .eq("id", selectedEventId);
+
+    if (error) {
+      toast.error("Não foi possível remover o evento.");
+      return;
+    }
+
+    setEvents((currentEvents) =>
+      currentEvents.filter((event) => event.id !== selectedEventId),
+    );
+    setSelectedEventId(null);
+    setIsEditing(false);
+    toast.success("Evento removido.");
+  };
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
+
+    if (loginForm.email.trim().toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      toast.error("Esta conta não possui acesso administrativo.");
+      return;
+    }
+
+    setIsAuthenticating(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginForm.email.trim(),
+      password: loginForm.password,
+    });
+    setIsAuthenticating(false);
+
+    if (error) {
+      toast.error("E-mail ou senha inválidos.");
+      return;
+    }
+
+    if (data.user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      await supabase.auth.signOut();
+      toast.error("Esta conta não possui acesso administrativo.");
+      return;
+    }
+
+    setShowLogin(false);
+    setLoginForm((current) => ({ ...current, password: "" }));
+    toast.success("Acesso administrativo liberado.");
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsEditing(false);
+    toast.success("Sessão administrativa encerrada.");
+  };
+
+  return (
+    <>
+      <Helmet>
+        <title>Calendário - Assembleia de Deus da Lapa</title>
+        <meta
+          name="description"
+          content="Consulte e organize os eventos da Assembleia de Deus da Lapa."
+        />
+      </Helmet>
+
+      <Header />
+      <Toaster position="top-right" />
+
+      <main className="min-h-screen bg-muted pt-28 pb-20">
+        <div className="section-container">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-background border border-border rounded-3xl shadow-xl overflow-hidden"
+          >
+            <div className="flex flex-col gap-5 p-5 md:p-8 border-b border-border lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <CalendarDays className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+                      Agenda da igreja
+                    </p>
+                    <h1 className="text-3xl font-bold text-foreground">
+                      Calendário
+                    </h1>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center bg-muted rounded-xl border border-border p-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => changeMonth(-1)}
+                    aria-label="Mês anterior"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+                  <span className="min-w-40 text-center font-semibold text-foreground">
+                    {monthNames[month]} {year}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => changeMonth(1)}
+                    aria-label="Próximo mês"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                {isAdmin ? (
+                  <>
+                    <Button
+                      type="button"
+                      onClick={startNewEvent}
+                      className="rounded-xl shadow-md"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Novo evento
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleLogout}
+                      className="rounded-xl"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sair
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowLogin(true)}
+                    className="rounded-xl"
+                  >
+                    <LockKeyhole className="w-4 h-4 mr-2" />
+                    Área administrativa
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="p-4 md:p-8 overflow-x-auto">
+                <div className="min-w-[720px]">
+                  <div className="grid grid-cols-7 mb-3">
+                    {weekDays.map((day, index) => (
+                      <div
+                        key={day}
+                        className={`px-2 text-xs font-bold uppercase tracking-widest ${
+                          index === 0 || index === 6
+                            ? "text-primary"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {isLoadingEvents ? (
+                    <div className="h-[552px] flex items-center justify-center rounded-2xl border border-border bg-muted/20">
+                      <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    </div>
+                  ) : (
+                  <div className="grid grid-cols-7 gap-2">
+                    {calendarDays.map((day) => {
+                      const dayEvents = events.filter(
+                        (event) => event.date === day.dateKey,
+                      );
+                      const isSelected = selectedDate === day.dateKey;
+                      const isToday =
+                        day.dateKey ===
+                        toDateKey(
+                          today.getFullYear(),
+                          today.getMonth(),
+                          today.getDate(),
+                        );
+
+                      return (
+                        <button
+                          key={day.dateKey}
+                          type="button"
+                          onClick={() => selectDay(day)}
+                          className={`min-h-32 rounded-2xl border p-2.5 text-left align-top transition-all hover:border-primary/50 hover:shadow-md ${
+                            isSelected
+                              ? "border-primary bg-primary/5 ring-2 ring-primary/15"
+                              : "border-border bg-card"
+                          } ${day.isCurrentMonth ? "" : "opacity-45"}`}
+                        >
+                          <span
+                            className={`inline-flex w-8 h-8 items-center justify-center rounded-full text-sm font-semibold ${
+                              isToday
+                                ? "bg-primary text-primary-foreground"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {day.day}
+                          </span>
+
+                          <div className="mt-2 space-y-1.5">
+                            {dayEvents.slice(0, 3).map((event) => (
+                              <span
+                                key={event.id}
+                                onClick={(clickEvent) =>
+                                  selectEvent(event, clickEvent)
+                                }
+                                className={`block truncate rounded-lg border px-2 py-1.5 text-xs font-semibold ${
+                                  categoryStyles[event.category] ||
+                                  categoryStyles.especial
+                                }`}
+                              >
+                                {event.time && `${event.time} · `}
+                                {event.title}
+                              </span>
+                            ))}
+                            {dayEvents.length > 3 && (
+                              <span className="block px-2 text-xs font-medium text-muted-foreground">
+                                + {dayEvents.length - 3} eventos
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  )}
+                </div>
+              </div>
+
+              <aside className="border-t xl:border-t-0 xl:border-l border-border bg-muted/35 p-5 md:p-7">
+                {isEditing ? (
+                  <div>
+                    <div className="flex items-start justify-between gap-4 mb-6">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary mb-2">
+                          {selectedEventId ? "Editar evento" : "Novo evento"}
+                        </p>
+                        <h2 className="text-2xl font-bold text-foreground">
+                          {selectedEventId
+                            ? "Atualize os detalhes"
+                            : "Adicionar à agenda"}
+                        </h2>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={closeForm}
+                        aria-label="Fechar formulário"
+                      >
+                        <X className="w-5 h-5" />
+                      </Button>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div>
+                        <label className="text-sm font-semibold text-foreground">
+                          Título
+                        </label>
+                        <Input
+                          value={form.title}
+                          onChange={(event) =>
+                            setForm({ ...form, title: event.target.value })
+                          }
+                          placeholder="Ex.: Culto especial"
+                          className="mt-1.5 bg-background"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-sm font-semibold text-foreground">
+                            Data
+                          </label>
+                          <Input
+                            type="date"
+                            min={getTodayKey()}
+                            value={form.date}
+                            onChange={(event) =>
+                              setForm({ ...form, date: event.target.value })
+                            }
+                            className="mt-1.5 bg-background"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-foreground">
+                            Horário
+                          </label>
+                          <Input
+                            type="time"
+                            value={form.time}
+                            onChange={(event) =>
+                              setForm({ ...form, time: event.target.value })
+                            }
+                            className="mt-1.5 bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-semibold text-foreground">
+                          Categoria
+                        </label>
+                        <select
+                          value={form.category}
+                          onChange={(event) =>
+                            setForm({ ...form, category: event.target.value })
+                          }
+                          className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="especial">Evento especial</option>
+                          <option value="culto">Culto</option>
+                          <option value="jovens">Jovens</option>
+                          <option value="reuniao">Reunião</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-semibold text-foreground">
+                          Local
+                        </label>
+                        <Input
+                          value={form.location}
+                          onChange={(event) =>
+                            setForm({ ...form, location: event.target.value })
+                          }
+                          placeholder="Ex.: Templo central"
+                          className="mt-1.5 bg-background"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-semibold text-foreground">
+                          Descrição
+                        </label>
+                        <Textarea
+                          value={form.description}
+                          onChange={(event) =>
+                            setForm({
+                              ...form,
+                              description: event.target.value,
+                            })
+                          }
+                          placeholder="Conte brevemente sobre o evento..."
+                          className="mt-1.5 min-h-28 bg-background resize-none"
+                        />
+                      </div>
+
+                      <Button type="submit" className="w-full rounded-xl">
+                        <Save className="w-4 h-4 mr-2" />
+                        Salvar evento
+                      </Button>
+                    </form>
+                  </div>
+                ) : selectedEvent ? (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary mb-3">
+                      Evento selecionado
+                    </p>
+                    <span
+                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold mb-4 ${
+                        categoryStyles[selectedEvent.category] ||
+                        categoryStyles.especial
+                      }`}
+                    >
+                      {selectedEvent.category}
+                    </span>
+                    <h2 className="text-2xl font-bold text-foreground leading-tight mb-5">
+                      {selectedEvent.title}
+                    </h2>
+
+                    <div className="space-y-4 border-y border-border py-5">
+                      <div className="flex gap-3">
+                        <CalendarDays className="w-5 h-5 text-primary shrink-0" />
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {formatLongDate(selectedEvent.date)}
+                        </p>
+                      </div>
+                      {selectedEvent.time && (
+                        <div className="flex gap-3">
+                          <Clock className="w-5 h-5 text-primary shrink-0" />
+                          <p className="text-sm text-muted-foreground">
+                            {selectedEvent.time}
+                          </p>
+                        </div>
+                      )}
+                      {selectedEvent.location && (
+                        <div className="flex gap-3">
+                          <MapPin className="w-5 h-5 text-primary shrink-0" />
+                          <p className="text-sm text-muted-foreground">
+                            {selectedEvent.location}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-muted-foreground leading-relaxed my-6">
+                      {selectedEvent.description || "Sem descrição adicional."}
+                    </p>
+
+                    {isAdmin && (
+                    <div className="grid grid-cols-[1fr_auto] gap-3">
+                      <Button
+                        type="button"
+                        onClick={startEditing}
+                        className="rounded-xl"
+                      >
+                        Editar evento
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={deleteEvent}
+                        className="rounded-xl text-destructive hover:text-destructive"
+                        aria-label="Excluir evento"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary mb-3">
+                      Data selecionada
+                    </p>
+                    <h2 className="text-2xl font-bold text-foreground capitalize">
+                      {formatLongDate(selectedDate)}
+                    </h2>
+
+                    {selectedDateEvents.length > 0 ? (
+                      <div className="mt-6 space-y-3">
+                        {selectedDateEvents.map((event) => (
+                          <button
+                            key={event.id}
+                            type="button"
+                            onClick={() => setSelectedEventId(event.id)}
+                            className="w-full text-left bg-background border border-border rounded-xl p-4 hover:border-primary/50 transition-colors"
+                          >
+                            <p className="font-semibold text-foreground">
+                              {event.title}
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {event.time || "Horário não informado"}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-8 rounded-2xl border border-dashed border-border bg-background p-6 text-center">
+                        <CalendarDays className="w-9 h-9 text-muted-foreground/50 mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground">
+                          Ainda não há eventos cadastrados para esta data.
+                        </p>
+                      </div>
+                    )}
+
+                    {isAdmin ? (
+                      <Button
+                        type="button"
+                        onClick={startNewEvent}
+                        className="w-full mt-6 rounded-xl"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Adicionar evento nesta data
+                      </Button>
+                    ) : (
+                      <div className="mt-6 rounded-2xl border border-border bg-background p-5">
+                        <div className="flex gap-3">
+                          <LockKeyhole className="w-5 h-5 text-primary shrink-0" />
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              Agenda protegida
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Somente o administrador pode criar ou alterar eventos.
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowLogin(true)}
+                          className="w-full mt-4 rounded-xl"
+                        >
+                          <LogIn className="w-4 h-4 mr-2" />
+                          Entrar como administrador
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </aside>
+            </div>
+          </motion.div>
+        </div>
+      </main>
+
+      {showLogin && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 backdrop-blur-sm p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-login-title"
+          onClick={() => setShowLogin(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={(event) => event.stopPropagation()}
+            className="relative w-full max-w-md rounded-3xl border border-border bg-background p-7 shadow-2xl"
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowLogin(false)}
+              className="absolute right-4 top-4"
+              aria-label="Fechar login"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <LockKeyhole className="h-7 w-7 text-primary" />
+            </div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+              Acesso restrito
+            </p>
+            <h2
+              id="admin-login-title"
+              className="mt-2 text-2xl font-bold text-foreground"
+            >
+              Área administrativa
+            </h2>
+            <p className="mt-2 text-muted-foreground">
+              Entre com a conta autorizada para gerenciar os eventos.
+            </p>
+
+            <form onSubmit={handleLogin} className="mt-6 space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-foreground">
+                  E-mail
+                </label>
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  value={loginForm.email}
+                  onChange={(event) =>
+                    setLoginForm({ ...loginForm, email: event.target.value })
+                  }
+                  className="mt-1.5"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-foreground">
+                  Senha
+                </label>
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  value={loginForm.password}
+                  onChange={(event) =>
+                    setLoginForm({ ...loginForm, password: event.target.value })
+                  }
+                  className="mt-1.5"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={isAuthenticating}
+                className="w-full rounded-xl"
+              >
+                {isAuthenticating ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <LogIn className="w-4 h-4 mr-2" />
+                )}
+                Entrar
+              </Button>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {showPastDateWarning && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 backdrop-blur-sm p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="past-date-title"
+          onClick={() => setShowPastDateWarning(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={(event) => event.stopPropagation()}
+            className="w-full max-w-md rounded-3xl border border-border bg-background p-7 text-center shadow-2xl"
+          >
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50">
+              <AlertTriangle className="h-8 w-8 text-amber-600" />
+            </div>
+            <h2
+              id="past-date-title"
+              className="text-2xl font-bold text-foreground"
+            >
+              Esta data já passou
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              Não é possível adicionar ou alterar eventos em uma data anterior
+              ao dia de hoje. Escolha uma data atual ou futura.
+            </p>
+            <Button
+              type="button"
+              onClick={() => setShowPastDateWarning(false)}
+              className="mt-7 w-full rounded-xl"
+            >
+              Entendi
+            </Button>
+          </motion.div>
+        </div>
+      )}
+
+      <Footer />
+    </>
+  );
+};
+
+export default CalendarPage;

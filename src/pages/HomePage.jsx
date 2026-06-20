@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from "react-helmet-async";
 import { motion } from 'framer-motion';
 import { Calendar, Clock, ArrowRight, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 const HomePage = () => {
@@ -249,9 +250,9 @@ const HomePage = () => {
           </div>
 
           <div className="text-center mt-12">
-            <a href="#" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium transition-colors">
+            <Link to="/calendario" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium transition-colors">
               Ver calendário completo <ArrowRight className="w-4 h-4" />
-            </a>
+            </Link>
           </div>
         </div>
       </section>
