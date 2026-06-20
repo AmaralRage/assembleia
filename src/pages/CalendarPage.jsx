@@ -24,8 +24,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast, Toaster } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { churchLocations } from "@/data/churchLocations";
 
 const ADMIN_EMAIL = "amaralaragao31@gmail.com";
+const MAX_DESCRIPTION_LENGTH = 180;
 const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const monthNames = [
   "Janeiro",
@@ -61,11 +63,30 @@ const emptyForm = (date = "") => ({
   category: "especial",
 });
 
-const categoryStyles = {
-  especial: "bg-primary/10 text-primary border-primary/20",
-  culto: "bg-amber-50 text-amber-700 border-amber-200",
-  jovens: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  reuniao: "bg-violet-50 text-violet-700 border-violet-200",
+const eventColorStyles = [
+  "bg-blue-50 text-blue-700 border-blue-200",
+  "bg-amber-50 text-amber-700 border-amber-200",
+  "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "bg-violet-50 text-violet-700 border-violet-200",
+  "bg-rose-50 text-rose-700 border-rose-200",
+  "bg-cyan-50 text-cyan-700 border-cyan-200",
+  "bg-orange-50 text-orange-700 border-orange-200",
+  "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200",
+];
+
+const getEventColorStyle = (eventId = "") => {
+  const hash = String(eventId)
+    .split("")
+    .reduce((total, character) => total + character.charCodeAt(0), 0);
+
+  return eventColorStyles[hash % eventColorStyles.length];
+};
+
+const categoryLabels = {
+  especial: "Evento especial",
+  culto: "Culto",
+  jovens: "Jovens",
+  reuniao: "Reunião",
 };
 
 const fromDatabaseEvent = (event) => ({
@@ -300,6 +321,13 @@ const CalendarPage = () => {
       return;
     }
 
+    if (form.description.length > MAX_DESCRIPTION_LENGTH) {
+      toast.error(
+        `A descrição deve ter no máximo ${MAX_DESCRIPTION_LENGTH} caracteres.`,
+      );
+      return;
+    }
+
     if (isPastDate(form.date)) {
       setShowPastDateWarning(true);
       return;
@@ -440,7 +468,7 @@ const CalendarPage = () => {
                   </div>
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-                      Agenda da igreja
+                      Agenda da Assembleia de Deus da Lapa
                     </p>
                     <h1 className="text-3xl font-bold text-foreground">
                       Calendário
@@ -574,8 +602,7 @@ const CalendarPage = () => {
                                   selectEvent(event, clickEvent)
                                 }
                                 className={`block truncate rounded-lg border px-2 py-1.5 text-xs font-semibold ${
-                                  categoryStyles[event.category] ||
-                                  categoryStyles.especial
+                                  getEventColorStyle(event.id)
                                 }`}
                               >
                                 {event.time && `${event.time} · `}
@@ -688,14 +715,41 @@ const CalendarPage = () => {
                         <label className="text-sm font-semibold text-foreground">
                           Local
                         </label>
-                        <Input
+                        <select
                           value={form.location}
                           onChange={(event) =>
                             setForm({ ...form, location: event.target.value })
                           }
-                          placeholder="Ex.: Templo central"
-                          className="mt-1.5 bg-background"
-                        />
+                          className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="">Selecione uma igreja</option>
+                          {form.location &&
+                            !churchLocations.some(
+                              (location) => location.name === form.location,
+                            ) && (
+                              <option value={form.location}>
+                                {form.location} (evento antigo)
+                              </option>
+                            )}
+                          {churchLocations.map((location) => (
+                            <option key={location.id} value={location.name}>
+                              {location.name}
+                              {location.isExample ? " (Exemplo)" : ""}
+                            </option>
+                          ))}
+                        </select>
+                        {form.location &&
+                          churchLocations.find(
+                            (location) => location.name === form.location,
+                          ) && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              {
+                                churchLocations.find(
+                                  (location) => location.name === form.location,
+                                ).address
+                              }
+                            </p>
+                          )}
                       </div>
 
                       <div>
@@ -704,6 +758,7 @@ const CalendarPage = () => {
                         </label>
                         <Textarea
                           value={form.description}
+                          maxLength={MAX_DESCRIPTION_LENGTH}
                           onChange={(event) =>
                             setForm({
                               ...form,
@@ -713,6 +768,9 @@ const CalendarPage = () => {
                           placeholder="Conte brevemente sobre o evento..."
                           className="mt-1.5 min-h-28 bg-background resize-none"
                         />
+                        <p className="mt-1.5 text-right text-xs text-muted-foreground">
+                          {form.description.length}/{MAX_DESCRIPTION_LENGTH}
+                        </p>
                       </div>
 
                       <Button type="submit" className="w-full rounded-xl">
@@ -728,11 +786,10 @@ const CalendarPage = () => {
                     </p>
                     <span
                       className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold mb-4 ${
-                        categoryStyles[selectedEvent.category] ||
-                        categoryStyles.especial
+                        getEventColorStyle(selectedEvent.id)
                       }`}
                     >
-                      {selectedEvent.category}
+                      {categoryLabels[selectedEvent.category] || "Evento"}
                     </span>
                     <h2 className="text-2xl font-bold text-foreground leading-tight mb-5">
                       {selectedEvent.title}

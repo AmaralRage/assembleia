@@ -90,8 +90,8 @@ const Header = () => {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 border-b border-border/80 transition-all duration-300 ${
         isScrolled 
-          ? 'bg-white/95 backdrop-blur-md shadow-[0_8px_24px_-12px_rgba(15,23,42,0.35)]'
-          : 'bg-white/90 backdrop-blur-sm shadow-[0_6px_18px_-14px_rgba(15,23,42,0.3)]'
+          ? 'bg-white/80 backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(15,23,42,0.35)]'
+          : 'bg-white/70 backdrop-blur-lg shadow-[0_6px_18px_-14px_rgba(15,23,42,0.3)]'
       }`}
     >
       <nav className="section-container">

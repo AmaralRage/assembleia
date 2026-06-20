@@ -7,70 +7,15 @@ import Footer from '@/components/Footer.jsx';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast, Toaster } from 'sonner';
+import { churchLocations } from '@/data/churchLocations';
 
 const AddressesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const addresses = [
-    {
-      id: 1,
-      name: 'Assembleia de Deus da Lapa - Centro',
-      city: 'Rio de Janeiro',
-      state: 'RJ',
-      fullAddress: 'Rua Joaquim Silva 52 - Centro - Rio de Janeiro - RJ - Brasil',
-      image: 'https://i.imgur.com/WMVJQ9m.jpeg',
-      mapUrl: 'https://maps.google.com/?q=Rua+Joaquim+Silva+52+Centro+Rio+de+Janeiro+RJ+Brasil'
-    },
-    {
-      id: 2,
-      name: 'Assembleia de Deus - Vila Nova',
-      city: 'São Paulo',
-      state: 'SP',
-      fullAddress: 'Avenida Paulista, 1000 - Vila Nova, São Paulo, SP',
-      image: 'https://images.unsplash.com/photo-1609926795947-0738627824c5',
-      mapUrl: 'https://maps.google.com/?q=Avenida+Paulista,+1000+-+Vila+Nova,+São+Paulo,+SP'
-    },
-    {
-      id: 3,
-      name: 'Assembleia de Deus - Santa Cruz',
-      city: 'Rio de Janeiro',
-      state: 'RJ',
-      fullAddress: 'Rua Felipe Cardoso, 500 - Santa Cruz, Rio de Janeiro - RJ',
-      image: 'https://chicaslokas.com.br/wp-content/uploads/2022/05/Santa-cruz-rio-de-janeiro.jpg',
-      mapUrl: 'https://maps.google.com/?q=Rua+Felipe+Cardoso+500+Santa+Cruz+Rio+de+Janeiro+RJ',
-      isExample: true
-    },
-    {
-      id: 4,
-      name: 'Assembleia de Deus - Cidade de Deus',
-      city: 'Rio de Janeiro',
-      state: 'RJ',
-      fullAddress: 'Rua Josias, 150 - Cidade de Deus, Rio de Janeiro - RJ',
-      image: 'https://webquarto-photos.nyc3.cdn.digitaloceanspaces.com/district/24157/district_image_0.jpg',
-      mapUrl: 'https://maps.google.com/?q=Rua+Josias+150+Cidade+de+Deus+Rio+de+Janeiro+RJ',
-      isExample: true
-    },
-    {
-      id: 5,
-      name: 'Assembleia de Deus - Catete',
-      city: 'Rio de Janeiro',
-      state: 'RJ',
-      fullAddress: 'Rua do Catete, 250 - Catete, Rio de Janeiro - RJ',
-      image: 'https://portal.loft.com.br/wp-content/uploads/2023/01/bairros-rj-catete-shutterstock.jpg',
-      mapUrl: 'https://maps.google.com/?q=Rua+do+Catete+250+Catete+Rio+de+Janeiro+RJ',
-      isExample: true
-    },
-    {
-      id: 6,
-      name: 'Assembleia de Deus - Campo Grande',
-      city: 'Rio de Janeiro',
-      state: 'RJ',
-      fullAddress: 'Estrada do Monteiro, 900 - Campo Grande, Rio de Janeiro - RJ',
-      image: 'https://b3577058.smushcdn.com/3577058/wp-content/uploads/2024/06/Bairro-mais-populoso-do-Brasil-Campo-Grande-720x511.webp?lossy=1&strip=0&webp=1',
-      mapUrl: 'https://maps.google.com/?q=Estrada+do+Monteiro+900+Campo+Grande+Rio+de+Janeiro+RJ',
-      isExample: true
-    }
-  ];
+  const addresses = churchLocations.map((location) => ({
+    ...location,
+    fullAddress: location.address,
+  }));
 
   const filteredAddresses = addresses.filter((address) => {
     const query = searchQuery.toLowerCase();

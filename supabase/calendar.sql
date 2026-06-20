@@ -6,7 +6,8 @@ create table if not exists public.calendar_events (
   event_date date not null check (event_date >= current_date),
   event_time time,
   location text not null default '',
-  description text not null default '',
+  description text not null default ''
+    check (char_length(description) <= 180),
   category text not null default 'especial'
     check (category in ('especial', 'culto', 'jovens', 'reuniao')),
   created_by uuid not null default auth.uid() references auth.users(id),
@@ -16,6 +17,21 @@ create table if not exists public.calendar_events (
 
 create index if not exists calendar_events_event_date_idx
   on public.calendar_events (event_date);
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'calendar_events_description_length_check'
+      and conrelid = 'public.calendar_events'::regclass
+  ) then
+    alter table public.calendar_events
+      add constraint calendar_events_description_length_check
+      check (char_length(description) <= 180) not valid;
+  end if;
+end;
+$$;
 
 create or replace function public.is_calendar_admin()
 returns boolean

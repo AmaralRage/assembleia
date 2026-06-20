@@ -1,11 +1,59 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from "react-helmet-async";
 import { motion } from 'framer-motion';
-import { Calendar, Clock, ArrowRight, Users } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Users, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
+import { supabase } from '@/lib/supabase';
+import { getChurchLocation } from '@/data/churchLocations';
+
+const formatEventDate = (date) =>
+  new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    timeZone: 'UTC'
+  }).format(new Date(`${date}T12:00:00Z`));
+
+const formatWeekDay = (date) => {
+  const weekDay = new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'long',
+    timeZone: 'UTC'
+  }).format(new Date(`${date}T12:00:00Z`));
+
+  return weekDay.charAt(0).toUpperCase() + weekDay.slice(1);
+};
+
 const HomePage = () => {
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+
+  useEffect(() => {
+    const loadUpcomingEvents = async () => {
+      const today = new Date();
+      const todayKey = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, '0'),
+        String(today.getDate()).padStart(2, '0')
+      ].join('-');
+
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .select('id, title, event_date, event_time, description, location')
+        .gte('event_date', todayKey)
+        .order('event_date', { ascending: true })
+        .order('event_time', { ascending: true })
+        .limit(6);
+
+      if (!error) {
+        setUpcomingEvents(data || []);
+      }
+
+      setIsLoadingEvents(false);
+    };
+
+    loadUpcomingEvents();
+  }, []);
 
   const serviceTimes = [{
     day: 'Domingo',
@@ -22,17 +70,6 @@ const HomePage = () => {
   }, {
     day: 'Sexta-feira',
     time: '19:30',
-  }];
-  const upcomingEvents = [{
-    title: 'Conferência de Jovens',
-    date: '15 de Julho',
-    time: '19:00',
-    description: 'Um encontro especial de adoração e palavra para a juventude.'
-  }, {
-    title: 'Retiro Espiritual',
-    date: '22 a 24 de Agosto',
-    time: 'O dia todo',
-    description: 'Momentos de comunhão e renovação espiritual em nosso acampamento.'
   }];
   {/* LIDERANÇA SECTION */ }
   const leadershipCards = [
@@ -217,8 +254,8 @@ const HomePage = () => {
             </p>
           </motion.div>
 
-          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-            {upcomingEvents.map((event, idx) => <motion.div key={idx} initial={{
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {upcomingEvents.map((event, idx) => <motion.div key={event.id} initial={{
               opacity: 0,
               y: 20
             }} whileInView={{
@@ -230,24 +267,71 @@ const HomePage = () => {
               duration: 0.5,
               delay: idx * 0.1
             }} className="bg-card border border-border p-6 rounded-2xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-xl font-bold text-card-foreground">{event.title}</h3>
-              </div>
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">{event.date}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-6 h-full">
+                <div className="flex flex-col">
+                  <p className="inline-block bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full mb-3">
+                    {formatWeekDay(event.event_date)}
+                  </p>
+                  <h3 className="text-xl font-bold text-card-foreground">{event.title}</h3>
+
+                  <div className="space-y-3 my-5">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium capitalize">
+                        {formatEventDate(event.event_date)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">
+                        {event.event_time?.slice(0, 5) || 'Horário a definir'}
+                      </span>
+                    </div>
+                    {event.location && (
+                      <div className="flex items-start gap-2 text-muted-foreground">
+                        <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span className="text-sm font-medium">{event.location}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-muted-foreground text-sm leading-relaxed mt-auto line-clamp-3">
+                    {event.description || 'Mais informações serão divulgadas em breve.'}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">{event.time}</span>
+
+                <div className="flex sm:flex-col gap-2 sm:border-l sm:border-border sm:pl-5 sm:justify-center">
+                  <Link
+                    to="/calendario"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Calendário
+                  </Link>
+                  {getChurchLocation(event.location) && (
+                    <a
+                      href={getChurchLocation(event.location).mapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      Como chegar
+                    </a>
+                  )}
                 </div>
               </div>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {event.description}
-              </p>
             </motion.div>)}
           </div>
+
+          {!isLoadingEvents && upcomingEvents.length === 0 && (
+            <div className="max-w-4xl mx-auto text-center border border-dashed border-border rounded-2xl py-10 px-6 bg-muted/20">
+              <Calendar className="w-9 h-9 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-muted-foreground">
+                Nenhum evento futuro cadastrado no momento.
+              </p>
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <Link to="/calendario" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium transition-colors">
