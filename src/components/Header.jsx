@@ -14,7 +14,7 @@ const Header = () => {
       setIsScrolled(window.scrollY > 20);
       
       if (location.pathname === '/') {
-        const sections = ['agenda', 'horarios', 'sobre'];
+        const sections = ['agenda', 'localizacoes', 'sobre'];
         const scrollPosition = window.scrollY + 100;
         
         let found = false;
@@ -43,8 +43,7 @@ const Header = () => {
   }, [location.pathname]);
 
   const navLinks = [
-    { name: 'Agenda', href: '/#agenda', isAnchor: true },
-    { name: 'Horários', href: '/#horarios', isAnchor: true },
+    { name: 'Agenda e cultos', href: '/#agenda', isAnchor: true },
     { name: 'Endereços', href: '/enderecos', isAnchor: false },
     { name: 'Sobre', href: '/sobre', isAnchor: false }
   ];

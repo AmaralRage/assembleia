@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import { supabase } from '@/lib/supabase';
-import { getChurchLocation } from '@/data/churchLocations';
+import { churchLocations, getChurchLocation } from '@/data/churchLocations';
 
 const formatEventDate = (date) =>
   new Intl.DateTimeFormat('pt-BR', {
@@ -55,22 +55,7 @@ const HomePage = () => {
     loadUpcomingEvents();
   }, []);
 
-  const serviceTimes = [{
-    day: 'Domingo',
-    time: '09:00',
-    event: 'Escola Dominical'
-  }, {
-    day: 'Domingo',
-    time: '18:00',
-    event: 'Culto de Celebração'
-  }, {
-    day: 'Quarta-feira',
-    time: '19:30',
-    event: 'Culto de Ensino'
-  }, {
-    day: 'Sexta-feira',
-    time: '19:30',
-  }];
+  const featuredLocations = churchLocations.slice(0, 3);
   {/* LIDERANÇA SECTION */ }
   const leadershipCards = [
     {
@@ -101,7 +86,7 @@ const HomePage = () => {
   return <>
     <Helmet>
       <title>Assembleia de Deus - Bem-vindo à nossa comunidade de fé</title>
-      <meta name="description" content="Junte-se à nossa comunidade de fé. Confira nossa agenda de cultos, horários e conheça nossa liderança." />
+      <meta name="description" content="Junte-se à nossa comunidade de fé. Confira nossa agenda, conheça nossas congregações e nossa liderança." />
     </Helmet>
 
     <Header />
@@ -142,9 +127,9 @@ const HomePage = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 mt-8">
-              <motion.a href="#horarios" onClick={e => {
+              <motion.a href="#agenda" onClick={e => {
                 e.preventDefault();
-                const element = document.querySelector('#horarios');
+                const element = document.querySelector('#agenda');
                 if (element) {
                   const offset = 80;
                   const elementPosition = element.offsetTop - offset;
@@ -161,7 +146,7 @@ const HomePage = () => {
                 delay: 0.5,
                 duration: 0.8
               }} className="px-8 py-4 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] shadow-lg hover:shadow-xl w-full sm:w-auto text-center">
-                Ver horários de cultos
+                Ver agenda e cultos
               </motion.a>
             </div>
           </motion.div>
@@ -341,8 +326,8 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* HORÁRIOS SECTION */}
-      <section id="horarios" className="py-24 bg-muted">
+      {/* LOCALIZAÇÕES SECTION */}
+      <section id="localizacoes" className="py-24 bg-muted">
         <div className="section-container">
           <motion.div initial={{
             opacity: 0,
@@ -356,48 +341,71 @@ const HomePage = () => {
             duration: 0.6
           }} className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Clock className="w-8 h-8 text-primary" />
+              <MapPin className="w-8 h-8 text-primary" />
               <h2 className="text-4xl md:text-5xl font-bold text-foreground" style={{
                 letterSpacing: '-0.02em'
               }}>
-                Horários
+                Nossas localizações
               </h2>
             </div>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Nossos encontros semanais
+              Conheça algumas de nossas congregações e encontre a mais próxima de você
             </p>
           </motion.div>
 
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {serviceTimes.map((item, index) => <motion.div key={index} initial={{
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {featuredLocations.map((location, index) => <motion.div key={location.id} initial={{
                 opacity: 0,
-                scale: 0.95
+                y: 20
               }} whileInView={{
                 opacity: 1,
-                scale: 1
+                y: 0
               }} viewport={{
                 once: true
               }} transition={{
                 duration: 0.5,
                 delay: index * 0.1
-              }} className="bg-white p-6 rounded-2xl shadow-sm border border-border flex flex-col justify-between hover:shadow-md transition-shadow">
-                <div>
-                  <p className="text-sm font-medium text-primary mb-2 bg-primary/10 inline-block px-3 py-1 rounded-full">
-                    {item.day}
-                  </p>
-                  <h3 className="font-bold text-xl text-card-foreground mb-1">
-                    {item.event}
-                  </h3>
+              }} className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div className="h-52 overflow-hidden relative">
+                  <img
+                    src={location.image}
+                    alt={location.name}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  />
+                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-foreground">
+                      {location.city}, {location.state}
+                    </span>
+                  </div>
                 </div>
-                <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-                  <span className="text-muted-foreground text-sm font-medium">Horário de início</span>
-                  <span className="font-bold text-2xl text-foreground">
-                    {item.time}
-                  </span>
+
+                <div className="p-6 flex flex-col flex-grow">
+                  <h3 className="font-bold text-xl text-card-foreground mb-3">
+                    {location.name}
+                  </h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-6 flex-grow">
+                    {location.address}
+                  </p>
+                  <a
+                    href={location.mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    <MapPin className="w-4 h-4" />
+                    Como chegar
+                  </a>
                 </div>
               </motion.div>)}
             </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <Link to="/enderecos" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium transition-colors">
+              Ver todas as congregações <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </section>

@@ -9,7 +9,6 @@ import {
   Clock,
   Loader2,
   LockKeyhole,
-  LogIn,
   LogOut,
   MapPin,
   Plus,
@@ -25,8 +24,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast, Toaster } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { churchLocations } from "@/data/churchLocations";
+import {
+  isAdminDeviceRecognized,
+  recognizeAdminDevice,
+} from "@/lib/adminDevice";
+import { Link } from "react-router-dom";
 
-const ADMIN_EMAIL = "amaralaragao31@gmail.com";
 const MAX_DESCRIPTION_LENGTH = 180;
 const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const monthNames = [
@@ -115,10 +118,10 @@ const CalendarPage = () => {
   );
   const [events, setEvents] = useState([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
-  const [session, setSession] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [loginForm, setLoginForm] = useState({ email: ADMIN_EMAIL, password: "" });
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isRecognizedDevice, setIsRecognizedDevice] = useState(() =>
+    isAdminDeviceRecognized(),
+  );
   const [selectedDate, setSelectedDate] = useState(
     toDateKey(today.getFullYear(), today.getMonth(), today.getDate()),
   );
@@ -127,10 +130,25 @@ const CalendarPage = () => {
   const [showPastDateWarning, setShowPastDateWarning] = useState(false);
   const [form, setForm] = useState(() => emptyForm(selectedDate));
 
-  const isAdmin =
-    session?.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-
   useEffect(() => {
+    const checkAdminAccess = async (currentSession) => {
+      if (!currentSession) {
+        setIsAdmin(false);
+        setIsEditing(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc("is_calendar_admin");
+      const hasAdminAccess = !error && data === true;
+
+      setIsAdmin(hasAdminAccess);
+
+      if (hasAdminAccess) {
+        recognizeAdminDevice();
+        setIsRecognizedDevice(true);
+      }
+    };
+
     const loadCalendar = async () => {
       const [{ data: sessionData }, { data, error }] = await Promise.all([
         supabase.auth.getSession(),
@@ -141,7 +159,7 @@ const CalendarPage = () => {
           .order("event_time", { ascending: true }),
       ]);
 
-      setSession(sessionData.session);
+      await checkAdminAccess(sessionData.session);
 
       if (error) {
         toast.error("Não foi possível carregar a agenda.");
@@ -157,7 +175,9 @@ const CalendarPage = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      setSession(currentSession);
+      setTimeout(() => {
+        checkAdminAccess(currentSession);
+      }, 0);
     });
 
     return () => subscription.unsubscribe();
@@ -267,10 +287,7 @@ const CalendarPage = () => {
   };
 
   const startNewEvent = () => {
-    if (!isAdmin) {
-      setShowLogin(true);
-      return;
-    }
+    if (!isAdmin) return;
 
     const date =
       selectedDate ||
@@ -289,10 +306,7 @@ const CalendarPage = () => {
   const startEditing = () => {
     if (!selectedEvent) return;
 
-    if (!isAdmin) {
-      setShowLogin(true);
-      return;
-    }
+    if (!isAdmin) return;
 
     if (isPastDate(selectedEvent.date)) {
       setShowPastDateWarning(true);
@@ -311,10 +325,7 @@ const CalendarPage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!isAdmin) {
-      setShowLogin(true);
-      return;
-    }
+    if (!isAdmin) return;
 
     if (!form.title.trim() || !form.date) {
       toast.error("Informe o título e a data do evento.");
@@ -402,39 +413,9 @@ const CalendarPage = () => {
     toast.success("Evento removido.");
   };
 
-  const handleLogin = async (event) => {
-    event.preventDefault();
-
-    if (loginForm.email.trim().toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      toast.error("Esta conta não possui acesso administrativo.");
-      return;
-    }
-
-    setIsAuthenticating(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: loginForm.email.trim(),
-      password: loginForm.password,
-    });
-    setIsAuthenticating(false);
-
-    if (error) {
-      toast.error("E-mail ou senha inválidos.");
-      return;
-    }
-
-    if (data.user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      await supabase.auth.signOut();
-      toast.error("Esta conta não possui acesso administrativo.");
-      return;
-    }
-
-    setShowLogin(false);
-    setLoginForm((current) => ({ ...current, password: "" }));
-    toast.success("Acesso administrativo liberado.");
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    setIsAdmin(false);
     setIsEditing(false);
     toast.success("Sessão administrativa encerrada.");
   };
@@ -502,7 +483,7 @@ const CalendarPage = () => {
                   </Button>
                 </div>
 
-                {isAdmin ? (
+                {isAdmin && (
                   <>
                     <Button
                       type="button"
@@ -522,15 +503,14 @@ const CalendarPage = () => {
                       Sair
                     </Button>
                   </>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowLogin(true)}
-                    className="rounded-xl"
-                  >
-                    <LockKeyhole className="w-4 h-4 mr-2" />
-                    Área administrativa
+                )}
+
+                {!isAdmin && isRecognizedDevice && (
+                  <Button type="button" variant="outline" asChild className="rounded-xl">
+                    <Link to="/administracao">
+                      <LockKeyhole className="w-4 h-4 mr-2" />
+                      Área administrativa
+                    </Link>
                   </Button>
                 )}
               </div>
@@ -882,7 +862,7 @@ const CalendarPage = () => {
                       </div>
                     )}
 
-                    {isAdmin ? (
+                    {isAdmin && (
                       <Button
                         type="button"
                         onClick={startNewEvent}
@@ -891,29 +871,6 @@ const CalendarPage = () => {
                         <Plus className="w-4 h-4 mr-2" />
                         Adicionar evento nesta data
                       </Button>
-                    ) : (
-                      <div className="mt-6 rounded-2xl border border-border bg-background p-5">
-                        <div className="flex gap-3">
-                          <LockKeyhole className="w-5 h-5 text-primary shrink-0" />
-                          <div>
-                            <p className="font-semibold text-foreground">
-                              Agenda protegida
-                            </p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              Somente o administrador pode criar ou alterar eventos.
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setShowLogin(true)}
-                          className="w-full mt-4 rounded-xl"
-                        >
-                          <LogIn className="w-4 h-4 mr-2" />
-                          Entrar como administrador
-                        </Button>
-                      </div>
                     )}
                   </div>
                 )}
@@ -922,96 +879,6 @@ const CalendarPage = () => {
           </motion.div>
         </div>
       </main>
-
-      {showLogin && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 backdrop-blur-sm p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="admin-login-title"
-          onClick={() => setShowLogin(false)}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={(event) => event.stopPropagation()}
-            className="relative w-full max-w-md rounded-3xl border border-border bg-background p-7 shadow-2xl"
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowLogin(false)}
-              className="absolute right-4 top-4"
-              aria-label="Fechar login"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-
-            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-              <LockKeyhole className="h-7 w-7 text-primary" />
-            </div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
-              Acesso restrito
-            </p>
-            <h2
-              id="admin-login-title"
-              className="mt-2 text-2xl font-bold text-foreground"
-            >
-              Área administrativa
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              Entre com a conta autorizada para gerenciar os eventos.
-            </p>
-
-            <form onSubmit={handleLogin} className="mt-6 space-y-4">
-              <div>
-                <label className="text-sm font-semibold text-foreground">
-                  E-mail
-                </label>
-                <Input
-                  type="email"
-                  autoComplete="email"
-                  value={loginForm.email}
-                  onChange={(event) =>
-                    setLoginForm({ ...loginForm, email: event.target.value })
-                  }
-                  className="mt-1.5"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-foreground">
-                  Senha
-                </label>
-                <Input
-                  type="password"
-                  autoComplete="current-password"
-                  value={loginForm.password}
-                  onChange={(event) =>
-                    setLoginForm({ ...loginForm, password: event.target.value })
-                  }
-                  className="mt-1.5"
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={isAuthenticating}
-                className="w-full rounded-xl"
-              >
-                {isAuthenticating ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <LogIn className="w-4 h-4 mr-2" />
-                )}
-                Entrar
-              </Button>
-            </form>
-          </motion.div>
-        </div>
-      )}
 
       {showPastDateWarning && (
         <div
