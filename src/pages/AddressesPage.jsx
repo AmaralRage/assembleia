@@ -29,6 +29,46 @@ const AddressesPage = () => {
       fullAddress: 'Avenida Paulista, 1000 - Vila Nova, São Paulo, SP',
       image: 'https://images.unsplash.com/photo-1609926795947-0738627824c5',
       mapUrl: 'https://maps.google.com/?q=Avenida+Paulista,+1000+-+Vila+Nova,+São+Paulo,+SP'
+    },
+    {
+      id: 3,
+      name: 'Assembleia de Deus - Santa Cruz',
+      city: 'Rio de Janeiro',
+      state: 'RJ',
+      fullAddress: 'Rua Felipe Cardoso, 500 - Santa Cruz, Rio de Janeiro - RJ',
+      image: 'https://chicaslokas.com.br/wp-content/uploads/2022/05/Santa-cruz-rio-de-janeiro.jpg',
+      mapUrl: 'https://maps.google.com/?q=Rua+Felipe+Cardoso+500+Santa+Cruz+Rio+de+Janeiro+RJ',
+      isExample: true
+    },
+    {
+      id: 4,
+      name: 'Assembleia de Deus - Cidade de Deus',
+      city: 'Rio de Janeiro',
+      state: 'RJ',
+      fullAddress: 'Rua Josias, 150 - Cidade de Deus, Rio de Janeiro - RJ',
+      image: 'https://webquarto-photos.nyc3.cdn.digitaloceanspaces.com/district/24157/district_image_0.jpg',
+      mapUrl: 'https://maps.google.com/?q=Rua+Josias+150+Cidade+de+Deus+Rio+de+Janeiro+RJ',
+      isExample: true
+    },
+    {
+      id: 5,
+      name: 'Assembleia de Deus - Catete',
+      city: 'Rio de Janeiro',
+      state: 'RJ',
+      fullAddress: 'Rua do Catete, 250 - Catete, Rio de Janeiro - RJ',
+      image: 'https://portal.loft.com.br/wp-content/uploads/2023/01/bairros-rj-catete-shutterstock.jpg',
+      mapUrl: 'https://maps.google.com/?q=Rua+do+Catete+250+Catete+Rio+de+Janeiro+RJ',
+      isExample: true
+    },
+    {
+      id: 6,
+      name: 'Assembleia de Deus - Campo Grande',
+      city: 'Rio de Janeiro',
+      state: 'RJ',
+      fullAddress: 'Estrada do Monteiro, 900 - Campo Grande, Rio de Janeiro - RJ',
+      image: 'https://b3577058.smushcdn.com/3577058/wp-content/uploads/2024/06/Bairro-mais-populoso-do-Brasil-Campo-Grande-720x511.webp?lossy=1&strip=0&webp=1',
+      mapUrl: 'https://maps.google.com/?q=Estrada+do+Monteiro+900+Campo+Grande+Rio+de+Janeiro+RJ',
+      isExample: true
     }
   ];
 
@@ -140,6 +180,11 @@ const AddressesPage = () => {
                           {address.city}, {address.state}
                         </span>
                       </div>
+                      {address.isExample && (
+                        <span className="absolute top-4 right-4 bg-primary/90 text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                          Exemplo
+                        </span>
+                      )}
                     </div>
 
                     <div className="p-6 flex flex-col flex-grow">
