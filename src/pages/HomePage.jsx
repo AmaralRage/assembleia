@@ -254,7 +254,7 @@ const HomePage = () => {
             }} className="bg-card border border-border p-6 rounded-2xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300">
               <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-6 h-full">
                 <div className="flex flex-col">
-                  <p className="inline-block bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full mb-3">
+                  <p className="-ml-3 inline-block bg-primary/10 text-primary dark:text-white text-sm font-medium px-3 py-1 rounded-full mb-3">
                     {formatWeekDay(event.event_date)}
                   </p>
                   <h3 className="text-xl font-bold text-card-foreground">{event.title}</h3>
@@ -319,7 +319,7 @@ const HomePage = () => {
           )}
 
           <div className="text-center mt-12">
-            <Link to="/calendario" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium transition-colors">
+            <Link to="/calendario" className="inline-flex items-center gap-2 text-primary dark:text-white hover:text-primary/80 dark:hover:text-primary font-medium transition-colors">
               Ver calendário completo <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -373,7 +373,7 @@ const HomePage = () => {
                     alt={location.name}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                   />
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                  <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
                     <MapPin className="w-4 h-4 text-primary" />
                     <span className="text-xs font-semibold text-foreground">
                       {location.city}, {location.state}
@@ -403,7 +403,7 @@ const HomePage = () => {
           </div>
 
           <div className="text-center mt-12">
-            <Link to="/enderecos" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium transition-colors">
+            <Link to="/enderecos" className="inline-flex items-center gap-2 text-primary dark:text-white hover:text-primary/80 dark:hover:text-primary font-medium transition-colors">
               Ver todas as congregações <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

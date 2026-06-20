@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, Moon, Sun, X } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { getPreferredTheme, saveTheme } from '@/lib/theme';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('');
+  const [theme, setTheme] = useState(() => getPreferredTheme());
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -85,15 +87,21 @@ const Header = () => {
     return location.pathname === link.href;
   };
 
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    saveTheme(nextTheme);
+  };
+
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 border-b border-border/80 transition-all duration-300 ${
         isScrolled 
-          ? 'bg-white/80 backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(15,23,42,0.35)]'
-          : 'bg-white/70 backdrop-blur-lg shadow-[0_6px_18px_-14px_rgba(15,23,42,0.3)]'
+          ? 'bg-background/85 backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(15,23,42,0.35)]'
+          : 'bg-background/75 backdrop-blur-lg shadow-[0_6px_18px_-14px_rgba(15,23,42,0.3)]'
       }`}
     >
-      <nav className="section-container">
+      <nav className="section-container md:pr-20">
         <div className="flex items-center justify-between h-20">
           <Link 
             to="/" 
@@ -112,33 +120,35 @@ const Header = () => {
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={(e) => handleNavClick(e, link)}
-                className={`font-medium transition-all duration-200 relative ${
-                  isActive(link)
-                    ? 'text-primary'
-                    : 'text-foreground/70 hover:text-primary'
-                }`}
-              >
-                {link.name}
-                {isActive(link) && (
-                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full" />
-                )}
-              </a>
-            ))}
-          </div>
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-8">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={(e) => handleNavClick(e, link)}
+                  className={`font-medium transition-all duration-200 relative ${
+                    isActive(link)
+                      ? 'text-primary'
+                      : 'text-foreground/70 hover:text-primary'
+                  }`}
+                >
+                  {link.name}
+                  {isActive(link) && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                  )}
+                </a>
+              ))}
+            </div>
 
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 text-foreground hover:text-primary transition-colors duration-200"
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 text-foreground hover:text-primary transition-colors duration-200"
+              aria-label="Abrir menu"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
 
         {isMobileMenuOpen && (
@@ -162,6 +172,16 @@ const Header = () => {
           </div>
         )}
       </nav>
+
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="absolute right-16 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl border border-border bg-muted/70 text-foreground transition-all hover:border-primary/40 hover:text-primary md:right-5"
+        aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
+        title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+      >
+        {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
+      </button>
     </header>
   );
 };

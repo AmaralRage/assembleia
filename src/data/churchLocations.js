@@ -5,6 +5,8 @@ export const churchLocations = [
     city: "Rio de Janeiro",
     state: "RJ",
     address: "Rua Joaquim Silva, 52 - Centro, Rio de Janeiro - RJ",
+    leaderLabel: "Presidente",
+    leader: "Pastor Charles",
     image: "https://i.imgur.com/WMVJQ9m.jpeg",
     mapUrl:
       "https://maps.google.com/?q=Rua+Joaquim+Silva+52+Centro+Rio+de+Janeiro+RJ+Brasil",

@@ -23,6 +23,8 @@ const exPresidentes = [
     foto: "https://upload.wikimedia.org/wikipedia/pt/thumb/3/37/Saitama_One_Punch-Man.png/330px-Saitama_One_Punch-Man.png",
     resumo:
       "Foi um líder dedicado à expansão da igreja, fortalecendo os ministérios e a comunhão entre os membros.",
+    historia:
+      "Durante sua liderança, acompanhou os primeiros anos de crescimento da congregação e incentivou a participação das famílias nas atividades da igreja.",
   },
   {
     nome: "Pastor José Almeida",
@@ -30,6 +32,8 @@ const exPresidentes = [
     foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a",
     resumo:
       "Conduziu a igreja em um período de crescimento espiritual, valorizando o ensino bíblico e a evangelização.",
+    historia:
+      "Seu período foi marcado pelo fortalecimento dos estudos bíblicos e pela formação de novos líderes para servir aos diferentes ministérios.",
   },
   {
     nome: "Pastor Marcos Oliveira",
@@ -37,6 +41,8 @@ const exPresidentes = [
     foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
     resumo:
       "Trabalhou na modernização da comunicação da igreja e no fortalecimento dos projetos sociais.",
+    historia:
+      "Aproximou a igreja da comunidade por meio de ações sociais e ajudou a renovar a maneira como os eventos e projetos eram divulgados.",
   },
   {
     nome: "Mariana Vasconcelos",
@@ -44,6 +50,8 @@ const exPresidentes = [
     foto: "https://admin.cnnbrasil.com.br/wp-content/uploads/sites/12/2023/07/IMG_4005.jpg?w=419&h=283&crop=0",
     resumo:
       "Evoluiu a igreja a níveis modernos com sites e redes sociais, mantendo projetos íntegros e de alto rendimento.",
+    historia:
+      "Deu continuidade à transformação digital da igreja e ampliou os canais de comunicação com membros, visitantes e congregações.",
   },
 ];
 
@@ -81,14 +89,14 @@ const SobrePage = () => {
                   </h1>
                 </div>
 
-                <p className="text-lg text-muted-foreground leading-relaxed mb-5">
+                <p className="text-lg text-muted-foreground dark:text-slate-300 leading-relaxed mb-5">
                   A Assembleia de Deus da Lapa é uma comunidade cristã dedicada à
                   adoração, ao ensino da Palavra de Deus e ao acolhimento de famílias.
                   Nossa missão é anunciar o evangelho, cuidar de vidas e fortalecer a fé
                   de cada membro.
                 </p>
 
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-lg text-muted-foreground dark:text-slate-300 leading-relaxed">
                   Fundada em 1998, a igreja nasceu do desejo de reunir pessoas em um
                   ambiente de fé, comunhão e serviço. Ao longo dos anos, cresceu como
                   uma família espiritual, mantendo seu compromisso com Deus e com a
@@ -109,11 +117,10 @@ const SobrePage = () => {
                 transition={{ duration: 0.6 }}
                 className="relative"
               >
-                <div className="absolute -inset-3 rounded-3xl border border-primary/20" />
                 <img
                   src={presidenteAtual.foto}
                   alt={presidenteAtual.nome}
-                  className="relative w-full h-[460px] lg:h-[580px] object-cover rounded-3xl shadow-xl"
+                  className="w-full h-[460px] lg:h-[580px] object-cover rounded-3xl shadow-xl"
                 />
               </motion.div>
 
@@ -123,8 +130,8 @@ const SobrePage = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
               >
-                <span className="inline-flex items-center gap-2 border border-primary/40 bg-primary/5 text-primary text-xs font-semibold uppercase tracking-[0.2em] px-4 py-2 rounded-full mb-6">
-                  <Church className="w-4 h-4" />
+                <span className="inline-flex items-center gap-3 border border-primary/60 bg-primary/10 text-primary dark:text-white text-sm font-bold uppercase tracking-[0.2em] px-6 py-3 rounded-full mb-7 shadow-sm">
+                  <Church className="w-5 h-5" />
                   Liderança atual
                 </span>
 
@@ -132,7 +139,7 @@ const SobrePage = () => {
                   {presidenteAtual.nome}
                 </h2>
 
-                <p className="text-sm font-semibold uppercase tracking-wider text-primary mb-7">
+                <p className="text-sm font-semibold uppercase tracking-wider text-primary dark:text-white mb-7">
                   Presidente · {presidenteAtual.periodo}
                 </p>
 
@@ -140,17 +147,17 @@ const SobrePage = () => {
                   “Servir com fé, cuidado e compromisso com cada vida.”
                 </p>
 
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-lg text-muted-foreground dark:text-slate-300 leading-relaxed">
                   {presidenteAtual.resumo}
                 </p>
 
-                <div className="mt-6 space-y-5 text-base md:text-lg text-muted-foreground leading-relaxed">
+                <div className="mt-6 space-y-5 text-base md:text-lg text-muted-foreground dark:text-slate-300 leading-relaxed">
                   <p>{presidenteAtual.historia}</p>
                   <p>{presidenteAtual.atuacao}</p>
                 </div>
 
                 <div className="mt-10 pt-6 border-t border-border">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground dark:text-slate-400">
                     Assembleia de Deus da Lapa
                   </p>
                 </div>
@@ -175,43 +182,73 @@ const SobrePage = () => {
                 </h2>
               </div>
 
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-lg text-muted-foreground dark:text-white max-w-2xl mx-auto">
                 Conheça alguns líderes que fizeram parte da história da nossa igreja.
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-              {exPresidentes.map((presidente) => (
+            <div className="mx-auto max-w-5xl space-y-16 lg:space-y-20">
+              {exPresidentes.map((presidente, index) => {
+                const imageOnRight = index % 2 === 0;
+
+                return (
                 <motion.div
-                  key={presidente.nome}
-                  initial={{ opacity: 0, y: 20 }}
+                  key={`${presidente.nome}-${presidente.periodo}`}
+                  initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  whileHover={{ y: -8, scale: 1.03 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-card border border-border rounded-2xl overflow-hidden shadow-md"
+                  transition={{ duration: 0.5 }}
+                  className="grid grid-cols-1 items-center gap-7 md:grid-cols-2 md:gap-10"
                 >
-                  <img
-                    src={presidente.foto}
-                    alt={presidente.nome}
-                    className="w-full h-80 object-cover"
-                  />
+                  <motion.div
+                    initial={{ opacity: 0, x: imageOnRight ? 24 : -24 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.55 }}
+                    className={imageOnRight ? "md:order-2" : "md:order-1"}
+                  >
+                    <img
+                      src={presidente.foto}
+                      alt={presidente.nome}
+                      className="h-[420px] w-full rounded-3xl object-cover object-top shadow-lg md:h-[480px]"
+                    />
+                  </motion.div>
 
-                  <div className="p-4">
-                    <p className="inline-block bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full mb-3">
-                      {presidente.periodo}
-                    </p>
+                  <motion.div
+                    initial={{ opacity: 0, x: imageOnRight ? -24 : 24 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.55 }}
+                    className={`flex flex-col justify-center ${
+                      imageOnRight ? "md:order-1" : "md:order-2"
+                    }`}
+                  >
+                    <div>
+                      <p className="mb-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary dark:text-white">
+                        {presidente.periodo}
+                      </p>
 
-                    <h3 className="text-foreground text-xl font-bold mb-3">
-                      {presidente.nome}
-                    </h3>
+                      <h3 className="mb-4 text-3xl font-bold text-foreground md:text-4xl">
+                        {presidente.nome}
+                      </h3>
 
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                      {presidente.resumo}
-                    </p>
-                  </div>
+                      <p className="text-base leading-relaxed text-muted-foreground dark:text-slate-300 md:text-lg">
+                        {presidente.resumo}
+                      </p>
+
+                      <div className="mt-7 border-l-2 border-primary/60 pl-5">
+                        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary dark:text-white">
+                          Durante sua liderança
+                        </p>
+                        <p className="leading-relaxed text-muted-foreground dark:text-slate-300">
+                          {presidente.historia}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>

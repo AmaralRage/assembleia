@@ -67,14 +67,14 @@ const emptyForm = (date = "") => ({
 });
 
 const eventColorStyles = [
-  "bg-blue-50 text-blue-700 border-blue-200",
-  "bg-amber-50 text-amber-700 border-amber-200",
-  "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "bg-violet-50 text-violet-700 border-violet-200",
-  "bg-rose-50 text-rose-700 border-rose-200",
-  "bg-cyan-50 text-cyan-700 border-cyan-200",
-  "bg-orange-50 text-orange-700 border-orange-200",
-  "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200",
+  "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/60 dark:text-blue-200 dark:border-blue-600/70",
+  "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/60 dark:text-amber-200 dark:border-amber-600/70",
+  "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/60 dark:text-emerald-200 dark:border-emerald-600/70",
+  "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/60 dark:text-violet-200 dark:border-violet-600/70",
+  "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/60 dark:text-rose-200 dark:border-rose-600/70",
+  "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/60 dark:text-cyan-200 dark:border-cyan-600/70",
+  "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/60 dark:text-orange-200 dark:border-orange-600/70",
+  "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-900/60 dark:text-fuchsia-200 dark:border-fuchsia-600/70",
 ];
 
 const getEventColorStyle = (eventId = "") => {
@@ -448,7 +448,7 @@ const CalendarPage = () => {
                     <CalendarDays className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary dark:text-white">
                       Agenda da Assembleia de Deus da Lapa
                     </p>
                     <h1 className="text-3xl font-bold text-foreground">
@@ -560,7 +560,7 @@ const CalendarPage = () => {
                           onClick={() => selectDay(day)}
                           className={`min-h-32 rounded-2xl border p-2.5 text-left align-top transition-all hover:border-primary/50 hover:shadow-md ${
                             isSelected
-                              ? "border-primary bg-primary/5 ring-2 ring-primary/15"
+                              ? "border-primary bg-primary/5 ring-2 ring-primary/15 dark:bg-primary/10 dark:ring-primary/30"
                               : "border-border bg-card"
                           } ${day.isCurrentMonth ? "" : "opacity-45"}`}
                         >
@@ -761,7 +761,7 @@ const CalendarPage = () => {
                   </div>
                 ) : selectedEvent ? (
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary mb-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary dark:text-white mb-3">
                       Evento selecionado
                     </p>
                     <span
@@ -818,7 +818,7 @@ const CalendarPage = () => {
                         variant="outline"
                         size="icon"
                         onClick={deleteEvent}
-                        className="rounded-xl text-destructive hover:text-destructive"
+                        className="rounded-xl border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
                         aria-label="Excluir evento"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -895,8 +895,8 @@ const CalendarPage = () => {
             onClick={(event) => event.stopPropagation()}
             className="w-full max-w-md rounded-3xl border border-border bg-background p-7 text-center shadow-2xl"
           >
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50">
-              <AlertTriangle className="h-8 w-8 text-amber-600" />
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/50">
+              <AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-400" />
             </div>
             <h2
               id="past-date-title"
