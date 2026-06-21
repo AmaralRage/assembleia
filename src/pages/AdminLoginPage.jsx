@@ -9,7 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { recognizeAdminDevice } from "@/lib/adminDevice";
+import {
+  forgetAdminDevice,
+  isAdminSessionFresh,
+  startAdminSessionTimer,
+} from "@/lib/adminDevice";
 
 const AdminLoginPage = () => {
   const navigate = useNavigate();
@@ -26,16 +30,18 @@ const AdminLoginPage = () => {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (session) {
+      if (session && isAdminSessionFresh()) {
         const { data } = await supabase.rpc("is_calendar_admin");
 
         if (data === true) {
-          recognizeAdminDevice();
           navigate("/calendario", { replace: true });
           return;
         }
+      }
 
+      if (session) {
         await supabase.auth.signOut();
+        forgetAdminDevice();
       }
 
       setIsCheckingSession(false);
@@ -53,6 +59,7 @@ const AdminLoginPage = () => {
     }
 
     setIsAuthenticating(true);
+    startAdminSessionTimer();
 
     const { error } = await supabase.auth.signInWithPassword({
       email: credentials.email.trim(),
@@ -60,6 +67,7 @@ const AdminLoginPage = () => {
     });
 
     if (error) {
+      forgetAdminDevice();
       setIsAuthenticating(false);
       toast.error("Não foi possível entrar com essas credenciais.");
       return;
@@ -71,13 +79,14 @@ const AdminLoginPage = () => {
 
     if (accessError || hasAdminAccess !== true) {
       await supabase.auth.signOut();
+      forgetAdminDevice();
       setIsAuthenticating(false);
       setCredentials((current) => ({ ...current, password: "" }));
       toast.error("Esta conta não possui acesso administrativo.");
       return;
     }
 
-    recognizeAdminDevice();
+    startAdminSessionTimer();
     toast.success("Acesso administrativo liberado.");
     navigate("/calendario", { replace: true });
   };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from "react-helmet-async";
 import { motion } from 'framer-motion';
 import {
@@ -51,6 +51,7 @@ const categoryLabels = {
 
 const AddressesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCity, setSelectedCity] = useState('todos');
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [upcomingServices, setUpcomingServices] = useState([]);
   const [isLoadingServices, setIsLoadingServices] = useState(false);
@@ -64,14 +65,21 @@ const AddressesPage = () => {
     fullAddress: location.address,
   }));
 
+  const cityFilters = useMemo(
+    () => ['todos', ...new Set(addresses.map((address) => address.city))],
+    [addresses],
+  );
+
   const filteredAddresses = addresses.filter((address) => {
     const query = searchQuery.toLowerCase();
-    return (
+    const matchesCity = selectedCity === 'todos' || address.city === selectedCity;
+    const matchesSearch =
       address.name.toLowerCase().includes(query) ||
       address.city.toLowerCase().includes(query) ||
       address.state.toLowerCase().includes(query) ||
-      address.fullAddress.toLowerCase().includes(query)
-    );
+      address.fullAddress.toLowerCase().includes(query);
+
+    return matchesCity && matchesSearch;
   });
 
   const handleCopy = (text) => {
@@ -190,6 +198,43 @@ const AddressesPage = () => {
                 Buscar
               </Button>
             </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+            className="mx-auto -mt-10 mb-14 flex max-w-4xl flex-col items-center gap-4"
+          >
+            <div className="flex flex-wrap justify-center gap-2">
+              {cityFilters.map((city) => (
+                <button
+                  key={city}
+                  type="button"
+                  onClick={() => setSelectedCity(city)}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    selectedCity === city
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-card text-foreground hover:border-primary/50 hover:text-primary'
+                  }`}
+                >
+                  {city === 'todos' ? 'Todos os locais' : city}
+                </button>
+              ))}
+            </div>
+
+            {(searchQuery || selectedCity !== 'todos') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCity('todos');
+                }}
+                className="text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+              >
+                Limpar filtros
+              </button>
+            )}
           </motion.div>
 
           <div>

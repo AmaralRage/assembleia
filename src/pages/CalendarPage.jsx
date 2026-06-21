@@ -24,10 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { churchLocations } from "@/data/churchLocations";
-import {
-  isAdminDeviceRecognized,
-  recognizeAdminDevice,
-} from "@/lib/adminDevice";
+import { forgetAdminDevice, isAdminSessionFresh } from "@/lib/adminDevice";
 import { Link } from "react-router-dom";
 
 const MAX_DESCRIPTION_LENGTH = 180;
@@ -119,9 +116,6 @@ const CalendarPage = () => {
   const [events, setEvents] = useState([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isRecognizedDevice, setIsRecognizedDevice] = useState(() =>
-    isAdminDeviceRecognized(),
-  );
   const [selectedDate, setSelectedDate] = useState(
     toDateKey(today.getFullYear(), today.getMonth(), today.getDate()),
   );
@@ -131,8 +125,18 @@ const CalendarPage = () => {
   const [form, setForm] = useState(() => emptyForm(selectedDate));
 
   useEffect(() => {
+    let sessionRetryId;
+
     const checkAdminAccess = async (currentSession) => {
       if (!currentSession) {
+        setIsAdmin(false);
+        setIsEditing(false);
+        return;
+      }
+
+      if (!isAdminSessionFresh()) {
+        await supabase.auth.signOut();
+        forgetAdminDevice();
         setIsAdmin(false);
         setIsEditing(false);
         return;
@@ -143,10 +147,14 @@ const CalendarPage = () => {
 
       setIsAdmin(hasAdminAccess);
 
-      if (hasAdminAccess) {
-        recognizeAdminDevice();
-        setIsRecognizedDevice(true);
-      }
+    };
+
+    const refreshAdminAccess = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      await checkAdminAccess(session);
     };
 
     const loadCalendar = async () => {
@@ -160,6 +168,10 @@ const CalendarPage = () => {
       ]);
 
       await checkAdminAccess(sessionData.session);
+
+      if (!sessionData.session) {
+        sessionRetryId = window.setTimeout(refreshAdminAccess, 150);
+      }
 
       if (error) {
         toast.error("Não foi possível carregar a agenda.");
@@ -180,7 +192,10 @@ const CalendarPage = () => {
       }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      if (sessionRetryId) window.clearTimeout(sessionRetryId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const year = visibleDate.getFullYear();
@@ -415,6 +430,7 @@ const CalendarPage = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    forgetAdminDevice();
     setIsAdmin(false);
     setIsEditing(false);
     toast.warning("Sessão administrativa encerrada.");
@@ -503,7 +519,7 @@ const CalendarPage = () => {
                   </>
                 )}
 
-                {!isAdmin && isRecognizedDevice && (
+                {!isAdmin && (
                   <Button type="button" variant="outline" asChild className="rounded-xl">
                     <Link to="/administracao">
                       <LockKeyhole className="w-4 h-4 mr-2" />

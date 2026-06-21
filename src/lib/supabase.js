@@ -7,4 +7,14 @@ if (!supabaseUrl || !supabasePublishableKey) {
   throw new Error("As variáveis do Supabase não foram configuradas.");
 }
 
-export const supabase = createClient(supabaseUrl, supabasePublishableKey);
+const authStorage =
+  typeof window !== "undefined" ? window.sessionStorage : undefined;
+
+export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
+  auth: {
+    storage: authStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});

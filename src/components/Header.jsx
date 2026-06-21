@@ -3,6 +3,7 @@ import { Menu, Moon, Sun, X } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { getPreferredTheme, saveTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
+import { forgetAdminDevice, isAdminSessionFresh } from '@/lib/adminDevice';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -53,6 +54,13 @@ const Header = () => {
         return;
       }
 
+      if (!isAdminSessionFresh()) {
+        await supabase.auth.signOut();
+        forgetAdminDevice();
+        setIsAdmin(false);
+        return;
+      }
+
       const { data, error } = await supabase.rpc('is_calendar_admin');
       setIsAdmin(!error && data === true);
     };
@@ -80,6 +88,7 @@ const Header = () => {
 
   const navLinks = [
     { name: 'Agenda e cultos', href: '/#agenda', isAnchor: true },
+    { name: 'Assista', href: '/assistir', isAnchor: false },
     { name: 'Endereços', href: '/enderecos', isAnchor: false },
     { name: 'Sobre', href: '/sobre', isAnchor: false },
      ...(isAdmin

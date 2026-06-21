@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from "react-helmet-async";
 import { motion } from 'framer-motion';
-import { Calendar, Clock, ArrowRight, Users, MapPin } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Users, MapPin, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
@@ -148,6 +148,22 @@ const HomePage = () => {
               }} className="px-8 py-4 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] shadow-lg hover:shadow-xl w-full sm:w-auto text-center">
                 Ver agenda e cultos
               </motion.a>
+              <motion.div initial={{
+                opacity: 0
+              }} animate={{
+                opacity: 1
+              }} transition={{
+                delay: 0.6,
+                duration: 0.8
+              }} className="w-full sm:w-auto">
+                <Link
+                  to="/assistir"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/35 bg-white/10 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/20 active:scale-[0.98] sm:w-auto"
+                >
+                  <Youtube className="h-5 w-5" />
+                  Assistir culto
+                </Link>
+              </motion.div>
             </div>
           </motion.div>
         </div>
