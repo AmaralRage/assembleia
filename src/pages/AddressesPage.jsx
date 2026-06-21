@@ -20,7 +20,7 @@ import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { churchLocations } from '@/data/churchLocations';
 import { supabase } from '@/lib/supabase';
 
@@ -137,8 +137,6 @@ const AddressesPage = () => {
       </Helmet>
 
       <Header />
-      <Toaster position="top-right" />
-
       <main className="min-h-screen pt-28 pb-24 bg-background dark:bg-slate-800">
         <div className="section-container">
 
@@ -242,7 +240,7 @@ const AddressesPage = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleCopy(address.fullAddress)}
-                          className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border"
+                          className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border hover:scale-105 transition-all duration-200"
                         >
                           <Copy className="w-4 h-4 text-primary" />
                           <span className="text-xs font-medium text-foreground">Copiar</span>
@@ -251,7 +249,7 @@ const AddressesPage = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(address.mapUrl, '_blank')}
-                          className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border"
+                          className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border hover:scale-105 transition-all duration-200"
                         >
                           <Map className="w-4 h-4 text-primary" />
                           <span className="text-xs font-medium text-foreground">Mapa</span>
@@ -260,7 +258,7 @@ const AddressesPage = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => setSelectedAddress(address)}
-                          className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border"
+                          className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border hover:scale-105 transition-all duration-200"
                         >
                           <Info className="w-4 h-4 text-primary" />
                           <span className="text-xs font-medium text-foreground">Info</span>
@@ -431,7 +429,7 @@ const AddressesPage = () => {
                     type="button"
                     variant="outline"
                     onClick={() => handleCopy(selectedAddress.fullAddress)}
-                    className="rounded-xl"
+                    className="rounded-xl transition-transform duration-200 hover:scale-105"
                   >
                     <Copy className="mr-2 h-4 w-4" />
                     Copiar endereço
@@ -439,7 +437,7 @@ const AddressesPage = () => {
                   <Button
                     type="button"
                     onClick={() => window.open(selectedAddress.mapUrl, '_blank')}
-                    className="rounded-xl"
+                    className="rounded-xl transition-transform duration-200 hover:scale-105"
                   >
                     <Map className="mr-2 h-4 w-4" />
                     Como chegar

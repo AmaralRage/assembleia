@@ -46,7 +46,7 @@ const Footer = () => {
             <a
               href="#agenda"
               onClick={(e) => handleNavClick(e, '#agenda')}
-              className="text-slate-300 hover:text-secondary transition-colors duration-200"
+              className="inline-block text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
             >
               Ver agenda de cultos
             </a>
@@ -60,7 +60,7 @@ const Footer = () => {
             <a
               href="#enderecos"
               onClick={(e) => handleNavClick(e, '#enderecos')}
-              className="text-slate-300 hover:text-secondary transition-colors duration-200"
+              className="inline-block text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
             >
               Ver endereços
             </a>
@@ -75,7 +75,7 @@ const Footer = () => {
               href={socialLinks.youtube}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-300 hover:text-secondary transition-colors duration-200"
+              className="inline-block text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
             >
               Acessar canal
             </a>
@@ -90,7 +90,7 @@ const Footer = () => {
               href={socialLinks.instagram}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-300 hover:text-secondary transition-colors duration-200"
+              className="inline-block text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
             >
               Ver Instagram
             </a>
@@ -105,7 +105,7 @@ const Footer = () => {
               href={socialLinks.facebook}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-300 hover:text-secondary transition-colors duration-200"
+              className="inline-block text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
             >
               Ver Facebook
             </a>

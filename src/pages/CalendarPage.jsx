@@ -21,7 +21,7 @@ import Footer from "@/components/Footer.jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { churchLocations } from "@/data/churchLocations";
 import {
@@ -417,7 +417,7 @@ const CalendarPage = () => {
     await supabase.auth.signOut();
     setIsAdmin(false);
     setIsEditing(false);
-    toast.success("Sessão administrativa encerrada.");
+    toast.warning("Sessão administrativa encerrada.");
   };
 
   return (
@@ -431,8 +431,6 @@ const CalendarPage = () => {
       </Helmet>
 
       <Header />
-      <Toaster position="top-right" />
-
       <main className="min-h-screen bg-muted pt-28 pb-20">
         <div className="section-container">
           <motion.div

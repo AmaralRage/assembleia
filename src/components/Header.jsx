@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Menu, Moon, Sun, X } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { getPreferredTheme, saveTheme } from '@/lib/theme';
+import { supabase } from '@/lib/supabase';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('');
   const [theme, setTheme] = useState(() => getPreferredTheme());
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -44,10 +46,45 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [location.pathname]);
 
+  useEffect(() => {
+    const checkAdminAccess = async (session) => {
+      if (!session) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('is_calendar_admin');
+      setIsAdmin(!error && data === true);
+    };
+
+    const loadSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      checkAdminAccess(session);
+    };
+
+    loadSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setTimeout(() => {
+        checkAdminAccess(session);
+      }, 0);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const navLinks = [
     { name: 'Agenda e cultos', href: '/#agenda', isAnchor: true },
     { name: 'Endereços', href: '/enderecos', isAnchor: false },
-    { name: 'Sobre', href: '/sobre', isAnchor: false }
+    { name: 'Sobre', href: '/sobre', isAnchor: false },
+     ...(isAdmin
+      ? [{ name: 'Calendário', href: '/calendario', isAnchor: false }]
+      : []),
   ];
 
   const handleNavClick = (e, link) => {

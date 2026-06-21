@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { Loader2, LockKeyhole, LogIn } from "lucide-react";
+import { ArrowLeft, Loader2, LockKeyhole, LogIn, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { recognizeAdminDevice } from "@/lib/adminDevice";
 
@@ -16,6 +16,9 @@ const AdminLoginPage = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
+  const [recoveryLogin, setRecoveryLogin] = useState("");
+  const [isSendingRecovery, setIsSendingRecovery] = useState(false);
 
   useEffect(() => {
     const checkCurrentSession = async () => {
@@ -43,6 +46,12 @@ const AdminLoginPage = () => {
 
   const handleLogin = async (event) => {
     event.preventDefault();
+
+    if (!credentials.email.trim() || !credentials.password) {
+      toast.error("Preencha o login e a senha.");
+      return;
+    }
+
     setIsAuthenticating(true);
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -73,6 +82,27 @@ const AdminLoginPage = () => {
     navigate("/calendario", { replace: true });
   };
 
+  const handlePasswordRecovery = async (event) => {
+    event.preventDefault();
+
+    if (!recoveryLogin.trim()) {
+      toast.error("Informe seu login.");
+      return;
+    }
+
+    setIsSendingRecovery(true);
+
+    await supabase.auth.resetPasswordForEmail(recoveryLogin.trim(), {
+      redirectTo: `${window.location.origin}/redefinir-senha`,
+    });
+
+    setIsSendingRecovery(false);
+    setRecoveryLogin("");
+    toast.success(
+      "Se o login estiver cadastrado, enviaremos as instruções de recuperação.",
+    );
+  };
+
   return (
     <>
       <Helmet>
@@ -81,8 +111,6 @@ const AdminLoginPage = () => {
       </Helmet>
 
       <Header />
-      <Toaster position="top-right" />
-
       <main className="min-h-screen bg-muted px-4 pb-20 pt-32">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
@@ -100,69 +128,140 @@ const AdminLoginPage = () => {
                 <LockKeyhole className="h-7 w-7 text-primary" />
               </div>
 
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
-                Acesso restrito
-              </p>
-              <h1 className="mt-2 text-3xl font-bold text-foreground">
-                Área administrativa
-              </h1>
-              <p className="mt-2 text-muted-foreground">
-                Entre com a conta autorizada para gerenciar a agenda.
-              </p>
+              {showPasswordRecovery ? (
+                <>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                    Recuperação de acesso
+                  </p>
+                  <h1 className="mt-2 text-3xl font-bold text-foreground">
+                    Esqueci minha senha
+                  </h1>
+                  <p className="mt-2 text-muted-foreground">
+                    Informe seu login para receber um link de recuperação.
+                  </p>
 
-              <form onSubmit={handleLogin} className="mt-7 space-y-4">
-                <div>
-                  <label className="text-sm font-semibold text-foreground">
-                    Login
-                  </label>
-                  <Input
-                    type="text"
-                    name="admin-login"
-                    autoComplete="off"
-                    value={credentials.email}
-                    onChange={(event) =>
-                      setCredentials({
-                        ...credentials,
-                        email: event.target.value,
-                      })
-                    }
-                    className="mt-1.5"
-                    required
-                  />
-                </div>
+                  <form
+                    onSubmit={handlePasswordRecovery}
+                    noValidate
+                    className="mt-7 space-y-4"
+                  >
+                    <div>
+                      <label className="text-sm font-semibold text-foreground">
+                        Login
+                      </label>
+                      <Input
+                        type="text"
+                        name="recovery-login"
+                        autoComplete="off"
+                        value={recoveryLogin}
+                        onChange={(event) => setRecoveryLogin(event.target.value)}
+                        className="mt-1.5"
+                        required
+                      />
+                    </div>
 
-                <div>
-                  <label className="text-sm font-semibold text-foreground">
-                    Senha
-                  </label>
-                  <Input
-                    type="password"
-                    autoComplete="current-password"
-                    value={credentials.password}
-                    onChange={(event) =>
-                      setCredentials({
-                        ...credentials,
-                        password: event.target.value,
-                      })
-                    }
-                    className="mt-1.5"
-                    required
-                  />
-                </div>
+                    <Button
+                      type="submit"
+                      disabled={isSendingRecovery}
+                      className="w-full rounded-xl"
+                    >
+                      {isSendingRecovery ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Mail className="mr-2 h-4 w-4" />
+                      )}
+                      Enviar instruções
+                    </Button>
 
-                <Button
-                  type="submit"
-                  disabled={isAuthenticating}
-                  className="w-full rounded-xl"
-                >
-                  {isAuthenticating ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <LogIn className="mr-2 h-4 w-4" />
-                  )}
-                  Entrar
-                </Button>
-              </form>
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordRecovery(false)}
+                      className="flex w-full items-center justify-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Voltar para o login
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                    Acesso restrito
+                  </p>
+                  <h1 className="mt-2 text-3xl font-bold text-foreground">
+                    Área administrativa
+                  </h1>
+                  <p className="mt-2 text-muted-foreground">
+                    Entre com a conta autorizada para gerenciar a agenda.
+                  </p>
+
+                  <form
+                    onSubmit={handleLogin}
+                    noValidate
+                    className="mt-7 space-y-4"
+                  >
+                    <div>
+                      <label className="text-sm font-semibold text-foreground">
+                        Login
+                      </label>
+                      <Input
+                        type="text"
+                        name="admin-login"
+                        autoComplete="off"
+                        value={credentials.email}
+                        onChange={(event) =>
+                          setCredentials({
+                            ...credentials,
+                            email: event.target.value,
+                          })
+                        }
+                        className="mt-1.5"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-semibold text-foreground">
+                        Senha
+                      </label>
+                      <Input
+                        type="password"
+                        autoComplete="current-password"
+                        value={credentials.password}
+                        onChange={(event) =>
+                          setCredentials({
+                            ...credentials,
+                            password: event.target.value,
+                          })
+                        }
+                        className="mt-1.5"
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isAuthenticating}
+                      className="w-full rounded-xl"
+                    >
+                      {isAuthenticating ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <LogIn className="mr-2 h-4 w-4" />
+                      )}
+                      Entrar
+                    </Button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordRecovery(true)}
+                      className="w-full text-center text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </form>
+                </>
+              )}
             </>
           )}
         </motion.div>
