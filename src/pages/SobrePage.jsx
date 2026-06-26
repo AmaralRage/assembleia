@@ -61,19 +61,19 @@ const SobrePage = () => {
       <Header />
 
       <main>
-        <section className="pt-32 pb-24 bg-background">
+        <section className="pt-28 pb-14 md:pt-32 md:pb-24 bg-background">
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-12 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-8 lg:gap-12 items-center">
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
-                className="rounded-3xl overflow-hidden shadow-xl border border-border"
+                className="rounded-xl md:rounded-3xl overflow-hidden shadow-xl border border-border"
               >
                 <img
                   src="https://lh5.googleusercontent.com/p/AF1QipNzF-PyrzUoPL4X3E26Y-6AJVsKusMgypL1cRvz=w650-h486-k-no"
                   alt="Foto da igreja"
-                  className="w-full h-[520px] object-cover"
+                  className="w-full h-72 sm:h-96 lg:h-[520px] object-cover"
                 />
               </motion.div>
 
@@ -83,20 +83,20 @@ const SobrePage = () => {
                 transition={{ duration: 0.6 }}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Church className="w-9 h-9 text-primary" />
-                  <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+                  <Church className="w-8 h-8 md:w-9 md:h-9 text-primary" />
+                  <h1 className="text-3xl md:text-5xl font-bold text-foreground">
                     Sobre a Igreja
                   </h1>
                 </div>
 
-                <p className="text-lg text-muted-foreground dark:text-slate-300 leading-relaxed mb-5">
+                <p className="text-base md:text-lg text-muted-foreground dark:text-slate-300 leading-relaxed mb-5">
                   A Assembleia de Deus da Lapa é uma comunidade cristã dedicada à
                   adoração, ao ensino da Palavra de Deus e ao acolhimento de famílias.
                   Nossa missão é anunciar o evangelho, cuidar de vidas e fortalecer a fé
                   de cada membro.
                 </p>
 
-                <p className="text-lg text-muted-foreground dark:text-slate-300 leading-relaxed">
+                <p className="text-base md:text-lg text-muted-foreground dark:text-slate-300 leading-relaxed">
                   Fundada em 1998, a igreja nasceu do desejo de reunir pessoas em um
                   ambiente de fé, comunhão e serviço. Ao longo dos anos, cresceu como
                   uma família espiritual, mantendo seu compromisso com Deus e com a
@@ -107,20 +107,20 @@ const SobrePage = () => {
           </div>
         </section>
 
-        <section className="py-28 lg:py-32 bg-muted">
+        <section className="py-12 md:py-24 lg:py-32 bg-muted">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.25fr] gap-10 lg:gap-16 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.25fr] gap-7 md:gap-10 lg:gap-16 items-center">
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="relative"
+                className="relative overflow-hidden rounded-2xl border border-border bg-background shadow-lg md:rounded-3xl md:shadow-xl"
               >
                 <img
                   src={presidenteAtual.foto}
                   alt={presidenteAtual.nome}
-                  className="w-full h-[460px] lg:h-[580px] object-cover rounded-3xl shadow-xl"
+                  className="aspect-[3/4] w-full object-cover object-[50%_32%] sm:aspect-[5/4] lg:aspect-auto lg:h-[580px]"
                 />
               </motion.div>
 
@@ -130,33 +130,33 @@ const SobrePage = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
               >
-                <span className="inline-flex items-center gap-3 border border-primary/60 bg-primary/10 text-primary dark:text-white text-sm font-bold uppercase tracking-[0.2em] px-6 py-3 rounded-full mb-7 shadow-sm">
-                  <Church className="w-5 h-5" />
+                <span className="inline-flex items-center gap-2 md:gap-3 border border-primary/60 bg-primary/10 text-primary dark:text-white text-[11px] md:text-sm font-bold uppercase tracking-[0.14em] md:tracking-[0.2em] px-3.5 md:px-6 py-2 md:py-3 rounded-full mb-4 md:mb-7 shadow-sm">
+                  <Church className="w-4 h-4 md:w-5 md:h-5" />
                   Liderança atual
                 </span>
 
-                <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-3">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight text-foreground mb-2 md:mb-3">
                   {presidenteAtual.nome}
                 </h2>
 
-                <p className="text-sm font-semibold uppercase tracking-wider text-primary dark:text-white mb-7">
+                <p className="text-xs md:text-sm font-semibold uppercase tracking-wider text-primary dark:text-white mb-4 md:mb-7">
                   Presidente · {presidenteAtual.periodo}
                 </p>
 
-                <p className="text-xl md:text-2xl text-foreground font-medium italic leading-relaxed border-l-4 border-primary pl-5 mb-8">
+                <p className="text-base sm:text-lg md:text-2xl text-foreground font-medium italic leading-relaxed border-l-4 border-primary pl-4 md:pl-5 mb-5 md:mb-8">
                   “Servir com fé, cuidado e compromisso com cada vida.”
                 </p>
 
-                <p className="text-lg text-muted-foreground dark:text-slate-300 leading-relaxed">
+                <p className="text-base md:text-lg text-muted-foreground dark:text-slate-300 leading-relaxed">
                   {presidenteAtual.resumo}
                 </p>
 
-                <div className="mt-6 space-y-5 text-base md:text-lg text-muted-foreground dark:text-slate-300 leading-relaxed">
+                <div className="mt-5 md:mt-6 space-y-4 md:space-y-5 text-base md:text-lg text-muted-foreground dark:text-slate-300 leading-relaxed">
                   <p>{presidenteAtual.historia}</p>
                   <p>{presidenteAtual.atuacao}</p>
                 </div>
 
-                <div className="mt-10 pt-6 border-t border-border">
+                <div className="mt-7 md:mt-10 pt-5 md:pt-6 border-t border-border">
                   <p className="text-sm text-muted-foreground dark:text-slate-400">
                     Assembleia de Deus da Lapa
                   </p>
@@ -166,28 +166,28 @@ const SobrePage = () => {
           </div>
         </section>
 
-        <section className="py-24 bg-background">
+        <section className="py-14 md:py-24 bg-background">
           <div className="max-w-7xl mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-16"
+              className="text-center mb-10 md:mb-16"
             >
               <div className="flex items-center justify-center gap-3 mb-4">
-                <History className="w-8 h-8 text-primary" />
-                <h2 className="text-4xl md:text-5xl font-bold text-foreground">
+                <History className="w-7 h-7 md:w-8 md:h-8 text-primary" />
+                <h2 className="text-3xl md:text-5xl font-bold text-foreground">
                   Ex-presidentes
                 </h2>
               </div>
 
-              <p className="text-lg text-muted-foreground dark:text-white max-w-2xl mx-auto">
+              <p className="text-base md:text-lg text-muted-foreground dark:text-white max-w-2xl mx-auto">
                 Conheça alguns líderes que fizeram parte da história da nossa igreja.
               </p>
             </motion.div>
 
-            <div className="mx-auto max-w-5xl space-y-16 lg:space-y-20">
+            <div className="mx-auto max-w-5xl space-y-12 lg:space-y-20">
               {exPresidentes.map((presidente, index) => {
                 const imageOnRight = index % 2 === 0;
 
@@ -210,7 +210,7 @@ const SobrePage = () => {
                     <img
                       src={presidente.foto}
                       alt={presidente.nome}
-                      className="h-[420px] w-full rounded-3xl object-cover object-top shadow-lg md:h-[480px]"
+                      className="aspect-[4/5] w-full rounded-xl object-cover object-top shadow-lg md:aspect-auto md:h-[480px] md:rounded-3xl"
                     />
                   </motion.div>
 
@@ -228,7 +228,7 @@ const SobrePage = () => {
                         {presidente.periodo}
                       </p>
 
-                      <h3 className="mb-4 text-3xl font-bold text-foreground md:text-4xl">
+                      <h3 className="mb-4 text-2xl font-bold text-foreground md:text-4xl">
                         {presidente.nome}
                       </h3>
 

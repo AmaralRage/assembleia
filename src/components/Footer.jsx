@@ -36,8 +36,8 @@ const Footer = () => {
 
   return (
     <footer className="bg-slate-900 text-slate-100">
-      <div className="section-container py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+      <div className="section-container py-10 md:py-12">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 md:gap-10">
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="w-5 h-5 text-secondary" />
@@ -46,7 +46,7 @@ const Footer = () => {
             <a
               href="#agenda"
               onClick={(e) => handleNavClick(e, '#agenda')}
-              className="inline-block text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
+              className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
             >
               Ver agenda de cultos
             </a>
@@ -60,7 +60,7 @@ const Footer = () => {
             <a
               href="#enderecos"
               onClick={(e) => handleNavClick(e, '#enderecos')}
-              className="inline-block text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
+              className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
             >
               Ver endereços
             </a>
@@ -75,7 +75,7 @@ const Footer = () => {
               href={socialLinks.youtube}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
+              className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
             >
               Acessar canal
             </a>
@@ -90,7 +90,7 @@ const Footer = () => {
               href={socialLinks.instagram}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
+              className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
             >
               Ver Instagram
             </a>
@@ -105,14 +105,14 @@ const Footer = () => {
               href={socialLinks.facebook}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
+              className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
             >
               Ver Facebook
             </a>
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-slate-700">
+        <div className="mt-8 md:mt-10 pt-6 border-t border-slate-700">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center overflow-hidden">

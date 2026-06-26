@@ -122,6 +122,7 @@ const CalendarPage = () => {
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showPastDateWarning, setShowPastDateWarning] = useState(false);
+  const [showMobileGrid, setShowMobileGrid] = useState(false);
   const [form, setForm] = useState(() => emptyForm(selectedDate));
 
   useEffect(() => {
@@ -247,6 +248,10 @@ const CalendarPage = () => {
   const selectedDateEvents = events.filter(
     (event) => event.date === selectedDate,
   );
+  const visibleMonthEvents = events.filter((event) => {
+    const [eventYear, eventMonth] = event.date.split("-").map(Number);
+    return eventYear === year && eventMonth === month + 1;
+  });
 
   const formatLongDate = (dateKey) => {
     if (!dateKey) return "";
@@ -447,33 +452,33 @@ const CalendarPage = () => {
       </Helmet>
 
       <Header />
-      <main className="min-h-screen bg-muted pt-28 pb-20">
+      <main className="min-h-screen bg-muted pt-24 md:pt-28 pb-14 md:pb-20">
         <div className="section-container">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-background border border-border rounded-3xl shadow-xl overflow-hidden"
+            className="bg-background border border-border rounded-xl md:rounded-3xl shadow-xl overflow-hidden"
           >
-            <div className="flex flex-col gap-5 p-5 md:p-8 border-b border-border lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-5 p-4 md:p-8 border-b border-border lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
                     <CalendarDays className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary dark:text-white">
+                    <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.14em] md:tracking-[0.18em] text-primary dark:text-white">
                       Agenda da Assembleia de Deus da Lapa
                     </p>
-                    <h1 className="text-3xl font-bold text-foreground">
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                       Calendário
                     </h1>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center bg-muted rounded-xl border border-border p-1">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="flex w-full items-center justify-between bg-muted rounded-xl border border-border p-1 sm:w-auto">
                   <Button
                     type="button"
                     variant="ghost"
@@ -483,7 +488,7 @@ const CalendarPage = () => {
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
-                  <span className="min-w-40 text-center font-semibold text-foreground">
+                  <span className="min-w-32 text-center text-sm font-semibold text-foreground sm:min-w-40 sm:text-base">
                     {monthNames[month]} {year}
                   </span>
                   <Button
@@ -531,8 +536,57 @@ const CalendarPage = () => {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="p-4 md:p-8 overflow-x-auto">
-                <div className="min-w-[720px]">
+              <div className="border-b border-border p-4 md:hidden">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="font-bold text-foreground">
+                    Eventos do mês
+                  </h2>
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {visibleMonthEvents.length} eventos
+                  </span>
+                </div>
+
+                {isLoadingEvents ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    Carregando agenda...
+                  </div>
+                ) : visibleMonthEvents.length > 0 ? (
+                  <div className="space-y-2">
+                    {visibleMonthEvents.slice(0, 6).map((event) => (
+                      <button
+                        key={event.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDate(event.date);
+                          setSelectedEventId(event.id);
+                          setIsEditing(false);
+                        }}
+                        className="w-full rounded-xl border border-border bg-background p-4 text-left transition-colors hover:border-primary/50"
+                      >
+                        <p className="font-semibold text-foreground">
+                          {event.title}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {formatLongDate(event.date)} · {event.time || "A definir"}
+                        </p>
+                      </button>
+                    ))}
+                    {visibleMonthEvents.length > 6 && (
+                      <p className="pt-1 text-center text-xs font-medium text-muted-foreground">
+                        Role o calendário para ver mais eventos.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+                    Nenhum evento cadastrado neste mês.
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 md:p-8 overflow-x-auto">
+                <div className="min-w-[620px] md:min-w-[720px]">
                   <div className="grid grid-cols-7 mb-3">
                     {weekDays.map((day, index) => (
                       <div
@@ -549,7 +603,7 @@ const CalendarPage = () => {
                   </div>
 
                   {isLoadingEvents ? (
-                    <div className="h-[552px] flex items-center justify-center rounded-2xl border border-border bg-muted/20">
+                    <div className="h-[460px] md:h-[552px] flex items-center justify-center rounded-xl md:rounded-2xl border border-border bg-muted/20">
                       <Loader2 className="w-8 h-8 text-primary animate-spin" />
                     </div>
                   ) : (
@@ -572,7 +626,7 @@ const CalendarPage = () => {
                           key={day.dateKey}
                           type="button"
                           onClick={() => selectDay(day)}
-                          className={`min-h-32 rounded-2xl border p-2.5 text-left align-top transition-all hover:border-primary/50 hover:shadow-md ${
+                          className={`min-h-28 md:min-h-32 rounded-xl md:rounded-2xl border p-2 text-left align-top transition-all hover:border-primary/50 hover:shadow-md ${
                             isSelected
                               ? "border-primary bg-primary/5 ring-2 ring-primary/15 dark:bg-primary/10 dark:ring-primary/30"
                               : "border-border bg-card"
@@ -617,7 +671,7 @@ const CalendarPage = () => {
                 </div>
               </div>
 
-              <aside className="border-t xl:border-t-0 xl:border-l border-border bg-muted/35 p-5 md:p-7">
+              <aside className="border-t xl:border-t-0 xl:border-l border-border bg-muted/35 p-4 md:p-7">
                 {isEditing ? (
                   <div>
                     <div className="flex items-start justify-between gap-4 mb-6">
@@ -625,7 +679,7 @@ const CalendarPage = () => {
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary mb-2">
                           {selectedEventId ? "Editar evento" : "Novo evento"}
                         </p>
-                        <h2 className="text-2xl font-bold text-foreground">
+                        <h2 className="text-xl md:text-2xl font-bold text-foreground">
                           {selectedEventId
                             ? "Atualize os detalhes"
                             : "Adicionar à agenda"}
@@ -657,7 +711,7 @@ const CalendarPage = () => {
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
                           <label className="text-sm font-semibold text-foreground">
                             Data
@@ -785,7 +839,7 @@ const CalendarPage = () => {
                     >
                       {categoryLabels[selectedEvent.category] || "Evento"}
                     </span>
-                    <h2 className="text-2xl font-bold text-foreground leading-tight mb-5">
+                    <h2 className="text-xl md:text-2xl font-bold text-foreground leading-tight mb-5">
                       {selectedEvent.title}
                     </h2>
 
@@ -845,7 +899,7 @@ const CalendarPage = () => {
                     <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary mb-3">
                       Data selecionada
                     </p>
-                    <h2 className="text-2xl font-bold text-foreground capitalize">
+                    <h2 className="text-xl md:text-2xl font-bold text-foreground capitalize">
                       {formatLongDate(selectedDate)}
                     </h2>
 

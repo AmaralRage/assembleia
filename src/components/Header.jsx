@@ -188,8 +188,22 @@ const Header = () => {
             </div>
 
             <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-muted/70 text-foreground transition-all hover:border-primary/40 hover:text-primary md:hidden"
+              aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
+              title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+            >
+              {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
+            </button>
+
+            <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-foreground hover:text-primary transition-colors duration-200"
+              className={`md:hidden flex h-10 w-10 items-center justify-center rounded-xl border transition-colors duration-200 ${
+                isMobileMenuOpen
+                  ? 'border-secondary text-foreground'
+                  : 'border-border bg-muted/70 text-foreground hover:border-primary/40 hover:text-primary'
+              }`}
               aria-label="Abrir menu"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -198,17 +212,17 @@ const Header = () => {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border">
-            <div className="flex flex-col gap-4">
+          <div className="md:hidden max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-border py-3">
+            <div className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={(e) => handleNavClick(e, link)}
-                  className={`font-medium py-2 transition-colors duration-200 ${
+                  className={`rounded-xl px-3 py-3 font-medium transition-colors duration-200 ${
                     isActive(link)
-                      ? 'text-primary'
-                      : 'text-foreground/70 hover:text-primary'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-foreground/70 hover:bg-muted hover:text-primary'
                   }`}
                 >
                   {link.name}
@@ -222,7 +236,7 @@ const Header = () => {
       <button
         type="button"
         onClick={toggleTheme}
-        className="absolute right-16 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl border border-border bg-muted/70 text-foreground transition-all hover:border-primary/40 hover:text-primary md:right-5"
+        className="absolute right-5 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl border border-border bg-muted/70 text-foreground transition-all hover:border-primary/40 hover:text-primary md:flex"
         aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
         title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
       >

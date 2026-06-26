@@ -91,9 +91,9 @@ const HomePage = () => {
 
     <Header />
 
-    <main>
+    <main className="flex flex-col">
       {/* HERO SECTION */}
-      <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden">
+      <section className="relative order-1 min-h-[92dvh] md:min-h-[100dvh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center" style={{
           backgroundImage: 'url(https://i.imgur.com/WMVJQ9m.jpeg)'
         }}>
@@ -109,24 +109,23 @@ const HomePage = () => {
             y: 0
           }} transition={{
             duration: 0.8
-          }} className="flex flex-col items-center gap-8">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden shadow-2xl ring-4 ring-white/20 bg-white">
+          }} className="flex flex-col items-center gap-6 md:gap-8">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden shadow-2xl ring-4 ring-white/20 bg-white">
               <img src="https://i.imgur.com/SA53Yxc.png" alt="Logo da Assembleia de Deus" className="w-full h-full object-cover" />
             </div>
 
             <div>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4" style={{
-                letterSpacing: '-0.02em',
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4" style={{
                 textWrap: 'balance'
               }}>
                 Assembleia de Deus da Lapa
               </h1>
-              <p className="text-xl md:text-2xl text-white/90 font-light max-w-2xl mx-auto leading-relaxed">
+              <p className="text-lg md:text-2xl text-white/90 font-light max-w-2xl mx-auto leading-relaxed">
                 Bem-vindo à nossa comunidade de fé
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 mt-8">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mt-4 md:mt-8 w-full max-w-sm sm:max-w-none sm:w-auto">
               <motion.a href="#agenda" onClick={e => {
                 e.preventDefault();
                 const element = document.querySelector('#agenda');
@@ -145,7 +144,7 @@ const HomePage = () => {
               }} transition={{
                 delay: 0.5,
                 duration: 0.8
-              }} className="px-8 py-4 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] shadow-lg hover:shadow-xl w-full sm:w-auto text-center">
+              }} className="px-7 py-3.5 md:px-8 md:py-4 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] shadow-lg hover:shadow-xl w-full sm:w-auto text-center">
                 Ver agenda e cultos
               </motion.a>
               <motion.div initial={{
@@ -158,7 +157,7 @@ const HomePage = () => {
               }} className="w-full sm:w-auto">
                 <Link
                   to="/assistir"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/35 bg-white/10 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/20 active:scale-[0.98] sm:w-auto"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/35 bg-white/10 px-7 py-3.5 md:px-8 md:py-4 font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/20 active:scale-[0.98] sm:w-auto"
                 >
                   <Youtube className="h-5 w-5" />
                   Assistir culto
@@ -170,26 +169,26 @@ const HomePage = () => {
       </section>
 
       {/* LIDERANÇA SECTION */}
-      <section id="sobre" className="py-24 bg-muted">
+      <section id="sobre" className="order-4 py-14 md:py-24 bg-muted">
         <div className="section-container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center mb-10 md:mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4 flex items-center justify-center gap-3">
-              <Users className="w-10 h-10 text-primary" />
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4 flex items-center justify-center gap-3">
+              <Users className="w-8 h-8 md:w-10 md:h-10 text-primary" />
               Nossa liderança
             </h2>
 
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Conheça quem conduz nossa comunidade com dedicação e amor
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 md:gap-8 max-w-7xl mx-auto">
             {leadershipCards.map((lider) => (
               <motion.div
                 key={lider.nome}
@@ -201,20 +200,20 @@ const HomePage = () => {
                 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.2 }}
-                className="bg-card border border-border rounded-2xl overflow-hidden shadow-md"
+                className="bg-card border border-border rounded-xl md:rounded-2xl overflow-hidden shadow-md"
               >
                 <img
                   src={lider.foto}
                   alt={lider.nome}
-                  className="w-full h-72 object-cover"
+                  className="w-full h-64 md:h-72 object-cover"
                 />
 
-                <div className="p-6">
+                <div className="p-5 md:p-6">
                   <p className="inline-block bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full mb-3">
                     {lider.cargo}
                   </p>
 
-                  <h3 className="text-foreground text-2xl font-bold mb-3">
+                  <h3 className="text-foreground text-xl md:text-2xl font-bold mb-3">
                     {lider.nome}
                   </h3>
 
@@ -229,7 +228,7 @@ const HomePage = () => {
       </section>
 
       {/* AGENDA SECTION */}
-      <section id="agenda" className="py-24 bg-background border-b border-border">
+      <section id="agenda" className="order-2 py-14 md:py-24 bg-background border-b border-border">
         <div className="section-container">
           <motion.div initial={{
             opacity: 0,
@@ -241,21 +240,19 @@ const HomePage = () => {
             once: true
           }} transition={{
             duration: 0.6
-          }} className="text-center mb-16">
+          }} className="text-center mb-10 md:mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Calendar className="w-8 h-8 text-primary" />
-              <h2 className="text-4xl md:text-5xl font-bold text-foreground" style={{
-                letterSpacing: '-0.02em'
-              }}>
+              <Calendar className="w-7 h-7 md:w-8 md:h-8 text-primary" />
+              <h2 className="text-3xl md:text-5xl font-bold text-foreground">
                 Agenda
               </h2>
             </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Fique por dentro dos nossos próximos eventos especiais
             </p>
           </motion.div>
 
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6">
             {upcomingEvents.map((event, idx) => <motion.div key={event.id} initial={{
               opacity: 0,
               y: 20
@@ -267,13 +264,13 @@ const HomePage = () => {
             }} transition={{
               duration: 0.5,
               delay: idx * 0.1
-            }} className="bg-card border border-border p-6 rounded-2xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300">
-              <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-6 h-full">
+            }} className="bg-card border border-border p-5 md:p-6 rounded-xl md:rounded-2xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300">
+              <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-5 md:gap-6 h-full">
                 <div className="flex flex-col">
                   <p className="-ml-3 inline-block bg-primary/10 text-primary dark:text-white text-sm font-medium px-3 py-1 rounded-full mb-3">
                     {formatWeekDay(event.event_date)}
                   </p>
-                  <h3 className="text-xl font-bold text-card-foreground">{event.title}</h3>
+                  <h3 className="text-lg md:text-xl font-bold text-card-foreground">{event.title}</h3>
 
                   <div className="space-y-3 my-5">
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -301,7 +298,7 @@ const HomePage = () => {
                   </p>
                 </div>
 
-                <div className="flex sm:flex-col gap-2 sm:border-l sm:border-border sm:pl-5 sm:justify-center">
+                <div className="flex flex-col gap-2 sm:border-l sm:border-border sm:pl-5 sm:justify-center">
                   <Link
                     to="/calendario"
                     className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 hover:text-primary transition-colors"
@@ -343,7 +340,7 @@ const HomePage = () => {
       </section>
 
       {/* LOCALIZAÇÕES SECTION */}
-      <section id="localizacoes" className="py-24 bg-muted">
+      <section id="localizacoes" className="order-3 py-14 md:py-24 bg-muted">
         <div className="section-container">
           <motion.div initial={{
             opacity: 0,
@@ -355,22 +352,22 @@ const HomePage = () => {
             once: true
           }} transition={{
             duration: 0.6
-          }} className="text-center mb-16">
+          }} className="text-center mb-10 md:mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <MapPin className="w-8 h-8 text-primary" />
-              <h2 className="text-4xl md:text-5xl font-bold text-foreground" style={{
+              <MapPin className="w-7 h-7 md:w-8 md:h-8 text-primary" />
+              <h2 className="text-3xl md:text-5xl font-bold text-foreground" style={{
                 letterSpacing: '-0.02em'
               }}>
                 Nossas localizações
               </h2>
             </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Conheça algumas de nossas congregações e encontre a mais próxima de você
             </p>
           </motion.div>
 
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6">
               {featuredLocations.map((location, index) => <motion.div key={location.id} initial={{
                 opacity: 0,
                 y: 20
@@ -382,8 +379,8 @@ const HomePage = () => {
               }} transition={{
                 duration: 0.5,
                 delay: index * 0.1
-              }} className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="h-52 overflow-hidden relative">
+              }} className="bg-card rounded-xl md:rounded-2xl shadow-sm border border-border overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div className="h-44 md:h-52 overflow-hidden relative">
                   <img
                     src={location.image}
                     alt={location.name}
@@ -397,8 +394,8 @@ const HomePage = () => {
                   </div>
                 </div>
 
-                <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="font-bold text-xl text-card-foreground mb-3">
+                <div className="p-5 md:p-6 flex flex-col flex-grow">
+                  <h3 className="font-bold text-lg md:text-xl text-card-foreground mb-3">
                     {location.name}
                   </h3>
                   <p className="text-muted-foreground text-sm leading-relaxed mb-6 flex-grow">
