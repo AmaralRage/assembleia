@@ -8,6 +8,7 @@ import CalendarPage from "./pages/CalendarPage.jsx";
 import AdminLoginPage from "./pages/AdminLoginPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import WatchPage from "./pages/WatchPage.jsx";
+import NewHerePage from "./pages/NewHerePage.jsx";
 import NotificationToaster from "./components/NotificationToaster.jsx";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/enderecos" element={<AddressesPage />} />
         <Route path="/sobre" element={<SobrePage />} />
         <Route path="/assistir" element={<WatchPage />} />
+        <Route path="/sou-novo" element={<NewHerePage />} />
         <Route path="/calendario" element={<CalendarPage />} />
         <Route path="/administracao" element={<AdminLoginPage />} />
         <Route path="/redefinir-senha" element={<ResetPasswordPage />} />

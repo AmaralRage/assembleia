@@ -102,3 +102,29 @@ html {
     }
   }
 }
+
+button:not(:disabled):not([class*="translate"]),
+a[href][class*="inline-flex"]:not([class*="translate"]),
+a[href][class*="rounded-xl"]:not([class*="translate"]),
+a[href][class*="rounded-full"]:not([class*="translate"]) {
+  transform-origin: center;
+  transition-property: transform, box-shadow, background-color, border-color, color, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+
+@media (hover: hover) {
+  button:not(:disabled):not([class*="translate"]):hover,
+  a[href][class*="inline-flex"]:not([class*="translate"]):hover,
+  a[href][class*="rounded-xl"]:not([class*="translate"]):hover,
+  a[href][class*="rounded-full"]:not([class*="translate"]):hover {
+    transform: translateY(-1px) scale(1.04);
+  }
+}
+
+button:not(:disabled):not([class*="translate"]):active,
+a[href][class*="inline-flex"]:not([class*="translate"]):active,
+a[href][class*="rounded-xl"]:not([class*="translate"]):active,
+a[href][class*="rounded-full"]:not([class*="translate"]):active {
+  transform: scale(0.96);
+}

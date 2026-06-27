@@ -63,6 +63,46 @@ const emptyForm = (date = "") => ({
   category: "especial",
 });
 
+const dateKeyToDate = (dateKey) => {
+  if (!dateKey) return undefined;
+
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatSelectedDate = (dateKey) => {
+  const date = dateKeyToDate(dateKey);
+  if (!date) return "Escolha uma data";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+};
+
+const getDateParts = (dateKey) => {
+  const date = dateKeyToDate(dateKey) || dateKeyToDate(getTodayKey());
+
+  return {
+    day: date.getDate(),
+    month: date.getMonth(),
+    year: date.getFullYear(),
+  };
+};
+
+const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+
+const timeOptions = Array.from({ length: 32 }, (_, index) => {
+  const totalMinutes = 6 * 60 + index * 30;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+});
+
+const quickTimeOptions = ["18:00", "19:00", "19:30", "20:00"];
+
 const eventColorStyles = [
   "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/60 dark:text-blue-200 dark:border-blue-600/70",
   "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/60 dark:text-amber-200 dark:border-amber-600/70",
@@ -243,6 +283,66 @@ const CalendarPage = () => {
 
     return cells;
   }, [daysInMonth, firstWeekDay, month, previousMonthDays, year]);
+
+  const formDateParts = getDateParts(form.date);
+  const formDaysInMonth = getDaysInMonth(formDateParts.year, formDateParts.month);
+  const formFirstWeekDay = new Date(
+    formDateParts.year,
+    formDateParts.month,
+    1,
+  ).getDay();
+  const formCalendarCells = [
+    ...Array.from({ length: formFirstWeekDay }, () => null),
+    ...Array.from({ length: formDaysInMonth }, (_, index) => index + 1),
+  ];
+  const yearOptions = useMemo(() => {
+    const currentYear = today.getFullYear();
+    return Array.from({ length: 6 }, (_, index) => currentYear + index);
+  }, [today]);
+
+  const updateFormDate = (changes) => {
+    const nextParts = { ...formDateParts, ...changes };
+    const safeDay = Math.min(
+      nextParts.day,
+      getDaysInMonth(nextParts.year, nextParts.month),
+    );
+    const nextDate = toDateKey(nextParts.year, nextParts.month, safeDay);
+
+    setForm({
+      ...form,
+      date: nextDate < getTodayKey() ? getTodayKey() : nextDate,
+    });
+  };
+
+  const changeFormMonth = (offset) => {
+    const nextMonth = new Date(
+      formDateParts.year,
+      formDateParts.month + offset,
+      1,
+    );
+
+    updateFormDate({
+      year: nextMonth.getFullYear(),
+      month: nextMonth.getMonth(),
+    });
+  };
+
+  const adjustFormTime = (offsetMinutes) => {
+    const [hour = 19, minute = 0] = (form.time || "19:00")
+      .split(":")
+      .map(Number);
+    const nextTotal = Math.min(
+      23 * 60 + 30,
+      Math.max(0, hour * 60 + minute + offsetMinutes),
+    );
+    const nextHour = Math.floor(nextTotal / 60);
+    const nextMinute = nextTotal % 60;
+
+    setForm({
+      ...form,
+      time: `${String(nextHour).padStart(2, "0")}:${String(nextMinute).padStart(2, "0")}`,
+    });
+  };
 
   const selectedEvent = events.find((event) => event.id === selectedEventId);
   const selectedDateEvents = events.filter(
@@ -711,33 +811,198 @@ const CalendarPage = () => {
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-3">
                         <div>
                           <label className="text-sm font-semibold text-foreground">
                             Data
                           </label>
-                          <Input
-                            type="date"
-                            min={getTodayKey()}
-                            value={form.date}
-                            onChange={(event) =>
-                              setForm({ ...form, date: event.target.value })
-                            }
-                            className="mt-1.5 bg-background"
-                          />
+                          <div className="mt-1.5 rounded-xl border border-input bg-background p-3 shadow-sm">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                                  <CalendarDays className="h-4 w-4 text-primary" />
+                                  <span className="capitalize">
+                                    {monthNames[formDateParts.month]} {formDateParts.year}
+                                  </span>
+                                </div>
+                                <p className="mt-0.5 truncate text-xs capitalize text-muted-foreground">
+                                  {formatSelectedDate(form.date)}
+                                </p>
+                              </div>
+                              <div className="flex shrink-0 gap-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg"
+                                  onClick={() => changeFormMonth(-1)}
+                                  aria-label="Mês anterior"
+                                >
+                                  <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg"
+                                  onClick={() => changeFormMonth(1)}
+                                  aria-label="Próximo mês"
+                                >
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[11px] font-bold uppercase text-muted-foreground">
+                              {weekDays.map((weekDay) => (
+                                <span key={weekDay}>{weekDay.slice(0, 1)}</span>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-7 gap-1">
+                              {formCalendarCells.map((day, index) =>
+                                day ? (
+                                  <button
+                                    key={`${formDateParts.month}-${day}`}
+                                    type="button"
+                                    disabled={toDateKey(
+                                      formDateParts.year,
+                                      formDateParts.month,
+                                      day,
+                                    ) < getTodayKey()}
+                                    onClick={() => updateFormDate({ day })}
+                                    className={`h-9 rounded-lg text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
+                                      formDateParts.day === day
+                                        ? "bg-primary text-primary-foreground shadow-sm"
+                                        : "bg-muted/40 text-foreground hover:bg-primary/10 hover:text-primary"
+                                    }`}
+                                  >
+                                    {day}
+                                  </button>
+                                ) : (
+                                  <span key={`blank-${index}`} />
+                                ),
+                              )}
+                            </div>
+                            <div className="hidden grid-cols-[0.8fr_1.2fr_1fr] gap-2">
+                              <select
+                                value={formDateParts.day}
+                                onChange={(event) =>
+                                  updateFormDate({ day: Number(event.target.value) })
+                                }
+                                className="h-10 rounded-lg border border-input bg-muted/40 px-2 text-sm font-semibold outline-none transition-colors focus:border-primary"
+                                aria-label="Dia do evento"
+                              >
+                                {Array.from({ length: formDaysInMonth }, (_, index) => index + 1).map((day) => (
+                                  <option key={day} value={day}>
+                                    {String(day).padStart(2, "0")}
+                                  </option>
+                                ))}
+                              </select>
+                              <select
+                                value={formDateParts.month}
+                                onChange={(event) =>
+                                  updateFormDate({ month: Number(event.target.value) })
+                                }
+                                className="h-10 rounded-lg border border-input bg-muted/40 px-2 text-sm font-semibold outline-none transition-colors focus:border-primary"
+                                aria-label="Mês do evento"
+                              >
+                                {monthNames.map((monthName, monthIndex) => (
+                                  <option key={monthName} value={monthIndex}>
+                                    {monthName}
+                                  </option>
+                                ))}
+                              </select>
+                              <select
+                                value={formDateParts.year}
+                                onChange={(event) =>
+                                  updateFormDate({ year: Number(event.target.value) })
+                                }
+                                className="h-10 rounded-lg border border-input bg-muted/40 px-2 text-sm font-semibold outline-none transition-colors focus:border-primary"
+                                aria-label="Ano do evento"
+                              >
+                                {yearOptions.map((yearOption) => (
+                                  <option key={yearOption} value={yearOption}>
+                                    {yearOption}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
                         </div>
                         <div>
                           <label className="text-sm font-semibold text-foreground">
                             Horário
                           </label>
-                          <Input
-                            type="time"
-                            value={form.time}
-                            onChange={(event) =>
-                              setForm({ ...form, time: event.target.value })
-                            }
-                            className="mt-1.5 bg-background"
-                          />
+                          <div className="mt-1.5 rounded-xl border border-input bg-background p-3 shadow-sm">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                              <div className="flex min-w-0 items-center gap-2">
+                              <Clock className="h-4 w-4 text-primary" />
+                              <span className="text-2xl font-bold tabular-nums text-foreground">
+                                {form.time || "19:00"}
+                              </span>
+                              </div>
+                              <div className="flex shrink-0 gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="h-9 rounded-lg px-3 text-xs font-bold"
+                                  onClick={() => adjustFormTime(-30)}
+                                >
+                                  -30
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="h-9 rounded-lg px-3 text-xs font-bold"
+                                  onClick={() => adjustFormTime(30)}
+                                >
+                                  +30
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                              {quickTimeOptions.map((time) => (
+                                <button
+                                  key={time}
+                                  type="button"
+                                  onClick={() => setForm({ ...form, time })}
+                                  className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                    form.time === time
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "border-input bg-muted/40 text-foreground hover:border-primary/50 hover:bg-primary/10"
+                                  }`}
+                                >
+                                  {time}
+                                </button>
+                              ))}
+                            </div>
+                            <label className="mt-3 block text-xs font-semibold text-muted-foreground">
+                              Horário livre
+                            </label>
+                            <Input
+                              type="time"
+                              value={form.time}
+                              onChange={(event) =>
+                                setForm({ ...form, time: event.target.value })
+                              }
+                              className="mt-1.5 h-11 rounded-lg bg-muted/40 font-semibold tabular-nums"
+                            />
+                            <div className="hidden max-h-36 grid-cols-2 gap-2 overflow-y-auto pr-1">
+                              {timeOptions.map((time) => (
+                                <button
+                                  key={time}
+                                  type="button"
+                                  onClick={() => setForm({ ...form, time })}
+                                  className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                    form.time === time
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "border-input bg-muted/40 text-foreground hover:border-primary/50 hover:bg-primary/10"
+                                  }`}
+                                >
+                                  {time}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
 
