@@ -1,18 +1,61 @@
 import React from 'react';
 import { MapPin, Calendar, Youtube, Instagram, Facebook } from 'lucide-react';
 
+import { smoothScrollToElement } from '@/lib/smoothScroll';
+
 const Footer = () => {
   const socialLinks = {
-    instagram: "#",
+    instagram: "",
     facebook: "https://www.facebook.com/people/Ieadlapa-Rio/100089125852506/",
     youtube: "https://www.youtube.com/@AssembleiadeDeusnaLapa",
   };
+
+  const footerItems = [
+    {
+      icon: Calendar,
+      title: "Agenda",
+      href: "#agenda",
+      label: "Ver agenda de cultos",
+      internal: true,
+    },
+    {
+      icon: MapPin,
+      title: "Localização",
+      href: "#enderecos",
+      label: "Ver endereços",
+      internal: true,
+    },
+    {
+      icon: Youtube,
+      title: "YouTube",
+      href: socialLinks.youtube,
+      label: "Acessar canal",
+    },
+    {
+      icon: Instagram,
+      title: "Instagram",
+      href: socialLinks.instagram,
+      label: "Ver Instagram",
+    },
+    {
+      icon: Facebook,
+      title: "Facebook",
+      href: socialLinks.facebook,
+      label: "Ver Facebook",
+    },
+  ].filter((item) => item.href);
 
   const handleNavClick = (e, href) => {
     e.preventDefault();
 
     if (href === "#agenda") {
-      window.location.href = "/#agenda";
+      if (window.location.pathname !== "/") {
+        window.location.href = "/#agenda";
+        return;
+      }
+
+      const agenda = document.querySelector("#agenda");
+      smoothScrollToElement(agenda);
       return;
     }
 
@@ -24,102 +67,45 @@ const Footer = () => {
     const element = document.querySelector(href);
 
     if (element) {
-      const offset = 80;
-      const elementPosition = element.offsetTop - offset;
-
-      window.scrollTo({
-        top: elementPosition,
-        behavior: "smooth",
-      });
+      smoothScrollToElement(element);
     }
   };
 
   return (
     <footer className="bg-slate-900 text-slate-100">
       <div className="section-container py-10 md:py-12">
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 md:gap-10">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-5 h-5 text-secondary" />
-              <h3 className="font-semibold text-lg">Agenda</h3>
-            </div>
-            <a
-              href="#agenda"
-              onClick={(e) => handleNavClick(e, '#agenda')}
-              className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
-            >
-              Ver agenda de cultos
-            </a>
-          </div>
+        <div className="grid grid-cols-2 gap-6 md:gap-10 lg:grid-cols-4">
+          {footerItems.map((item) => {
+            const Icon = item.icon;
 
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin className="w-5 h-5 text-secondary" />
-              <h3 className="font-semibold text-lg">Localização</h3>
-            </div>
-            <a
-              href="#enderecos"
-              onClick={(e) => handleNavClick(e, '#enderecos')}
-              className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
-            >
-              Ver endereços
-            </a>
-          </div>
-
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Youtube className="w-5 h-5 text-secondary" />
-              <h3 className="font-semibold text-lg">YouTube</h3>
-            </div>
-            <a
-              href={socialLinks.youtube}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
-            >
-              Acessar canal
-            </a>
-          </div>
-
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Instagram className="w-5 h-5 text-secondary" />
-              <h3 className="font-semibold text-lg">Instagram</h3>
-            </div>
-            <a
-              href={socialLinks.instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
-            >
-              Ver Instagram
-            </a>
-          </div>
-
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Facebook className="w-5 h-5 text-secondary" />
-              <h3 className="font-semibold text-lg">Facebook</h3>
-            </div>
-            <a
-              href={socialLinks.facebook}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
-            >
-              Ver Facebook
-            </a>
-          </div>
+            return (
+              <div key={item.title}>
+                <div className="flex items-center gap-2 mb-4">
+                  <Icon className="w-5 h-5 text-secondary" />
+                  <h3 className="font-semibold text-lg">{item.title}</h3>
+                </div>
+                <a
+                  href={item.href}
+                  onClick={item.internal ? (e) => handleNavClick(e, item.href) : undefined}
+                  target={item.internal ? undefined : "_blank"}
+                  rel={item.internal ? undefined : "noopener noreferrer"}
+                  className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
+                >
+                  {item.label}
+                </a>
+              </div>
+            );
+          })}
         </div>
 
         <div className="mt-8 md:mt-10 pt-6 border-t border-slate-700">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center overflow-hidden">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden">
                 <img
                   src="https://i.imgur.com/SA53Yxc.png"
                   alt="Logo da Assembleia de Deus"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full rounded-full object-cover"
                 />
               </div>
 

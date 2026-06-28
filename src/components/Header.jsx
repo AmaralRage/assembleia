@@ -4,6 +4,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { getPreferredTheme, saveTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
 import { forgetAdminDevice, isAdminSessionFresh } from '@/lib/adminDevice';
+import { smoothScrollTo, smoothScrollToElement } from '@/lib/smoothScroll';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -107,22 +108,18 @@ const Header = () => {
         setTimeout(() => {
           const element = document.getElementById(targetId);
           if (element) {
-            const offset = 80;
-            const elementPosition = element.offsetTop - offset;
-            window.scrollTo({ top: elementPosition, behavior: 'smooth' });
+            smoothScrollToElement(element);
           }
         }, 100);
       } else {
         const element = document.getElementById(targetId);
         if (element) {
-          const offset = 80;
-          const elementPosition = element.offsetTop - offset;
-          window.scrollTo({ top: elementPosition, behavior: 'smooth' });
+          smoothScrollToElement(element);
         }
       }
     } else {
       navigate(link.href);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      smoothScrollTo(0);
     }
   };
 
@@ -151,14 +148,14 @@ const Header = () => {
         <div className="flex items-center justify-between h-20">
           <Link 
             to="/" 
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => smoothScrollTo(0)}
             className="flex items-center gap-3 group"
           >
-            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105 overflow-hidden">
+            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center transition-transform duration-200 group-hover:scale-105 overflow-hidden">
               <img 
                 src="https://i.imgur.com/SA53Yxc.png"
                 alt="Logo da Assembleia de Deus"
-                className="w-full h-full object-cover"
+                className="w-full h-full rounded-full object-cover"
               />
             </div>
             <span className="font-bold text-xl text-foreground hidden sm:block">

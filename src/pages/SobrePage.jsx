@@ -1,61 +1,65 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Church, History } from "lucide-react";
+import { BookOpen, Church, Globe2, Heart, X } from "lucide-react";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
+import SectionHeading from "@/components/SectionHeading.jsx";
+import { exPresidentes, presidenteAtual } from "@/data/churchLeadership";
 
-const presidenteAtual = {
-  nome: "Mariana Vasconcelos",
-  periodo: "2020 - Atual",
-  foto: "https://admin.cnnbrasil.com.br/wp-content/uploads/sites/12/2023/07/IMG_4005.jpg?w=419&h=283&crop=0",
-  resumo:
-    "Conduz a igreja em direção a novos tempos, fortalecendo a presença digital, os projetos sociais e o compromisso com a comunidade.",
-  historia:
-    "Sua trajetória na igreja foi construída por meio do serviço, do cuidado com as famílias e da dedicação aos diferentes ministérios. Ao longo dos anos, participou de momentos importantes da comunidade e contribuiu para aproximar a liderança de seus membros.",
-  atuacao:
-    "Hoje, à frente da presidência, busca preservar os valores e a história da Assembleia de Deus da Lapa enquanto incentiva novas formas de evangelização, comunhão e atuação social.",
-};
-
-const exPresidentes = [
-  {
-    nome: "Pastor Antônio Souza",
-    periodo: "1998 - 2008",
-    foto: "https://upload.wikimedia.org/wikipedia/pt/thumb/3/37/Saitama_One_Punch-Man.png/330px-Saitama_One_Punch-Man.png",
-    resumo:
-      "Foi um líder dedicado à expansão da igreja, fortalecendo os ministérios e a comunhão entre os membros.",
-    historia:
-      "Durante sua liderança, acompanhou os primeiros anos de crescimento da congregação e incentivou a participação das famílias nas atividades da igreja.",
-  },
-  {
-    nome: "Pastor José Almeida",
-    periodo: "2008 - 2016",
-    foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a",
-    resumo:
-      "Conduziu a igreja em um período de crescimento espiritual, valorizando o ensino bíblico e a evangelização.",
-    historia:
-      "Seu período foi marcado pelo fortalecimento dos estudos bíblicos e pela formação de novos líderes para servir aos diferentes ministérios.",
-  },
-  {
-    nome: "Pastor Marcos Oliveira",
-    periodo: "2016 - 2020",
-    foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-    resumo:
-      "Trabalhou na modernização da comunicação da igreja e no fortalecimento dos projetos sociais.",
-    historia:
-      "Aproximou a igreja da comunidade por meio de ações sociais e ajudou a renovar a maneira como os eventos e projetos eram divulgados.",
-  },
-  {
-    nome: "Mariana Vasconcelos",
-    periodo: "2020 - 2026",
-    foto: "https://admin.cnnbrasil.com.br/wp-content/uploads/sites/12/2023/07/IMG_4005.jpg?w=419&h=283&crop=0",
-    resumo:
-      "Evoluiu a igreja a níveis modernos com sites e redes sociais, mantendo projetos íntegros e de alto rendimento.",
-    historia:
-      "Deu continuidade à transformação digital da igreja e ampliou os canais de comunicação com membros, visitantes e congregações.",
-  },
-];
+const getMandateStartYear = (periodo) => periodo.split("-")[0].trim();
 
 const SobrePage = () => {
+  const [selectedHistoryPresident, setSelectedHistoryPresident] = useState(null);
+
+  const historyPresidentCards = [
+    {
+      ...exPresidentes[0],
+      label: "Presidente fundador",
+      title: exPresidentes[0].nome,
+      summary:
+        "Liderou os primeiros anos da igreja, fortalecendo a comunhão e a participação das famílias.",
+    },
+    {
+      ...exPresidentes[1],
+      label: "Ensino bíblico",
+      title: exPresidentes[1].nome,
+      summary:
+        "Marcou sua gestão pelo ensino bíblico, evangelização e formação de novas lideranças.",
+    },
+    {
+      ...exPresidentes[2],
+      label: "Cuidado pastoral",
+      title: exPresidentes[2].nome,
+      summary:
+        "Aproximou a igreja da comunidade por meio de projetos sociais e ações de acolhimento.",
+    },
+    {
+      ...exPresidentes[3],
+      label: "Presença digital",
+      title: exPresidentes[3].nome,
+      summary:
+        "Ampliou os canais digitais e manteve os projetos da igreja conectados ao presente.",
+    },
+    {
+      ...presidenteAtual,
+      label: "Presidência atual",
+      title: presidenteAtual.nome,
+      summary:
+        "Preserva a história da igreja enquanto conduz novos passos de comunhão e serviço.",
+    },
+  ];
+
+  useEffect(() => {
+    if (!selectedHistoryPresident) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setSelectedHistoryPresident(null);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedHistoryPresident]);
+
   return (
     <>
       <Header />
@@ -82,12 +86,13 @@ const SobrePage = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <Church className="w-8 h-8 md:w-9 md:h-9 text-primary" />
-                  <h1 className="text-3xl md:text-5xl font-bold text-foreground">
-                    Sobre a Igreja
-                  </h1>
-                </div>
+                <SectionHeading
+                  eyebrow="Nossa história"
+                  title="Sobre a"
+                  highlight="Igreja"
+                  as="h1"
+                  titleClassName="text-3xl md:text-5xl"
+                />
 
                 <p className="text-base md:text-lg text-muted-foreground dark:text-slate-300 leading-relaxed mb-5">
                   A Assembleia de Deus da Lapa é uma comunidade cristã dedicada à
@@ -107,6 +112,178 @@ const SobrePage = () => {
           </div>
         </section>
 
+        <section className="border-y border-border bg-[#e8eef5] py-14 dark:bg-muted md:py-24">
+          <div className="mx-auto max-w-[1050px] px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="mb-10 max-w-3xl"
+            >
+              <SectionHeading
+                title="Nossa história em"
+                highlight="movimento"
+                description="Uma jornada de fé, serviço e comunidade que moldou quem somos hoje."
+                titleClassName="text-4xl md:text-5xl"
+                descriptionClassName="max-w-lg text-slate-700 dark:text-slate-300"
+              />
+            </motion.div>
+
+            <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+              <div className="grid gap-4 lg:grid-rows-[310px_165px]">
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0, y: 22 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.45 }}
+                  onClick={() => setSelectedHistoryPresident(historyPresidentCards[0])}
+                  className="group relative flex min-h-[280px] overflow-hidden rounded-[2rem] border-4 border-[#c3d3e4] bg-[#101c40] p-7 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-8 lg:min-h-0"
+                >
+                  <span className="absolute -bottom-7 right-0 text-[8.2rem] font-extrabold leading-none text-white/[0.045]">
+                    {getMandateStartYear(historyPresidentCards[0].periodo)}
+                  </span>
+                  <span className="pointer-events-none absolute -right-12 top-8 h-36 w-36 rounded-full border border-white/10 bg-white/[0.035]" />
+                  <Church className="pointer-events-none absolute right-9 top-10 h-14 w-14 text-white/[0.07]" />
+                  <span className="pointer-events-none absolute bottom-10 right-36 h-10 w-10 rounded-full bg-primary/10" />
+                  <div className="relative flex max-w-xl flex-col justify-center">
+                    <span className="mb-6 inline-flex w-fit rounded-full bg-[#4e8fc4] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-white">
+                      {historyPresidentCards[0].label}
+                    </span>
+                    <h2 className="text-2xl font-bold leading-tight sm:text-3xl md:text-4xl">
+                      {historyPresidentCards[0].title}
+                    </h2>
+                    <p className="mt-5 max-w-[520px] text-sm leading-relaxed text-white/85 sm:text-base md:text-lg">
+                      {historyPresidentCards[0].summary}
+                    </p>
+                    <span className="mt-8 translate-y-2 text-xs font-bold uppercase tracking-[0.28em] text-blue-200 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      Ver biografia →
+                    </span>
+                  </div>
+                </motion.button>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <motion.button
+                    type="button"
+                    initial={{ opacity: 0, y: 22 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.45, delay: 0.18 }}
+                    onClick={() => setSelectedHistoryPresident(historyPresidentCards[3])}
+                    className="group relative flex min-h-[165px] flex-col justify-center overflow-hidden rounded-[1.5rem] bg-[#4178aa] p-5 pb-10 pr-16 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6 sm:pb-10 sm:pr-16"
+                  >
+                    <span className="pointer-events-none absolute -bottom-12 -right-10 h-28 w-28 rounded-full bg-white/10" />
+                    <span className="pointer-events-none absolute -bottom-5 right-16 h-12 w-12 rounded-full border border-white/15" />
+                    <Church className="pointer-events-none absolute bottom-6 right-7 h-9 w-9 text-white/10" />
+                    <div className="absolute right-5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl bg-white/15 text-white sm:h-12 sm:w-12">
+                      <Globe2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </div>
+                    <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-100">
+                      {getMandateStartYear(historyPresidentCards[3].periodo)}
+                    </p>
+                    <h3 className="max-w-[210px] text-lg font-bold leading-tight sm:text-xl">
+                      {historyPresidentCards[3].title}
+                    </h3>
+                    <p className="mt-2 max-w-[220px] text-xs leading-snug text-white/80 sm:text-[13px]">
+                      {historyPresidentCards[3].summary}
+                    </p>
+                    <span className="absolute bottom-5 left-5 translate-y-1 text-[10px] font-bold uppercase tracking-[0.22em] text-blue-100 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:left-6">
+                      Ver biografia →
+                    </span>
+                  </motion.button>
+
+                  <motion.button
+                    type="button"
+                    initial={{ opacity: 0, y: 22 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.45, delay: 0.24 }}
+                    onClick={() => setSelectedHistoryPresident(historyPresidentCards[4])}
+                    className="group relative flex min-h-[165px] flex-col justify-center overflow-hidden rounded-[1.5rem] bg-[#101c40] p-5 pb-10 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6 sm:pb-10"
+                  >
+                    <span className="pointer-events-none absolute -bottom-14 -right-12 h-32 w-32 rounded-full bg-white/[0.055]" />
+                    <span className="pointer-events-none absolute right-8 top-6 h-10 w-10 rounded-full border border-white/10" />
+                    <Church className="pointer-events-none absolute bottom-7 right-8 h-10 w-10 text-white/[0.08]" />
+                    <span className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#4e8fc4]" />
+                      Hoje
+                    </span>
+                    <h3 className="text-lg font-bold uppercase leading-tight sm:text-xl">
+                      {historyPresidentCards[4].title}
+                    </h3>
+                    <p className="mt-2 max-w-[260px] text-xs leading-snug text-white/65 sm:text-[13px]">
+                      {historyPresidentCards[4].summary}
+                    </p>
+                    <span className="absolute bottom-5 left-5 translate-y-1 text-[10px] font-bold uppercase tracking-[0.22em] text-blue-200 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:left-6">
+                      Ver biografia →
+                    </span>
+                  </motion.button>
+                </div>
+              </div>
+
+              <div className="grid gap-4 lg:grid-rows-[165px_310px]">
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0, y: 22 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.45, delay: 0.08 }}
+                  onClick={() => setSelectedHistoryPresident(historyPresidentCards[1])}
+                  className="group relative flex min-h-[145px] flex-col justify-center overflow-hidden rounded-[1.5rem] bg-[#254870] p-5 pr-14 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6 sm:pr-16"
+                >
+                  <span className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/[0.055]" />
+                  <span className="pointer-events-none absolute -bottom-9 left-8 h-20 w-20 rounded-full border border-white/10" />
+                  <Church className="pointer-events-none absolute bottom-5 right-6 h-9 w-9 text-white/[0.08]" />
+                  <div className="absolute right-5 top-5 text-[#4e8fc4]">
+                    <BookOpen className="h-8 w-8" />
+                  </div>
+                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
+                    {getMandateStartYear(historyPresidentCards[1].periodo)}
+                  </p>
+                  <h3 className="max-w-[210px] text-base font-bold uppercase leading-tight sm:text-lg">
+                    {historyPresidentCards[1].title}
+                  </h3>
+                  <p className="mt-2 max-w-[220px] text-xs leading-snug text-white/75">
+                    {historyPresidentCards[1].summary}
+                  </p>
+                  <span className="mt-4 translate-y-2 text-[10px] font-bold uppercase tracking-[0.22em] text-blue-200 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                    Ver biografia →
+                  </span>
+                </motion.button>
+
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0, y: 22 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.45, delay: 0.14 }}
+                  onClick={() => setSelectedHistoryPresident(historyPresidentCards[2])}
+                  className="group relative flex min-h-[310px] flex-col justify-between overflow-hidden rounded-[1.5rem] border border-border/70 bg-white p-8 text-left text-slate-950 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
+                  <Heart className="h-10 w-10 text-[#2f6fa9]" />
+                  <div>
+                    <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-[#2f6fa9]">
+                      {getMandateStartYear(historyPresidentCards[2].periodo)}
+                    </p>
+                    <h3 className="text-xl font-bold leading-tight sm:text-2xl">
+                      {historyPresidentCards[2].title}
+                    </h3>
+                    <p className="mt-4 text-sm leading-relaxed text-slate-700">
+                      {historyPresidentCards[2].summary}
+                    </p>
+                    <span className="mt-5 inline-block translate-y-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#2f6fa9] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      Ver biografia →
+                    </span>
+                  </div>
+                  <span className="absolute -bottom-16 -right-12 h-36 w-36 rounded-full bg-[#eef3f8]" />
+                  <Church className="pointer-events-none absolute bottom-8 right-8 h-12 w-12 text-[#2f6fa9]/10" />
+                </motion.button>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="py-12 md:py-24 lg:py-32 bg-muted">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.25fr] gap-7 md:gap-10 lg:gap-16 items-center">
@@ -120,6 +297,7 @@ const SobrePage = () => {
                 <img
                   src={presidenteAtual.foto}
                   alt={presidenteAtual.nome}
+                  loading="lazy"
                   className="aspect-[3/4] w-full object-cover object-[50%_32%] sm:aspect-[5/4] lg:aspect-auto lg:h-[580px]"
                 />
               </motion.div>
@@ -135,9 +313,13 @@ const SobrePage = () => {
                   Liderança atual
                 </span>
 
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight text-foreground mb-2 md:mb-3">
-                  {presidenteAtual.nome}
-                </h2>
+                <SectionHeading
+                  eyebrow="Presidência"
+                  title={presidenteAtual.nome.split(" ").slice(0, -1).join(" ")}
+                  highlight={presidenteAtual.nome.split(" ").slice(-1).join(" ")}
+                  titleClassName="text-3xl sm:text-4xl md:text-5xl"
+                  eyebrowClassName="mb-3"
+                />
 
                 <p className="text-xs md:text-sm font-semibold uppercase tracking-wider text-primary dark:text-white mb-4 md:mb-7">
                   Presidente · {presidenteAtual.periodo}
@@ -166,93 +348,117 @@ const SobrePage = () => {
           </div>
         </section>
 
-        <section className="py-14 md:py-24 bg-background">
-          <div className="max-w-7xl mx-auto px-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-10 md:mb-16"
-            >
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <History className="w-7 h-7 md:w-8 md:h-8 text-primary" />
-                <h2 className="text-3xl md:text-5xl font-bold text-foreground">
-                  Ex-presidentes
-                </h2>
+      </main>
+
+      {selectedHistoryPresident && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="history-president-title"
+          onClick={() => setSelectedHistoryPresident(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 18 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.22 }}
+            onClick={(event) => event.stopPropagation()}
+            className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+          >
+            <div className="relative bg-[#071526] px-6 pb-8 pt-10 text-white md:px-9">
+              <button
+                type="button"
+                onClick={() => setSelectedHistoryPresident(null)}
+                className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+                aria-label="Fechar biografia"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="grid gap-6 md:grid-cols-[150px_minmax(0,1fr)] md:items-center">
+                <img
+                  src={selectedHistoryPresident.foto}
+                  alt={selectedHistoryPresident.nome}
+                  loading="lazy"
+                  className={`h-28 w-28 rounded-full border-4 border-white shadow-xl md:h-32 md:w-32 ${
+                    selectedHistoryPresident.fotoPlaceholder
+                      ? "bg-white object-contain p-3"
+                      : "object-cover object-top"
+                  }`}
+                />
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.32em] text-blue-200">
+                    Período de mandato
+                  </p>
+                  <span className="mt-3 inline-flex rounded-full border border-primary/60 bg-primary/10 px-4 py-2 text-sm font-bold text-primary">
+                    {selectedHistoryPresident.periodo}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative px-6 py-8 md:px-9 md:py-10">
+              <h2
+                id="history-president-title"
+                className="text-3xl font-bold leading-tight text-slate-950 md:text-4xl"
+              >
+                {selectedHistoryPresident.nome}
+              </h2>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
+                {selectedHistoryPresident.periodo.includes("Atual")
+                  ? "Presidente atual"
+                  : "Ex-presidente"}
+              </p>
+
+              <div className="mt-7 grid gap-8 md:grid-cols-[1fr_0.85fr]">
+                <div>
+                  <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                    Biografia
+                  </p>
+                  <p className="leading-relaxed text-slate-600">
+                    {selectedHistoryPresident.historia ||
+                      selectedHistoryPresident.resumo}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                    Informações
+                  </p>
+                  <ul className="space-y-3 text-sm font-medium text-slate-600">
+                    <li className="flex gap-3">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                      Mandato iniciado em {getMandateStartYear(selectedHistoryPresident.periodo)}
+                    </li>
+                    {(selectedHistoryPresident.destaques || [
+                      selectedHistoryPresident.resumo,
+                    ]).map((destaque) => (
+                      <li key={destaque} className="flex gap-3">
+                        <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                        {destaque}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
 
-              <p className="text-base md:text-lg text-muted-foreground dark:text-white max-w-2xl mx-auto">
-                Conheça alguns líderes que fizeram parte da história da nossa igreja.
-              </p>
-            </motion.div>
+              <span className="pointer-events-none absolute -bottom-12 right-5 text-[8rem] font-extrabold leading-none text-slate-950/[0.05] md:text-[10rem]">
+                {getMandateStartYear(selectedHistoryPresident.periodo)}
+              </span>
 
-            <div className="mx-auto max-w-5xl space-y-12 lg:space-y-20">
-              {exPresidentes.map((presidente, index) => {
-                const imageOnRight = index % 2 === 0;
-
-                return (
-                <motion.div
-                  key={`${presidente.nome}-${presidente.periodo}`}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5 }}
-                  className="grid grid-cols-1 items-center gap-7 md:grid-cols-2 md:gap-10"
+              <div className="mt-8 border-t border-slate-200 pt-5 text-right">
+                <button
+                  type="button"
+                  onClick={() => setSelectedHistoryPresident(null)}
+                  className="inline-flex rounded-full bg-[#071526] px-7 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-slate-800"
                 >
-                  <motion.div
-                    initial={{ opacity: 0, x: imageOnRight ? 24 : -24 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.55 }}
-                    className={imageOnRight ? "md:order-2" : "md:order-1"}
-                  >
-                    <img
-                      src={presidente.foto}
-                      alt={presidente.nome}
-                      className="aspect-[4/5] w-full rounded-xl object-cover object-top shadow-lg md:aspect-auto md:h-[480px] md:rounded-3xl"
-                    />
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, x: imageOnRight ? -24 : 24 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.55 }}
-                    className={`flex flex-col justify-center ${
-                      imageOnRight ? "md:order-1" : "md:order-2"
-                    }`}
-                  >
-                    <div>
-                      <p className="mb-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary dark:text-white">
-                        {presidente.periodo}
-                      </p>
-
-                      <h3 className="mb-4 text-2xl font-bold text-foreground md:text-4xl">
-                        {presidente.nome}
-                      </h3>
-
-                      <p className="text-base leading-relaxed text-muted-foreground dark:text-slate-300 md:text-lg">
-                        {presidente.resumo}
-                      </p>
-
-                      <div className="mt-7 border-l-2 border-primary/60 pl-5">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary dark:text-white">
-                          Durante sua liderança
-                        </p>
-                        <p className="leading-relaxed text-muted-foreground dark:text-slate-300">
-                          {presidente.historia}
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                </motion.div>
-                );
-              })}
+                  Fechar registro
+                </button>
+              </div>
             </div>
-          </div>
-        </section>
-      </main>
+          </motion.div>
+        </div>
+      )}
 
       <Footer />
     </>

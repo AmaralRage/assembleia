@@ -5,32 +5,15 @@ import {
   ArrowRight,
   CalendarDays,
   Clock,
-  HelpCircle,
   MapPin,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
+import SectionHeading from '@/components/SectionHeading.jsx';
 import { getChurchLocation, mainChurchLocation } from '@/data/churchLocations';
 import { supabase } from '@/lib/supabase';
-
-const formatEventDate = (date) =>
-  new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T12:00:00Z`));
-
-const formatWeekDay = (date) => {
-  const weekDay = new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T12:00:00Z`));
-
-  return weekDay.charAt(0).toUpperCase() + weekDay.slice(1);
-};
-
-const formatEventTime = (time) => time?.slice(0, 5) || 'A definir';
+import { formatEventDate, formatEventTime, formatWeekDay, getTodayKey } from '@/lib/calendar';
 
 const worshipSteps = [
   {
@@ -84,12 +67,7 @@ const NewHerePage = () => {
 
   useEffect(() => {
     const loadUpcomingEvents = async () => {
-      const today = new Date();
-      const todayKey = [
-        today.getFullYear(),
-        String(today.getMonth() + 1).padStart(2, '0'),
-        String(today.getDate()).padStart(2, '0'),
-      ].join('-');
+      const todayKey = getTodayKey();
 
       const { data, error } = await supabase
         .from('calendar_events')
@@ -141,9 +119,14 @@ const NewHerePage = () => {
         <section className="relative overflow-hidden bg-slate-950 pt-28 pb-14 md:pt-32 md:pb-20">
           <div className="section-container">
             <div className="mx-auto max-w-3xl">
-              <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
-                Sou novo por aqui
-              </h1>
+              <SectionHeading
+                eyebrow="Bem-vindo"
+                title="Sou novo"
+                highlight="por aqui"
+                as="h1"
+                eyebrowClassName="text-white/70"
+                titleClassName="text-4xl text-white sm:text-5xl md:text-6xl"
+              />
               <p className="mt-6 max-w-xl text-base leading-relaxed text-white/80 md:text-lg">
                 Seja muito bem-vindo! Estamos felizes que você está conhecendo a
                 Assembleia de Deus da Lapa.
@@ -173,9 +156,12 @@ const NewHerePage = () => {
           <div className="section-container">
             <div className="mx-auto grid max-w-6xl items-center gap-11 md:grid-cols-2 lg:gap-14">
               <div className="max-w-[520px]">
-                <h2 className="text-4xl font-bold leading-tight text-foreground md:text-5xl">
-                  Você é <span className="text-primary">bem-vindo</span> aqui!
-                </h2>
+                <SectionHeading
+                  eyebrow="Primeira visita"
+                  title="Você é"
+                  highlight="bem-vindo aqui!"
+                  titleClassName="md:text-5xl"
+                />
                 <div className="mt-6 space-y-4 text-base leading-relaxed text-muted-foreground md:text-lg">
                   <p>
                     Acreditamos que a fé é uma jornada que não deve ser percorrida
@@ -209,6 +195,7 @@ const NewHerePage = () => {
                   <img
                     src={mainChurchLocation.image}
                     alt={`Fachada da ${mainChurchLocation.name}`}
+                    loading="lazy"
                     className="h-full w-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent" />
@@ -227,12 +214,14 @@ const NewHerePage = () => {
         <section className="border-t border-border bg-muted py-14 md:py-24">
           <div className="section-container">
             <div className="mx-auto mb-10 max-w-3xl text-center md:mb-14">
-              <h2 className="text-3xl font-bold text-foreground md:text-5xl">
-                O que esperar no culto
-              </h2>
-              <p className="mt-4 text-base text-muted-foreground">
-                Um passo a passo de como é participar conosco
-              </p>
+              <SectionHeading
+                eyebrow="Sua primeira vez"
+                title="O que esperar"
+                highlight="no culto"
+                description="Um passo a passo de como é participar conosco"
+                align="center"
+                titleClassName="text-3xl md:text-5xl"
+              />
             </div>
 
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -288,16 +277,13 @@ const NewHerePage = () => {
               transition={{ duration: 0.6 }}
               className="mx-auto mb-10 max-w-7xl md:mb-14"
             >
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.32em] text-primary">
-                Nossa rotina
-              </p>
               <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-                <h2 className="max-w-3xl text-4xl font-bold leading-tight text-foreground md:text-6xl">
-                  Atividades da{' '}
-                  <span className="bg-[linear-gradient(90deg,hsl(var(--primary))_0%,hsl(var(--primary))_42%,#60a5fa_70%,#93c5fd_100%)] bg-clip-text text-transparent">
-                    semana
-                  </span>
-                </h2>
+                <SectionHeading
+                  eyebrow="Nossa rotina"
+                  title="Atividades da"
+                  highlight="semana"
+                  titleClassName="max-w-3xl"
+                />
                 <p className="max-w-md text-base leading-relaxed text-muted-foreground md:text-right md:text-lg">
                   Fique por dentro dos nossos próximos cultos, encontros e eventos especiais.
                 </p>
@@ -436,12 +422,13 @@ const NewHerePage = () => {
         <section className="border-t border-border bg-muted py-14 md:py-24">
           <div className="section-container">
             <div className="mx-auto mb-10 max-w-3xl text-center md:mb-14">
-              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <HelpCircle className="h-6 w-6" />
-              </div>
-              <h2 className="text-3xl font-bold text-foreground md:text-5xl">
-                Perguntas frequentes
-              </h2>
+              <SectionHeading
+                eyebrow="Dúvidas comuns"
+                title="Perguntas"
+                highlight="frequentes"
+                align="center"
+                titleClassName="text-3xl md:text-5xl"
+              />
             </div>
 
             <div className="mx-auto max-w-4xl space-y-3">
@@ -470,12 +457,14 @@ const NewHerePage = () => {
             <div className="overflow-hidden rounded-2xl bg-primary p-8 text-primary-foreground shadow-xl md:rounded-3xl md:p-12">
               <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                 <div>
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-white/70">
-                    Estamos esperando você
-                  </p>
-                  <h2 className="text-3xl font-bold md:text-5xl">
-                    Sua visita será uma alegria para nós
-                  </h2>
+                  <SectionHeading
+                    eyebrow="Estamos esperando você"
+                    title="Sua visita será"
+                    highlight="uma alegria"
+                    eyebrowClassName="text-white/70"
+                    titleClassName="text-3xl text-primary-foreground md:text-5xl"
+                    highlightClassName="bg-none text-white"
+                  />
                   <p className="mt-4 max-w-2xl text-white/80">
                     Venha conhecer a Assembleia de Deus da Lapa e participar de um
                     culto conosco.

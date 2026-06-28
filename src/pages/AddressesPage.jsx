@@ -18,29 +18,17 @@ import {
 } from 'lucide-react';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
+import SectionHeading from '@/components/SectionHeading.jsx';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { churchLocations } from '@/data/churchLocations';
 import { supabase } from '@/lib/supabase';
-
-const getTodayKey = () => {
-  const today = new Date();
-
-  return [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, '0'),
-    String(today.getDate()).padStart(2, '0'),
-  ].join('-');
-};
-
-const formatServiceDate = (date) =>
-  new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T12:00:00Z`));
+import {
+  formatEventDateWithWeekday,
+  formatEventTime,
+  getTodayKey,
+} from '@/lib/calendar';
 
 const categoryLabels = {
   culto: 'Culto',
@@ -153,27 +141,27 @@ const AddressesPage = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="w-16 h-16 bg-red-50 dark:bg-red-950/40 rounded-2xl flex items-center justify-center mb-6"
+              className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 text-primary ring-1 ring-primary/15 dark:bg-primary/20 dark:text-blue-200 dark:ring-primary/30"
             >
-              <Home className="w-8 h-8 text-red-500" />
+              <Home className="w-8 h-8" />
             </motion.div>
-            <motion.h1
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-4xl md:text-5xl font-bold text-foreground mb-4"
-              style={{ letterSpacing: '-0.02em' }}
             >
-              Endereços
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-lg text-muted-foreground max-w-2xl mx-auto"
-            >
-              Encontre uma Assembleia de Deus mais próxima de você
-            </motion.p>
+              <SectionHeading
+                eyebrow="Onde estamos"
+                title="Nossos"
+                highlight="endereços"
+                description="Encontre uma Assembleia de Deus mais próxima de você"
+                as="h1"
+                align="center"
+                titleClassName="text-4xl md:text-5xl"
+                descriptionClassName="mt-2 text-lg"
+                eyebrowClassName="dark:text-blue-200"
+              />
+            </motion.div>
           </div>
 
           <motion.div
@@ -239,8 +227,14 @@ const AddressesPage = () => {
 
           <div>
             <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-foreground">Todos os Endereços</h2>
-              <p className="text-muted-foreground">{filteredAddresses.length} locais encontrados</p>
+              <SectionHeading
+                eyebrow="Congregações"
+                title="Todos os"
+                highlight="endereços"
+                description={`${filteredAddresses.length} locais encontrados`}
+                titleClassName="text-2xl md:text-4xl"
+                descriptionClassName="mt-2 text-base"
+              />
             </div>
 
             {filteredAddresses.length > 0 ? (
@@ -257,6 +251,7 @@ const AddressesPage = () => {
                       <img
                         src={address.image}
                         alt={address.name}
+                        loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                       />
                       <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
@@ -352,6 +347,7 @@ const AddressesPage = () => {
                 <img
                   src={selectedAddress.image}
                   alt={selectedAddress.name}
+                  loading="lazy"
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
@@ -450,12 +446,12 @@ const AddressesPage = () => {
                                   {service.title}
                                 </p>
                                 <p className="text-xs capitalize text-muted-foreground">
-                                  {formatServiceDate(service.event_date)}
+                                  {formatEventDateWithWeekday(service.event_date)}
                                 </p>
                               </div>
                               <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
                                 <Clock className="h-4 w-4 text-primary" />
-                                {service.event_time?.slice(0, 5) || 'A definir'}
+                                {formatEventTime(service.event_time)}
                               </span>
                             </div>
                           ))}

@@ -1,30 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from "react-helmet-async";
 import { motion } from 'framer-motion';
-import { Calendar, Clock, ArrowRight, Users, MapPin, Youtube } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, MapPin, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
+import SectionHeading from '@/components/SectionHeading.jsx';
 import { supabase } from '@/lib/supabase';
+import { smoothScrollToElement } from '@/lib/smoothScroll';
 import { churchLocations, getChurchLocation } from '@/data/churchLocations';
-
-const formatEventDate = (date) =>
-  new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    timeZone: 'UTC'
-  }).format(new Date(`${date}T12:00:00Z`));
-
-const formatWeekDay = (date) => {
-  const weekDay = new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'long',
-    timeZone: 'UTC'
-  }).format(new Date(`${date}T12:00:00Z`));
-
-  return weekDay.charAt(0).toUpperCase() + weekDay.slice(1);
-};
-
-const formatEventTime = (time) => time?.slice(0, 5) || 'A definir';
+import { homeLeadershipCards } from '@/data/churchLeadership';
+import { formatEventDate, formatEventTime, formatWeekDay, getTodayKey } from '@/lib/calendar';
 
 const HomePage = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
@@ -32,12 +18,7 @@ const HomePage = () => {
 
   useEffect(() => {
     const loadUpcomingEvents = async () => {
-      const today = new Date();
-      const todayKey = [
-        today.getFullYear(),
-        String(today.getMonth() + 1).padStart(2, '0'),
-        String(today.getDate()).padStart(2, '0')
-      ].join('-');
+      const todayKey = getTodayKey();
 
       const { data, error } = await supabase
         .from('calendar_events')
@@ -73,33 +54,6 @@ const HomePage = () => {
       return days;
     }, {})
   );
-
-  const leadershipCards = [
-    {
-      cargo: "Presidente",
-      nome: "Pastor Miguel Santos",
-      descricao: "Líder espiritual dedicado ao crescimento da comunidade",
-      foto: "https://cdn.pixabay.com/photo/2023/08/24/19/58/saitama-8211499_1280.png"
-    },
-    {
-      cargo: "Vice-Presidente",
-      nome: "Irmã Beatriz Oliveira",
-      descricao: "Coordenadora de ministérios e ações sociais",
-      foto: "https://static.wikitide.net/deathbattlewiki/5/5b/Portrait.genos.png"
-    },
-    {
-      cargo: "Secretário",
-      nome: "Irmão Carlos Mendes",
-      descricao: "Responsável pela organização e documentação",
-      foto: "https://ovicio.com.br/wp-content/uploads/2022/08/20220803-20220803_214217-555x555.jpg"
-    },
-    {
-      cargo: "Tesoureira",
-      nome: "Irmã Ana Costa",
-      descricao: "Gestora financeira e administrativa",
-      foto: "https://i.redd.it/62qymrbj6sma1.jpg"
-    }
-  ];
 
   return (
     <>
@@ -145,27 +99,21 @@ const HomePage = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mt-4 md:mt-8 w-full max-w-sm sm:max-w-none sm:w-auto">
-                <motion.a href="#agenda" onClick={e => {
-                  e.preventDefault();
-                  const element = document.querySelector('#agenda');
-                  if (element) {
-                    const offset = 80;
-                    const elementPosition = element.offsetTop - offset;
-                    window.scrollTo({
-                      top: elementPosition,
-                      behavior: 'smooth'
-                    });
-                  }
-                }} initial={{
-                  opacity: 0
-                }} animate={{
-                  opacity: 1
-                }} transition={{
-                  delay: 0.5,
-                  duration: 0.8
-                }} className="px-7 py-3.5 md:px-8 md:py-4 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] shadow-lg hover:shadow-xl w-full sm:w-auto text-center">
-                  Ver agenda e cultos
-                </motion.a>
+              <motion.div initial={{
+                opacity: 0
+              }} animate={{
+                opacity: 1
+              }} transition={{
+                delay: 0.5,
+                duration: 0.8
+              }} className="w-full sm:w-auto">
+                <Link
+                  to="/sou-novo"
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-7 py-3.5 font-semibold text-primary-foreground shadow-lg transition-all duration-200 hover:bg-primary/90 hover:shadow-xl active:scale-[0.98] md:px-8 md:py-4 sm:w-auto"
+                >
+                  Sou novo por aqui
+                </Link>
+              </motion.div>
                 <motion.div initial={{
                   opacity: 0
                 }} animate={{
@@ -176,27 +124,28 @@ const HomePage = () => {
                 }} className="w-full sm:w-auto">
                 <Link
                   to="/assistir"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/35 bg-white/10 px-7 py-3.5 md:px-8 md:py-4 font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/20 active:scale-[0.98] sm:w-auto"
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/35 bg-white/10 px-7 py-3.5 md:px-8 md:py-4 font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/20 active:scale-[0.98] sm:w-auto"
                 >
-                  <Youtube className="h-5 w-5" />
+                  <Youtube className="h-5 w-5 transition-colors duration-200 group-hover:text-red-500" />
                   Assistir culto
                 </Link>
               </motion.div>
-              <motion.div initial={{
-                opacity: 0
-              }} animate={{
-                opacity: 1
-              }} transition={{
-                delay: 0.7,
-                duration: 0.8
-              }} className="w-full sm:w-auto">
-                <Link
-                  to="/sou-novo"
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-white px-7 py-3.5 font-semibold text-primary shadow-lg transition-all duration-200 hover:bg-white/90 hover:shadow-xl active:scale-[0.98] md:px-8 md:py-4 sm:w-auto"
-                >
-                  Sou novo por aqui
-                </Link>
-              </motion.div>
+                <motion.a href="#agenda" onClick={e => {
+                  e.preventDefault();
+                  const element = document.querySelector('#agenda');
+                  if (element) {
+                    smoothScrollToElement(element);
+                  }
+                }} initial={{
+                  opacity: 0
+                }} animate={{
+                  opacity: 1
+                }} transition={{
+                  delay: 0.7,
+                  duration: 0.8
+                }} className="px-7 py-3.5 md:px-8 md:py-4 bg-white hover:bg-white/90 text-primary font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] shadow-lg hover:shadow-xl w-full sm:w-auto text-center">
+                  Ver agenda
+                </motion.a>
             </div>
           </motion.div>
         </div>
@@ -212,18 +161,18 @@ const HomePage = () => {
               transition={{ duration: 0.6 }}
               className="text-center mb-10 md:mb-16"
             >
-              <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4 flex items-center justify-center gap-3">
-                <Users className="w-8 h-8 md:w-10 md:h-10 text-primary" />
-                Nossa liderança
-              </h2>
-
-              <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Conheça quem conduz nossa comunidade com dedicação e amor
-              </p>
+              <SectionHeading
+                eyebrow="Nossa igreja"
+                title="Liderança e"
+                highlight="memória"
+                description="Conheça pessoas que fazem parte da caminhada e da história da nossa comunidade"
+                align="center"
+                titleClassName="text-3xl md:text-5xl"
+              />
             </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 md:gap-8 max-w-7xl mx-auto">
-              {leadershipCards.map((lider) => (
+              {homeLeadershipCards.map((lider) => (
                 <motion.div
                   key={lider.nome}
                   initial={{ opacity: 0, y: 20 }}
@@ -239,7 +188,12 @@ const HomePage = () => {
                   <img
                     src={lider.foto}
                     alt={lider.nome}
-                    className="w-full h-64 md:h-72 object-cover"
+                    loading="lazy"
+                    className={`w-full h-64 md:h-72 ${
+                      lider.fotoPlaceholder
+                        ? "bg-muted object-contain p-8"
+                        : "object-cover"
+                    }`}
                   />
 
                   <div className="p-5 md:p-6">
@@ -275,16 +229,13 @@ const HomePage = () => {
             }} transition={{
               duration: 0.6
             }} className="mx-auto mb-10 max-w-7xl md:mb-14">
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.32em] text-primary">
-                Nossa rotina
-              </p>
               <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-                <h2 className="max-w-3xl text-4xl font-bold leading-tight text-foreground md:text-6xl">
-                  Atividades da{" "}
-                  <span className="bg-[linear-gradient(90deg,hsl(var(--primary))_0%,hsl(var(--primary))_42%,#60a5fa_70%,#93c5fd_100%)] bg-clip-text text-transparent">
-                    semana
-                  </span>
-                </h2>
+                <SectionHeading
+                  eyebrow="Nossa rotina"
+                  title="Atividades da"
+                  highlight="semana"
+                  titleClassName="max-w-3xl"
+                />
                 <p className="max-w-md text-base leading-relaxed text-muted-foreground md:text-right md:text-lg">
                   Fique por dentro dos nossos próximos cultos, encontros e eventos especiais.
                 </p>
@@ -432,17 +383,14 @@ const HomePage = () => {
             }} transition={{
               duration: 0.6
             }} className="text-center mb-10 md:mb-16">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <MapPin className="w-7 h-7 md:w-8 md:h-8 text-primary" />
-                <h2 className="text-3xl md:text-5xl font-bold text-foreground" style={{
-                  letterSpacing: '-0.02em'
-                }}>
-                  Nossas localizações
-                </h2>
-              </div>
-              <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Conheça algumas de nossas congregações e encontre a mais próxima de você
-              </p>
+              <SectionHeading
+                eyebrow="Onde estamos"
+                title="Nossas"
+                highlight="localizações"
+                description="Conheça algumas de nossas congregações e encontre a mais próxima de você"
+                align="center"
+                titleClassName="text-3xl md:text-5xl"
+              />
             </motion.div>
 
             <div className="max-w-7xl mx-auto">
@@ -463,6 +411,7 @@ const HomePage = () => {
                     <img
                       src={location.image}
                       alt={location.name}
+                      loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     />
                     <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">

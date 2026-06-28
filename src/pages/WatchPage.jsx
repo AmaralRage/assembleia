@@ -15,39 +15,17 @@ import {
 import { Link } from "react-router-dom";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
+import SectionHeading from "@/components/SectionHeading.jsx";
 import { Button } from "@/components/ui/button";
 import { churchMedia } from "@/data/churchMedia";
 import { mainChurchLocation } from "@/data/churchLocations";
 import { supabase } from "@/lib/supabase";
-
-const getTodayKey = () => {
-  const today = new Date();
-
-  return [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, "0"),
-    String(today.getDate()).padStart(2, "0"),
-  ].join("-");
-};
-
-const formatEventDate = (date) =>
-  new Intl.DateTimeFormat("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    timeZone: "UTC",
-  }).format(new Date(`${date}T12:00:00Z`));
-
-const formatServiceTime = (time) => time?.slice(0, 5) || "Horário a definir";
-
-const getShortWeekDay = (date) => {
-  const weekDay = new Intl.DateTimeFormat("pt-BR", {
-    weekday: "long",
-    timeZone: "UTC",
-  }).format(new Date(`${date}T12:00:00Z`));
-
-  return weekDay.charAt(0).toUpperCase() + weekDay.slice(1);
-};
+import {
+  formatEventDateWithWeekday,
+  formatEventTime,
+  formatWeekDay,
+  getTodayKey,
+} from "@/lib/calendar";
 
 const getEventDateTime = (event) => {
   if (!event?.event_date || !event?.event_time) return null;
@@ -189,7 +167,7 @@ const WatchPage = () => {
   const isLiveNow = useMemo(() => isServiceLiveNow(nextService), [nextService]);
   const calendarServiceTimes = useMemo(() => {
     const groups = upcomingMainServices.reduce((items, service) => {
-      const day = getShortWeekDay(service.event_date);
+      const day = formatWeekDay(service.event_date);
       const currentGroup = items.get(day) || {
         day,
         label: service.title,
@@ -202,7 +180,7 @@ const WatchPage = () => {
         currentGroup.label = service.title;
       }
 
-      const time = formatServiceTime(service.event_time);
+      const time = formatEventTime(service.event_time, "Horário a definir");
       if (!currentGroup.times.includes(time)) {
         currentGroup.times.push(time);
       }
@@ -275,9 +253,12 @@ const WatchPage = () => {
                 )}
               </div>
 
-              <h1 className="text-4xl font-bold leading-tight text-foreground md:text-6xl">
-                {isLiveNow ? "Estamos ao vivo agora" : "Assista o culto de onde estiver"}
-              </h1>
+              <SectionHeading
+                eyebrow={isLiveNow ? "Transmissão ao vivo" : "Cultos online"}
+                title={isLiveNow ? "Estamos ao vivo" : "Assista o culto"}
+                highlight={isLiveNow ? "agora" : "de onde estiver"}
+                as="h1"
+              />
               <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
                 Acompanhe transmissões, mensagens e registros dos cultos pelo
                 canal oficial da Assembleia de Deus da Lapa.
@@ -310,11 +291,11 @@ const WatchPage = () => {
                         <div className="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
                           <span className="inline-flex items-center gap-1.5 capitalize">
                             <CalendarDays className="h-4 w-4 text-primary" />
-                            {formatEventDate(nextService.event_date)}
+                            {formatEventDateWithWeekday(nextService.event_date)}
                           </span>
                           <span className="inline-flex items-center gap-1.5">
                             <Clock className="h-4 w-4 text-primary" />
-                            {formatServiceTime(nextService.event_time)}
+                            {formatEventTime(nextService.event_time, "Horário a definir")}
                           </span>
                           {nextService.location && (
                             <span className="inline-flex items-center gap-1.5">
@@ -349,8 +330,9 @@ const WatchPage = () => {
                     href={churchMedia.youtubeChannelUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    className="group"
                   >
-                    <Youtube className="mr-2 h-5 w-5" />
+                    <Youtube className="mr-2 h-5 w-5 transition-colors duration-200 group-hover:text-red-500" />
                     Abrir canal
                   </a>
                 </Button>
@@ -379,6 +361,7 @@ const WatchPage = () => {
                   <img
                     src={featuredMediaImage}
                     alt={featuredMediaTitle}
+                    loading="lazy"
                     onError={(event) => {
                       event.currentTarget.src = "https://i.imgur.com/WMVJQ9m.jpeg";
                     }}
@@ -457,12 +440,12 @@ const WatchPage = () => {
           <div className="section-container">
             <div className="grid gap-10 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-                  Horários
-                </p>
-                <h2 className="mt-2 text-3xl font-bold text-foreground">
-                  Cultos presenciais e online
-                </h2>
+                <SectionHeading
+                  eyebrow="Horários"
+                  title="Cultos presenciais"
+                  highlight="e online"
+                  titleClassName="text-3xl md:text-5xl"
+                />
                 <p className="mt-4 text-muted-foreground">
                   Confira os horários regulares e acompanhe as transmissões pelo
                   canal oficial da igreja.
@@ -513,12 +496,12 @@ const WatchPage = () => {
         <section className="section-container pb-16 pt-20">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-                Mensagens
-              </p>
-              <h2 className="mt-2 text-3xl font-bold text-foreground">
-                Mensagens recentes
-              </h2>
+              <SectionHeading
+                eyebrow="Mensagens"
+                title="Mensagens"
+                highlight="recentes"
+                titleClassName="text-3xl md:text-5xl"
+              />
               {isLoadingVideos && (
                 <p className="mt-2 inline-flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -552,6 +535,7 @@ const WatchPage = () => {
                   <img
                     src={getVideoThumbnail(video)}
                     alt={video.title}
+                    loading="lazy"
                     onError={(event) => {
                       event.currentTarget.src = "https://i.imgur.com/WMVJQ9m.jpeg";
                     }}
@@ -589,12 +573,12 @@ const WatchPage = () => {
           <div className="rounded-xl border border-border bg-card p-6 md:p-8">
             <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-                  Primeira vez online?
-                </p>
-                <h2 className="mt-2 text-2xl font-bold text-foreground">
-                  Seja bem-vindo à Assembleia de Deus da Lapa
-                </h2>
+                <SectionHeading
+                  eyebrow="Primeira vez online?"
+                  title="Seja bem-vindo à"
+                  highlight="Assembleia de Deus da Lapa"
+                  titleClassName="text-2xl md:text-4xl"
+                />
                 <p className="mt-3 max-w-3xl text-muted-foreground">
                   Depois de assistir, conheça nossos endereços e escolha uma
                   congregação para participar presencialmente com sua família.
