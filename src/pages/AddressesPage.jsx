@@ -34,6 +34,7 @@ const categoryLabels = {
   culto: 'Culto',
   especial: 'Evento especial',
   jovens: 'Jovens',
+  festividade: 'Festividade',
   reuniao: 'Reunião',
 };
 
@@ -133,8 +134,9 @@ const AddressesPage = () => {
       </Helmet>
 
       <Header />
-      <main className="min-h-screen pt-28 pb-24 bg-background dark:bg-slate-800">
-        <div className="section-container">
+      <main className="min-h-screen bg-background dark:bg-[#0b1220]">
+        <section className="border-b border-border bg-muted/45 pb-14 pt-28 dark:border-slate-800 dark:bg-[#0b1220]">
+          <div className="section-container">
 
           <div className="flex flex-col items-center justify-center text-center mb-16">
             <motion.div
@@ -170,7 +172,7 @@ const AddressesPage = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="max-w-2xl mx-auto mb-16"
           >
-            <div className="flex items-center gap-3 bg-card p-2 rounded-xl shadow-sm border border-border focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+            <div className="flex items-center gap-3 bg-card p-2 rounded-xl shadow-sm border border-border focus-within:ring-2 focus-within:ring-primary/20 transition-all dark:border-slate-800 dark:bg-[#0b1220]">
               <Search className="w-5 h-5 text-muted-foreground ml-3" />
               <Input
                 type="text"
@@ -225,6 +227,11 @@ const AddressesPage = () => {
             )}
           </motion.div>
 
+          </div>
+        </section>
+
+        <section className="bg-background pb-24 pt-16 dark:bg-[#111827]">
+          <div className="section-container">
           <div>
             <div className="mb-8">
               <SectionHeading
@@ -245,7 +252,7 @@ const AddressesPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.1 * index }}
-                    className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full"
+                    className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full dark:border-slate-800 dark:bg-[#0b1220]"
                   >
                     <div className="h-48 w-full overflow-hidden relative">
                       <img
@@ -309,35 +316,36 @@ const AddressesPage = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-muted/30 rounded-2xl border border-dashed border-border">
+              <div className="text-center py-20 bg-muted/30 rounded-2xl border border-dashed border-border dark:border-slate-800 dark:bg-[#0b1220]">
                 <MapPin className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-foreground mb-1">Nenhum endereço encontrado</h3>
                 <p className="text-muted-foreground">Tente buscar por outra cidade ou nome de igreja.</p>
               </div>
             )}
           </div>
-        </div>
+          </div>
+        </section>
       </main>
 
       {selectedAddress && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="location-info-title"
           onClick={() => setSelectedAddress(null)}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             onClick={(event) => event.stopPropagation()}
-            className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-background shadow-2xl"
+            className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-background shadow-xl"
           >
               <button
                 type="button"
                 onClick={() => setSelectedAddress(null)}
-                className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md backdrop-blur-sm transition-colors hover:text-primary"
+                className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md transition-colors hover:text-primary"
                 aria-label="Fechar informações"
               >
                 <X className="h-5 w-5" />
@@ -347,11 +355,12 @@ const AddressesPage = () => {
                 <img
                   src={selectedAddress.image}
                   alt={selectedAddress.name}
-                  loading="lazy"
+                  loading="eager"
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
-                <span className="absolute bottom-4 left-5 inline-flex items-center gap-2 rounded-full bg-background/90 px-3 py-1.5 text-xs font-semibold text-foreground backdrop-blur-sm">
+                <span className="absolute bottom-4 left-5 inline-flex items-center gap-2 rounded-full bg-background/90 px-3 py-1.5 text-xs font-semibold text-foreground">
                   <MapPin className="h-4 w-4 text-primary" />
                   {selectedAddress.city}, {selectedAddress.state}
                 </span>

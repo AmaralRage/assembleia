@@ -10,10 +10,12 @@ import {
   Loader2,
   LockKeyhole,
   LogOut,
+  ImageIcon,
   MapPin,
   Plus,
   Save,
   Trash2,
+  UploadCloud,
   X,
 } from "lucide-react";
 import Header from "@/components/Header.jsx";
@@ -25,9 +27,11 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { churchLocations } from "@/data/churchLocations";
 import { forgetAdminDevice, isAdminSessionFresh } from "@/lib/adminDevice";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 const MAX_DESCRIPTION_LENGTH = 180;
+const MAX_BANNER_IMAGE_SIZE = 5 * 1024 * 1024;
+const BANNER_IMAGE_BUCKET = "calendar-banners";
 const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const monthNames = [
   "Janeiro",
@@ -54,6 +58,17 @@ const getTodayKey = () => {
 
 const isPastDate = (dateKey) => Boolean(dateKey && dateKey < getTodayKey());
 
+const addDaysToDateKey = (dateKey, amount) => {
+  const date = dateKeyToDate(dateKey || getTodayKey());
+  date.setDate(date.getDate() + amount);
+  return toDateKey(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const getFileExtension = (fileName = "") => {
+  const extension = fileName.split(".").pop()?.toLowerCase();
+  return extension && extension !== fileName ? extension : "jpg";
+};
+
 const emptyForm = (date = "") => ({
   title: "",
   date,
@@ -61,6 +76,10 @@ const emptyForm = (date = "") => ({
   location: "",
   description: "",
   category: "especial",
+  highlightHome: false,
+  highlightUntil: "",
+  highlightImageUrl: "",
+  highlightSummary: "",
 });
 
 const dateKeyToDate = (dateKey) => {
@@ -126,8 +145,12 @@ const categoryLabels = {
   especial: "Evento especial",
   culto: "Culto",
   jovens: "Jovens",
+  festividade: "Festividade",
   reuniao: "Reunião",
 };
+
+const highlightableCategories = ["especial", "festividade"];
+const canHighlightEvent = (category) => highlightableCategories.includes(category);
 
 const fromDatabaseEvent = (event) => ({
   id: event.id,
@@ -137,6 +160,10 @@ const fromDatabaseEvent = (event) => ({
   location: event.location || "",
   description: event.description || "",
   category: event.category,
+  highlightHome: Boolean(event.highlight_home),
+  highlightUntil: event.highlight_until || "",
+  highlightImageUrl: event.highlight_image_url || "",
+  highlightSummary: event.highlight_summary || "",
 });
 
 const toDatabaseEvent = (event) => ({
@@ -146,10 +173,22 @@ const toDatabaseEvent = (event) => ({
   location: event.location.trim(),
   description: event.description.trim(),
   category: event.category,
+  highlight_home: canHighlightEvent(event.category) && event.highlightHome,
+  highlight_until:
+    canHighlightEvent(event.category) && event.highlightHome
+      ? event.highlightUntil || null
+      : null,
+  highlight_image_url:
+    canHighlightEvent(event.category) ? event.highlightImageUrl.trim() : "",
+  highlight_summary:
+    canHighlightEvent(event.category) ? event.highlightSummary.trim() : "",
 });
 
 const CalendarPage = () => {
   const today = useMemo(() => new Date(), []);
+  const [searchParams] = useSearchParams();
+  const deepLinkedEventId = searchParams.get("event");
+  const shouldEditDeepLinkedEvent = searchParams.get("edit") === "1";
   const [visibleDate, setVisibleDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1),
   );
@@ -163,6 +202,7 @@ const CalendarPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showPastDateWarning, setShowPastDateWarning] = useState(false);
   const [showMobileGrid, setShowMobileGrid] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [form, setForm] = useState(() => emptyForm(selectedDate));
 
   useEffect(() => {
@@ -239,6 +279,29 @@ const CalendarPage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!deepLinkedEventId || isLoadingEvents) return;
+
+    const targetEvent = events.find((event) => event.id === deepLinkedEventId);
+    if (!targetEvent) return;
+
+    const targetDate = dateKeyToDate(targetEvent.date);
+    setSelectedDate(targetEvent.date);
+    setSelectedEventId(targetEvent.id);
+    setVisibleDate(new Date(targetDate.getFullYear(), targetDate.getMonth(), 1));
+
+    if (shouldEditDeepLinkedEvent && isAdmin && !isPastDate(targetEvent.date)) {
+      setForm({ ...targetEvent });
+      setIsEditing(true);
+    }
+  }, [
+    deepLinkedEventId,
+    events,
+    isAdmin,
+    isLoadingEvents,
+    shouldEditDeepLinkedEvent,
+  ]);
+
   const year = visibleDate.getFullYear();
   const month = visibleDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -299,6 +362,15 @@ const CalendarPage = () => {
     const currentYear = today.getFullYear();
     return Array.from({ length: 6 }, (_, index) => currentYear + index);
   }, [today]);
+  const highlightDurationOptions = useMemo(
+    () => [
+      { label: "Ate o evento", value: form.date || getTodayKey() },
+      { label: "7 dias", value: addDaysToDateKey(getTodayKey(), 7) },
+      { label: "15 dias", value: addDaysToDateKey(getTodayKey(), 15) },
+      { label: "30 dias", value: addDaysToDateKey(getTodayKey(), 30) },
+    ],
+    [form.date],
+  );
 
   const updateFormDate = (changes) => {
     const nextParts = { ...formDateParts, ...changes };
@@ -442,6 +514,53 @@ const CalendarPage = () => {
     if (!selectedEventId) setForm(emptyForm(selectedDate));
   };
 
+  const handleBannerImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Escolha uma imagem para o banner.");
+      return;
+    }
+
+    if (file.size > MAX_BANNER_IMAGE_SIZE) {
+      toast.error("A imagem deve ter no maximo 5MB.");
+      return;
+    }
+
+    setIsUploadingBanner(true);
+
+    const extension = getFileExtension(file.name);
+    const fileName = `${form.date || getTodayKey()}-${crypto.randomUUID()}.${extension}`;
+    const filePath = `home-highlights/${fileName}`;
+
+    const { error } = await supabase.storage
+      .from(BANNER_IMAGE_BUCKET)
+      .upload(filePath, file, {
+        cacheControl: "31536000",
+        upsert: false,
+      });
+
+    if (error) {
+      toast.error("Nao foi possivel enviar a imagem do banner.");
+      setIsUploadingBanner(false);
+      return;
+    }
+
+    const { data } = supabase.storage
+      .from(BANNER_IMAGE_BUCKET)
+      .getPublicUrl(filePath);
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      highlightImageUrl: data.publicUrl,
+    }));
+    setIsUploadingBanner(false);
+    toast.success("Imagem do banner enviada.");
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -456,6 +575,11 @@ const CalendarPage = () => {
       toast.error(
         `A descrição deve ter no máximo ${MAX_DESCRIPTION_LENGTH} caracteres.`,
       );
+      return;
+    }
+
+    if (canHighlightEvent(form.category) && form.highlightHome && !form.highlightUntil) {
+      toast.error("Informe ate quando o evento deve ficar em destaque.");
       return;
     }
 
@@ -1020,9 +1144,209 @@ const CalendarPage = () => {
                           <option value="especial">Evento especial</option>
                           <option value="culto">Culto</option>
                           <option value="jovens">Jovens</option>
+                          <option value="festividade">Festividade</option>
                           <option value="reuniao">Reunião</option>
                         </select>
                       </div>
+
+                      {canHighlightEvent(form.category) && (
+                        <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background shadow-sm">
+                          <div className="border-b border-primary/15 p-4">
+                            <div className="flex flex-col gap-3">
+                              <div className="min-w-0">
+                                <p className="flex items-center gap-2 text-sm font-bold text-foreground">
+                                  <ImageIcon className="h-4 w-4 text-primary" />
+                                  Destaque na Home
+                                </p>
+                                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                  Monte o banner principal e escolha ate quando ele fica visivel.
+                                </p>
+                              </div>
+
+                              <label className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2.5">
+                                <span>
+                                  <span className="block text-xs font-bold text-foreground">
+                                    Exibir banner
+                                  </span>
+                                  <span className="block text-[11px] text-muted-foreground">
+                                    Aparece na Home
+                                  </span>
+                                </span>
+                                <input
+                                  type="checkbox"
+                                  checked={form.highlightHome}
+                                  onChange={(event) =>
+                                    setForm({
+                                      ...form,
+                                      highlightHome: event.target.checked,
+                                    })
+                                  }
+                                  className="h-5 w-5 rounded border-input accent-primary"
+                                />
+                              </label>
+                            </div>
+                          </div>
+
+                          <div className="grid min-w-0 gap-5 p-4">
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-semibold text-foreground">
+                                  Tempo de destaque
+                                </label>
+                                <div className="mt-2 grid grid-cols-2 gap-2">
+                                  {highlightDurationOptions.map((option) => (
+                                    <button
+                                      key={option.label}
+                                      type="button"
+                                      disabled={!form.highlightHome}
+                                      onClick={() =>
+                                        setForm({
+                                          ...form,
+                                          highlightUntil: option.value,
+                                        })
+                                      }
+                                      className={`rounded-xl border px-3 py-2 text-left text-xs font-bold transition-colors ${
+                                        form.highlightUntil === option.value
+                                          ? "border-primary bg-primary text-primary-foreground"
+                                          : "border-border bg-background text-foreground hover:border-primary/50"
+                                      } disabled:cursor-not-allowed disabled:opacity-50`}
+                                    >
+                                      {option.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="text-sm font-semibold text-foreground">
+                                  Data final
+                                </label>
+                                <Input
+                                  type="date"
+                                  value={form.highlightUntil}
+                                  min={getTodayKey()}
+                                  disabled={!form.highlightHome}
+                                  onChange={(event) =>
+                                    setForm({
+                                      ...form,
+                                      highlightUntil: event.target.value,
+                                    })
+                                  }
+                                  className="mt-1.5 h-12 bg-background text-base font-semibold"
+                                />
+                                <p className="mt-1.5 text-xs text-muted-foreground">
+                                  Depois dessa data, o banner some automaticamente.
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="text-sm font-semibold text-foreground">
+                                  Descrição do banner
+                                </label>
+                                <Textarea
+                                  value={form.highlightSummary}
+                                  maxLength={240}
+                                  onChange={(event) =>
+                                    setForm({
+                                      ...form,
+                                      highlightSummary: event.target.value,
+                                    })
+                                  }
+                                  placeholder="Convide o visitante com uma frase curta e especial..."
+                                  className="mt-1.5 min-h-28 resize-none bg-background"
+                                />
+                                <p className="mt-1.5 text-right text-xs text-muted-foreground">
+                                  {form.highlightSummary.length}/240
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-semibold text-foreground">
+                                  Foto do banner
+                                </label>
+                                <div className="mt-2 overflow-hidden rounded-2xl border border-dashed border-primary/30 bg-background">
+                                  <div className="aspect-[16/9] bg-muted">
+                                    {form.highlightImageUrl ? (
+                                      <img
+                                        src={form.highlightImageUrl}
+                                        alt="Previa do banner"
+                                        className="h-full w-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center text-muted-foreground">
+                                        <ImageIcon className="h-8 w-8 text-primary" />
+                                        <p className="text-xs font-semibold">
+                                          Envie uma imagem horizontal para o banner.
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="grid gap-2 border-t border-border p-3">
+                                    <input
+                                      id="highlight-banner-upload"
+                                      type="file"
+                                      accept="image/*"
+                                      disabled={!form.highlightHome || isUploadingBanner}
+                                      onChange={handleBannerImageUpload}
+                                      className="hidden"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      asChild
+                                      className={`w-full ${!form.highlightHome || isUploadingBanner ? "pointer-events-none opacity-50" : ""}`}
+                                    >
+                                      <label htmlFor="highlight-banner-upload" className="cursor-pointer">
+                                        {isUploadingBanner ? (
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                          <UploadCloud className="h-4 w-4" />
+                                        )}
+                                        {isUploadingBanner ? "Enviando..." : "Enviar foto"}
+                                      </label>
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      disabled={!form.highlightImageUrl}
+                                      onClick={() =>
+                                        setForm({
+                                          ...form,
+                                          highlightImageUrl: "",
+                                        })
+                                      }
+                                    >
+                                      Remover foto
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="text-sm font-semibold text-foreground">
+                                  Link manual da imagem
+                                </label>
+                                <Input
+                                  type="text"
+                                  value={form.highlightImageUrl}
+                                  placeholder="https://... ou /imagens/banner.jpg"
+                                  disabled={!form.highlightHome}
+                                  onChange={(event) =>
+                                    setForm({
+                                      ...form,
+                                      highlightImageUrl: event.target.value,
+                                    })
+                                  }
+                                  className="mt-1.5 bg-background"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       <div>
                         <label className="text-sm font-semibold text-foreground">
@@ -1215,7 +1539,7 @@ const CalendarPage = () => {
 
       {showPastDateWarning && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="past-date-title"

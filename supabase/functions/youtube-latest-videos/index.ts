@@ -11,7 +11,7 @@ const jsonResponse = (body: unknown, status = 200) =>
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=900",
+      "Cache-Control": "public, max-age=43200",
     },
   });
 
@@ -63,10 +63,99 @@ const getVideoIdFromUrl = (url: string) => {
   return "";
 };
 
+const getYoutubeUrl = (videoId = "") =>
+  videoId ? `https://www.youtube.com/watch?v=${videoId}` : "";
+
+const getYoutubeThumbnail = (videoId = "") =>
+  videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
+
+const cleanVideoId = (videoId = "") =>
+  videoId.replace(/\\u0026/g, "&").split("&")[0].trim();
+
+const getTimeZoneOffset = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const zonedUtcTime = Date.UTC(
+    Number(values.year),
+    Number(values.month) - 1,
+    Number(values.day),
+    Number(values.hour),
+    Number(values.minute),
+    Number(values.second),
+  );
+
+  return zonedUtcTime - date.getTime();
+};
+
+const zonedTimeToUtc = (
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  timeZone: string,
+) => {
+  const utcGuess = Date.UTC(year, month - 1, day, hour, minute);
+  const offset = getTimeZoneOffset(new Date(utcGuess), timeZone);
+  return new Date(utcGuess - offset);
+};
+
+const formatDateTimeInTimeZone = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return {
+    event_date: `${values.year}-${values.month}-${values.day}`,
+    event_time: `${values.hour}:${values.minute}`,
+  };
+};
+
+const parseScheduledDate = (text = "") => {
+  const match = text.match(
+    /(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2})/,
+  );
+
+  if (!match) return { event_date: "", event_time: "" };
+
+  const [, day, month, year, hour, minute] = match;
+  const sourceTimeZone =
+    Deno.env.get("YOUTUBE_SOURCE_TIME_ZONE") || "America/Los_Angeles";
+  const targetTimeZone =
+    Deno.env.get("YOUTUBE_DISPLAY_TIME_ZONE") || "America/Sao_Paulo";
+  const scheduledDate = zonedTimeToUtc(
+    Number(year),
+    Number(month),
+    Number(day),
+    Number(hour),
+    Number(minute),
+    sourceTimeZone,
+  );
+
+  return formatDateTimeInTimeZone(scheduledDate, targetTimeZone);
+};
+
 const fetchText = async (url: string) => {
   const response = await fetch(url, {
     headers: {
       "User-Agent": "Mozilla/5.0 AssembleiaDeDeusDaLapa/1.0",
+      "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
     },
   });
 
@@ -103,11 +192,11 @@ const parseYoutubeFeed = (xmlText: string, maxResults: number) => {
       const publishedAt = getTagText(entry, "published");
       const link =
         getAttribute(entry, "link", "href") ||
-        (videoId ? `https://www.youtube.com/watch?v=${videoId}` : "");
+        getYoutubeUrl(videoId);
       const thumbnail =
         getAttribute(entry, "media:thumbnail", "url") ||
         getAttribute(entry, "thumbnail", "url") ||
-        (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "");
+        getYoutubeThumbnail(videoId);
 
       return {
         videoId,
@@ -118,6 +207,57 @@ const parseYoutubeFeed = (xmlText: string, maxResults: number) => {
       };
     })
     .filter((video) => Boolean(video.videoId && video.title && video.url));
+};
+
+const parseUpcomingStreams = (htmlText: string, maxResults: number) => {
+  const matches = Array.from(
+    htmlText.matchAll(
+      /"title":\{"content":"([^"]+)"\}[\s\S]{0,1800}?"content":"(Programado para [^"]+)"/g,
+    ),
+  );
+
+  const seenVideoIds = new Set<string>();
+
+  return matches
+    .map((match) => {
+      const title = decodeXml(match[1]);
+      const scheduleLabel = decodeXml(match[2]);
+      const blockStart = Math.max(0, (match.index || 0) - 2200);
+      const blockEnd = Math.min(htmlText.length, (match.index || 0) + 5200);
+      const block = htmlText.slice(blockStart, blockEnd);
+      const videoId = cleanVideoId(
+        block.match(/"url":"\/watch\?v=([^"]+)"/)?.[1] ||
+          block.match(/"videoId":"([^"]+)"/)?.[1] ||
+          "",
+      );
+      const thumbnail =
+        block
+          .match(/"url":"(https:\/\/i\.ytimg\.com\/vi\/[^"]+)"/)?.[1]
+          ?.replace(/\\u0026/g, "&") || getYoutubeThumbnail(videoId);
+      const { event_date, event_time } = parseScheduledDate(scheduleLabel);
+
+      return {
+        videoId,
+        title,
+        scheduleLabel,
+        event_date,
+        event_time,
+        url: getYoutubeUrl(videoId),
+        thumbnail,
+      };
+    })
+    .filter((stream) => {
+      if (!stream.videoId || !stream.title || !stream.event_date) return false;
+      if (seenVideoIds.has(stream.videoId)) return false;
+      seenVideoIds.add(stream.videoId);
+      return true;
+    })
+    .sort((first, second) =>
+      `${first.event_date}T${first.event_time || "00:00"}`.localeCompare(
+        `${second.event_date}T${second.event_time || "00:00"}`,
+      ),
+    )
+    .slice(0, maxResults);
 };
 
 Deno.serve(async (request) => {
@@ -148,10 +288,28 @@ Deno.serve(async (request) => {
     }
 
     const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+    const streamsUrl = `https://www.youtube.com/${normalizeHandle(channelHandle)}/streams`;
     const feedXml = await fetchText(feedUrl);
-    const videos = parseYoutubeFeed(feedXml, maxResults);
+    let streamsHtml = "";
 
-    return jsonResponse({ channelId, videos });
+    try {
+      streamsHtml = await fetchText(streamsUrl);
+    } catch (error) {
+      console.warn("NÃ£o foi possÃ­vel carregar a aba de transmissÃµes.", error);
+    }
+
+    const videos = parseYoutubeFeed(feedXml, maxResults);
+    const upcomingStreams = streamsHtml
+      ? parseUpcomingStreams(streamsHtml, maxResults)
+      : [];
+
+    return jsonResponse({
+      channelId,
+      videos,
+      upcomingStreams,
+      nextStream: upcomingStreams[0] || null,
+      cachedForSeconds: 43200,
+    });
   } catch (error) {
     console.error(error);
     return jsonResponse(

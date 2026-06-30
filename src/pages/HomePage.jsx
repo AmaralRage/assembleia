@@ -1,20 +1,76 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from "react-helmet-async";
-import { motion } from 'framer-motion';
-import { Calendar, Clock, ArrowRight, MapPin, Youtube } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Calendar, Clock, ArrowRight, MapPin, Youtube, Sparkles, Users, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import SectionHeading from '@/components/SectionHeading.jsx';
 import { supabase } from '@/lib/supabase';
 import { smoothScrollToElement } from '@/lib/smoothScroll';
-import { churchLocations, getChurchLocation } from '@/data/churchLocations';
+import { churchLocations, getChurchLocation, mainChurchLocation } from '@/data/churchLocations';
 import { homeLeadershipCards } from '@/data/churchLeadership';
+import { featuredFestivity as fallbackFestivity } from '@/data/churchHighlights';
 import { formatEventDate, formatEventTime, formatWeekDay, getTodayKey } from '@/lib/calendar';
+import { isAdminSessionFresh } from '@/lib/adminDevice';
+
+const getImageRatio = (imageUrl) =>
+  new Promise((resolve) => {
+    if (!imageUrl || typeof window === 'undefined') {
+      resolve('16 / 9');
+      return;
+    }
+
+    const image = new Image();
+    image.onload = () => {
+      if (!image.naturalWidth || !image.naturalHeight) {
+        resolve('16 / 9');
+        return;
+      }
+
+      resolve(`${image.naturalWidth} / ${image.naturalHeight}`);
+    };
+    image.onerror = () => resolve('16 / 9');
+    image.src = imageUrl;
+  });
 
 const HomePage = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [featuredFestivities, setFeaturedFestivities] = useState([]);
+  const [featuredFestivityIndex, setFeaturedFestivityIndex] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkAdminAccess = async (currentSession) => {
+      if (!currentSession || !isAdminSessionFresh()) {
+        if (isMounted) setIsAdmin(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('is_calendar_admin');
+      if (isMounted) setIsAdmin(!error && data === true);
+    };
+
+    supabase.auth.getSession().then(({ data }) => {
+      checkAdminAccess(data.session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setTimeout(() => {
+        checkAdminAccess(currentSession);
+      }, 0);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const loadUpcomingEvents = async () => {
@@ -37,6 +93,91 @@ const HomePage = () => {
 
     loadUpcomingEvents();
   }, []);
+
+  useEffect(() => {
+    const loadFeaturedFestivity = async () => {
+      const todayKey = getTodayKey();
+
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .select(
+          'id, title, event_date, event_time, location, description, category, highlight_until, highlight_image_url, highlight_summary',
+        )
+        .in('category', ['especial', 'festividade'])
+        .eq('highlight_home', true)
+        .gte('highlight_until', todayKey)
+        .order('event_date', { ascending: true })
+        .order('event_time', { ascending: true })
+        .limit(8);
+
+      if (error) {
+        setFeaturedFestivities(fallbackFestivity.active ? [fallbackFestivity] : []);
+        return;
+      }
+
+      if (!data?.length) {
+        setFeaturedFestivities([]);
+        return;
+      }
+
+      const formattedFestivities = await Promise.all(
+        data.map(async (festivity) => {
+          const location = getChurchLocation(festivity.location) || mainChurchLocation;
+          const image = festivity.highlight_image_url || fallbackFestivity.image;
+
+          return {
+            active: true,
+            id: festivity.id,
+            eyebrow:
+              festivity.category === 'festividade'
+                ? 'Festividade em destaque'
+                : 'Evento especial em destaque',
+            title: festivity.title,
+            subtitle:
+              festivity.highlight_summary ||
+              festivity.description ||
+              'Uma programação especial preparada para receber você e sua família.',
+            date: formatEventDate(festivity.event_date),
+            time: formatEventTime(festivity.event_time, 'Horário a definir'),
+            location: festivity.location || location.name,
+            address: location.address,
+            image,
+            imageRatio: await getImageRatio(image),
+            mapUrl: location.mapUrl,
+            highlights: [
+              festivity.description || 'Uma noite especial de comunhão e Palavra.',
+              'Recepção preparada para visitantes',
+              `Destaque disponível até ${formatEventDate(festivity.highlight_until)}`,
+            ],
+          };
+        }),
+      );
+
+      setFeaturedFestivities(formattedFestivities);
+    };
+
+    loadFeaturedFestivity();
+  }, []);
+
+  useEffect(() => {
+    if (featuredFestivities.length > 0 && featuredFestivityIndex >= featuredFestivities.length) {
+      setFeaturedFestivityIndex(0);
+    }
+  }, [featuredFestivities.length, featuredFestivityIndex]);
+
+  const featuredFestivity = featuredFestivities[featuredFestivityIndex] || null;
+  const featuredImageRatio = featuredFestivity?.imageRatio || '16 / 9';
+  const hasMultipleFeaturedFestivities = featuredFestivities.length > 1;
+  const showPreviousFeaturedFestivity = () => {
+    setFeaturedFestivityIndex((currentIndex) =>
+      currentIndex === 0 ? featuredFestivities.length - 1 : currentIndex - 1,
+    );
+  };
+  const showNextFeaturedFestivity = () => {
+    setFeaturedFestivityIndex((currentIndex) =>
+      currentIndex === featuredFestivities.length - 1 ? 0 : currentIndex + 1,
+    );
+  };
 
   const featuredLocations = churchLocations.slice(0, 3);
   const agendaDays = Object.values(
@@ -151,8 +292,218 @@ const HomePage = () => {
         </div>
       </section>
 
+        {/* FESTIVIDADE EM DESTAQUE */}
+        {featuredFestivity?.active && (
+          <section className="order-2 overflow-hidden bg-[#f4f7fb] py-10 dark:bg-slate-950 md:py-20">
+            <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8 2xl:max-w-[1620px]">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.55 }}
+                className="relative overflow-hidden rounded-xl border border-border bg-card shadow-lg md:rounded-3xl md:shadow-xl"
+              >
+                <div className="grid lg:grid-cols-[1.15fr_0.85fr] xl:grid-cols-[1.2fr_0.8fr]">
+                  <div
+                    className="relative overflow-hidden bg-slate-950"
+                    style={{ aspectRatio: featuredImageRatio }}
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={featuredFestivity.id || featuredFestivity.image}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.42, ease: 'easeOut' }}
+                        className="absolute inset-0"
+                      >
+                        <img
+                          src={featuredFestivity.image}
+                          alt=""
+                          aria-hidden="true"
+                          loading="eager"
+                          decoding="async"
+                          className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-2xl"
+                        />
+                        <motion.img
+                          src={featuredFestivity.image}
+                          alt={featuredFestivity.title}
+                          loading="eager"
+                          decoding="async"
+                          initial={{ scale: 1.015 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.42, ease: 'easeOut' }}
+                          className="absolute inset-0 h-full w-full object-contain"
+                        />
+                      </motion.div>
+                    </AnimatePresence>
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/88 via-slate-950/28 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-slate-950/10 lg:to-slate-950/70" />
+
+                    {hasMultipleFeaturedFestivities && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={showPreviousFeaturedFestivity}
+                          aria-label="Mostrar destaque anterior"
+                          className="absolute left-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-slate-950/65 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-slate-950/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:left-5 md:h-12 md:w-12"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={showNextFeaturedFestivity}
+                          aria-label="Mostrar proximo destaque"
+                          className="absolute right-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-slate-950/65 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-slate-950/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:right-5 md:h-12 md:w-12"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                        <div className="absolute right-4 top-4 z-10 rounded-full border border-white/25 bg-slate-950/65 px-3 py-1 text-xs font-bold text-white shadow-lg backdrop-blur-md md:right-6 md:top-6">
+                          {featuredFestivityIndex + 1} / {featuredFestivities.length}
+                        </div>
+                      </>
+                    )}
+
+                    <div className="absolute bottom-4 left-4 right-4 rounded-xl border border-white/25 bg-slate-950/78 p-4 text-white shadow-lg backdrop-blur-md md:bottom-7 md:left-7 md:right-auto md:max-w-sm md:rounded-2xl md:p-6 md:shadow-xl">
+                      <div className="mb-3 flex items-center gap-2 md:mb-4">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground md:h-10 md:w-10 md:rounded-xl">
+                          <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
+                        </span>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200 md:text-xs md:tracking-[0.2em]">
+                            Convite especial
+                          </p>
+                          <p className="text-xs font-semibold text-white/80 md:text-sm">
+                            Entrada livre para visitantes
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xl font-bold leading-tight md:text-3xl">
+                        Venha viver uma noite de fé com a gente.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="relative flex flex-col justify-center bg-[#071526] p-5 text-white sm:p-6 md:p-10 lg:p-12">
+                    {isAdmin && featuredFestivity.id && (
+                      <Link
+                        to={`/calendario?event=${featuredFestivity.id}&edit=1`}
+                        aria-label="Editar evento em destaque"
+                        title="Editar evento em destaque"
+                        className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-blue-100 shadow-lg backdrop-blur-md transition-colors hover:bg-white/18 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Link>
+                    )}
+
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={featuredFestivity.id || featuredFestivity.title}
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                      >
+                    <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100 md:mb-5 md:px-4 md:py-2 md:text-xs md:tracking-[0.18em]">
+                      <Sparkles className="h-3.5 w-3.5 text-[#76b7ff] md:h-4 md:w-4" />
+                      {featuredFestivity.eyebrow}
+                    </span>
+
+                    <h2 className="max-w-xl text-2xl font-bold leading-tight sm:text-3xl md:text-5xl">
+                      {featuredFestivity.title}
+                    </h2>
+                    <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/78 sm:text-base md:mt-5 md:text-lg">
+                      {featuredFestivity.subtitle}
+                    </p>
+
+                    <div className="mt-5 grid gap-2 sm:grid-cols-3 md:mt-8 md:gap-3">
+                      <div className="rounded-xl border border-white/12 bg-white/[0.07] p-3 md:p-4">
+                        <Calendar className="mb-2 h-4 w-4 text-[#76b7ff] md:mb-3 md:h-5 md:w-5" />
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100 md:text-xs md:tracking-[0.16em]">
+                          Data
+                        </p>
+                        <p className="mt-1 text-base font-bold md:text-lg">{featuredFestivity.date}</p>
+                      </div>
+                      <div className="rounded-xl border border-white/12 bg-white/[0.07] p-3 md:p-4">
+                        <Clock className="mb-2 h-4 w-4 text-[#76b7ff] md:mb-3 md:h-5 md:w-5" />
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100 md:text-xs md:tracking-[0.16em]">
+                          Horário
+                        </p>
+                        <p className="mt-1 text-base font-bold md:text-lg">{featuredFestivity.time}</p>
+                      </div>
+                      <div className="rounded-xl border border-white/12 bg-white/[0.07] p-3 sm:col-span-1 md:p-4">
+                        <MapPin className="mb-2 h-4 w-4 text-[#76b7ff] md:mb-3 md:h-5 md:w-5" />
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100 md:text-xs md:tracking-[0.16em]">
+                          Local
+                        </p>
+                        <p className="mt-1 text-xs font-bold leading-snug md:text-sm">
+                          {featuredFestivity.location}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 rounded-xl border border-white/12 bg-white/[0.06] p-4 md:mt-7 md:rounded-2xl md:p-5">
+                      <div className="mb-3 flex items-center gap-2 text-blue-100 md:mb-4">
+                        <Users className="h-4 w-4 text-[#76b7ff] md:h-5 md:w-5" />
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] md:text-sm md:tracking-[0.16em]">
+                          O que esperar
+                        </p>
+                      </div>
+                      <div className="grid gap-2 md:gap-3">
+                        {featuredFestivity.highlights.map((highlight) => (
+                          <div key={highlight} className="flex gap-3 text-xs leading-relaxed text-white/80 md:text-sm">
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#76b7ff]" />
+                            {highlight}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex flex-col gap-2 sm:flex-row md:mt-8 md:gap-3">
+                      <a
+                        href="#agenda"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          const element = document.querySelector('#agenda');
+                          if (element) {
+                            smoothScrollToElement(element);
+                          }
+                        }}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 md:px-6 md:py-3.5"
+                      >
+                        Ver programação
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                      <a
+                        href={featuredFestivity.mapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-white/16 md:px-6 md:py-3.5"
+                      >
+                        <MapPin className="h-4 w-4" />
+                        Como chegar
+                      </a>
+                      <Link
+                        to="/sou-novo"
+                        className="inline-flex items-center justify-center rounded-xl border border-white/15 px-5 py-3 text-sm font-bold text-blue-100 transition-colors hover:bg-white/10 hover:text-white md:px-6 md:py-3.5"
+                      >
+                        Sou visitante
+                      </Link>
+                    </div>
+
+                    <p className="mt-4 text-xs leading-relaxed text-white/55 md:mt-5 md:text-sm">
+                      {featuredFestivity.address}
+                    </p>
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </section>
+        )}
+
         {/* LIDERANÇA SECTION */}
-        <section id="sobre" className="order-4 py-14 md:py-24 bg-background">
+        <section id="sobre" className="order-5 py-14 md:py-24 bg-background">
           <div className="section-container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -216,7 +567,7 @@ const HomePage = () => {
         </section>
 
         {/* AGENDA SECTION */}
-        <section id="agenda" className="order-2 py-14 md:py-24 bg-background">
+        <section id="agenda" className="order-3 py-14 md:py-24 bg-background">
           <div className="section-container">
             <motion.div initial={{
               opacity: 0,
@@ -370,7 +721,7 @@ const HomePage = () => {
         </section>
 
         {/* LOCALIZAÇÕES SECTION */}
-        <section id="localizacoes" className="order-3 py-14 md:py-24 bg-muted">
+        <section id="localizacoes" className="order-4 bg-[#f4f7fb] py-14 dark:bg-slate-950 md:py-24">
           <div className="section-container">
             <motion.div initial={{
               opacity: 0,

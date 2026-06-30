@@ -9,7 +9,11 @@ create table if not exists public.calendar_events (
   description text not null default ''
     check (char_length(description) <= 180),
   category text not null default 'especial'
-    check (category in ('especial', 'culto', 'jovens', 'reuniao')),
+    check (category in ('especial', 'culto', 'jovens', 'reuniao', 'festividade')),
+  highlight_home boolean not null default false,
+  highlight_until date,
+  highlight_image_url text not null default '',
+  highlight_summary text not null default '',
   created_by uuid not null default auth.uid() references auth.users(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -17,6 +21,34 @@ create table if not exists public.calendar_events (
 
 create index if not exists calendar_events_event_date_idx
   on public.calendar_events (event_date);
+
+alter table public.calendar_events
+  add column if not exists highlight_home boolean not null default false,
+  add column if not exists highlight_until date,
+  add column if not exists highlight_image_url text not null default '',
+  add column if not exists highlight_summary text not null default '';
+
+create index if not exists calendar_events_highlight_idx
+  on public.calendar_events (highlight_home, highlight_until, event_date)
+  where category in ('especial', 'festividade');
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'calendar_events_category_check'
+      and conrelid = 'public.calendar_events'::regclass
+  ) then
+    alter table public.calendar_events
+      drop constraint calendar_events_category_check;
+  end if;
+
+  alter table public.calendar_events
+    add constraint calendar_events_category_check
+    check (category in ('especial', 'culto', 'jovens', 'reuniao', 'festividade'));
+end;
+$$;
 
 do $$
 begin
@@ -45,6 +77,61 @@ $$;
 
 revoke all on function public.is_calendar_admin() from public;
 grant execute on function public.is_calendar_admin() to anon, authenticated;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'calendar-banners',
+  'calendar-banners',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Banners do calendario sao publicos" on storage.objects;
+create policy "Banners do calendario sao publicos"
+on storage.objects
+for select
+to anon, authenticated
+using (bucket_id = 'calendar-banners');
+
+drop policy if exists "Somente admin envia banners do calendario" on storage.objects;
+create policy "Somente admin envia banners do calendario"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'calendar-banners'
+  and public.is_calendar_admin()
+);
+
+drop policy if exists "Somente admin atualiza banners do calendario" on storage.objects;
+create policy "Somente admin atualiza banners do calendario"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'calendar-banners'
+  and public.is_calendar_admin()
+)
+with check (
+  bucket_id = 'calendar-banners'
+  and public.is_calendar_admin()
+);
+
+drop policy if exists "Somente admin remove banners do calendario" on storage.objects;
+create policy "Somente admin remove banners do calendario"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'calendar-banners'
+  and public.is_calendar_admin()
+);
 
 create or replace function public.set_calendar_event_updated_at()
 returns trigger

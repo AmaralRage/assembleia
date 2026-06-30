@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Calendar, Youtube, Instagram, Facebook } from 'lucide-react';
+import { MapPin, Calendar, Youtube, Instagram, Facebook, UserPlus } from 'lucide-react';
 
 import { smoothScrollToElement } from '@/lib/smoothScroll';
 
@@ -30,6 +30,13 @@ const Footer = () => {
       title: "YouTube",
       href: socialLinks.youtube,
       label: "Acessar canal",
+    },
+    {
+      icon: UserPlus,
+      title: "Sou novo aqui",
+      href: "/sou-novo",
+      label: "Primeira visita",
+      internal: true,
     },
     {
       icon: Instagram,
@@ -64,6 +71,11 @@ const Footer = () => {
       return;
     }
 
+    if (href.startsWith("/")) {
+      window.location.href = href;
+      return;
+    }
+
     const element = document.querySelector(href);
 
     if (element) {
@@ -74,7 +86,7 @@ const Footer = () => {
   return (
     <footer className="bg-slate-900 text-slate-100">
       <div className="section-container py-10 md:py-12">
-        <div className="grid grid-cols-2 gap-6 md:gap-10 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-6 md:gap-10 lg:grid-cols-5">
           {footerItems.map((item) => {
             const Icon = item.icon;
 

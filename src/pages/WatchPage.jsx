@@ -27,6 +27,41 @@ import {
   getTodayKey,
 } from "@/lib/calendar";
 
+const YOUTUBE_CACHE_KEY = "assembleia-youtube-media-cache-v2";
+const YOUTUBE_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+
+const readYoutubeCache = () => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const cachedValue = window.localStorage.getItem(YOUTUBE_CACHE_KEY);
+    if (!cachedValue) return null;
+
+    const cached = JSON.parse(cachedValue);
+    if (!cached?.savedAt || Date.now() - cached.savedAt > YOUTUBE_CACHE_TTL_MS) {
+      window.localStorage.removeItem(YOUTUBE_CACHE_KEY);
+      return null;
+    }
+
+    return cached.data;
+  } catch {
+    return null;
+  }
+};
+
+const saveYoutubeCache = (data) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(
+      YOUTUBE_CACHE_KEY,
+      JSON.stringify({ savedAt: Date.now(), data }),
+    );
+  } catch {
+    // Ignore cache write failures.
+  }
+};
+
 const getEventDateTime = (event) => {
   if (!event?.event_date || !event?.event_time) return null;
   return new Date(`${event.event_date}T${event.event_time}`);
@@ -93,6 +128,7 @@ const formatVideoDate = (date) => {
 
 const WatchPage = () => {
   const [nextService, setNextService] = useState(null);
+  const [youtubeNextService, setYoutubeNextService] = useState(null);
   const [upcomingMainServices, setUpcomingMainServices] = useState([]);
   const [isLoadingNextService, setIsLoadingNextService] = useState(true);
   const [recentVideos, setRecentVideos] = useState(churchMedia.recentVideos);
@@ -142,6 +178,20 @@ const WatchPage = () => {
     let isCurrentRequest = true;
 
     const loadRecentVideos = async () => {
+      const cachedYoutubeData = readYoutubeCache();
+      if (cachedYoutubeData) {
+        if (cachedYoutubeData.videos?.length) {
+          setRecentVideos(cachedYoutubeData.videos);
+        }
+
+        if (cachedYoutubeData.nextStream) {
+          setYoutubeNextService(cachedYoutubeData.nextStream);
+        }
+
+        setIsLoadingVideos(false);
+        return;
+      }
+
       setIsLoadingVideos(true);
 
       const { data, error } = await supabase.functions.invoke(
@@ -154,6 +204,14 @@ const WatchPage = () => {
         setRecentVideos(data.videos);
       }
 
+      if (!error && data?.nextStream) {
+        setYoutubeNextService(data.nextStream);
+      }
+
+      if (!error && data) {
+        saveYoutubeCache(data);
+      }
+
       setIsLoadingVideos(false);
     };
 
@@ -164,7 +222,13 @@ const WatchPage = () => {
     };
   }, []);
 
-  const isLiveNow = useMemo(() => isServiceLiveNow(nextService), [nextService]);
+  const displayedNextService = youtubeNextService || nextService;
+  const isLoadingDisplayedService =
+    isLoadingNextService || (isLoadingVideos && !youtubeNextService);
+  const isLiveNow = useMemo(
+    () => isServiceLiveNow(displayedNextService),
+    [displayedNextService],
+  );
   const calendarServiceTimes = useMemo(() => {
     const groups = upcomingMainServices.reduce((items, service) => {
       const day = formatWeekDay(service.event_date);
@@ -199,14 +263,14 @@ const WatchPage = () => {
       : churchMedia.serviceTimes.slice(0, 2);
   const liveWatchUrl = isLiveNow
     ? churchMedia.youtubeLiveNowUrl
-    : churchMedia.youtubeLiveUrl;
+    : youtubeNextService?.url || churchMedia.youtubeLiveUrl;
   const featuredVideo = recentVideos[0];
   const featuredMediaImage =
     isLiveNow && featuredVideo
       ? getVideoThumbnail(featuredVideo)
       : "https://i.imgur.com/WMVJQ9m.jpeg";
   const featuredMediaTitle = isLiveNow
-    ? nextService?.title || featuredVideo?.title || "Culto ao vivo"
+    ? displayedNextService?.title || featuredVideo?.title || "Culto ao vivo"
     : "Abrir transmissões no YouTube";
 
   return (
@@ -267,7 +331,7 @@ const WatchPage = () => {
               <div className="mt-6 rounded-xl border border-border bg-card p-5">
                 <div className="flex items-start gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    {isLoadingNextService ? (
+                    {isLoadingDisplayedService ? (
                       <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     ) : (
                       <CalendarDays className="h-5 w-5 text-primary" />
@@ -279,28 +343,28 @@ const WatchPage = () => {
                       {isLiveNow ? "Culto em andamento" : "Próximo culto"}
                     </p>
 
-                    {isLoadingNextService ? (
+                    {isLoadingDisplayedService ? (
                       <p className="mt-1 text-sm text-muted-foreground">
                         Buscando a próxima transmissão...
                       </p>
-                    ) : nextService ? (
+                    ) : displayedNextService ? (
                       <>
                         <h2 className="mt-1 text-xl font-bold text-foreground">
-                          {nextService.title}
+                          {displayedNextService.title}
                         </h2>
                         <div className="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
                           <span className="inline-flex items-center gap-1.5 capitalize">
                             <CalendarDays className="h-4 w-4 text-primary" />
-                            {formatEventDateWithWeekday(nextService.event_date)}
+                            {formatEventDateWithWeekday(displayedNextService.event_date)}
                           </span>
                           <span className="inline-flex items-center gap-1.5">
                             <Clock className="h-4 w-4 text-primary" />
-                            {formatEventTime(nextService.event_time, "Horário a definir")}
+                            {formatEventTime(displayedNextService.event_time, "Horário a definir")}
                           </span>
-                          {nextService.location && (
+                          {displayedNextService.location && (
                             <span className="inline-flex items-center gap-1.5">
                               <MapPin className="h-4 w-4 text-primary" />
-                              {nextService.location}
+                              {displayedNextService.location}
                             </span>
                           )}
                         </div>

@@ -1,7 +1,7 @@
 export const leadershipPlaceholderImage = "https://i.imgur.com/SA53Yxc.png";
 
 export const presidenteAtual = {
-  nome: "Mariana Vasconcelos",
+  nome: "Pastor Charles",
   cargo: "Presidente",
   periodo: "2020 - Atual",
   foto:
@@ -69,7 +69,7 @@ export const exPresidentes = [
     ],
   },
   {
-    nome: "Mariana Vasconcelos",
+    nome: "Fabiano de Melo",
     cargo: "Ex-presidente",
     periodo: "2020 - 2026",
     foto: presidenteAtual.foto,

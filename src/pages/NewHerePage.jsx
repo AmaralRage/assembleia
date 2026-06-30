@@ -118,7 +118,12 @@ const NewHerePage = () => {
       <main>
         <section className="relative overflow-hidden bg-slate-950 pt-28 pb-14 md:pt-32 md:pb-20">
           <div className="section-container">
-            <div className="mx-auto max-w-3xl">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: 'easeOut' }}
+              className="mx-auto max-w-3xl"
+            >
               <SectionHeading
                 eyebrow="Bem-vindo"
                 title="Sou novo"
@@ -148,14 +153,20 @@ const NewHerePage = () => {
                   Como chegar
                 </a>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
         <section className="bg-background py-16 md:py-20">
           <div className="section-container">
             <div className="mx-auto grid max-w-6xl items-center gap-11 md:grid-cols-2 lg:gap-14">
-              <div className="max-w-[520px]">
+              <motion.div
+                initial={{ opacity: 0, x: -26 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.35 }}
+                transition={{ duration: 0.55, ease: 'easeOut' }}
+                className="max-w-[520px]"
+              >
                 <SectionHeading
                   eyebrow="Primeira visita"
                   title="Você é"
@@ -187,9 +198,15 @@ const NewHerePage = () => {
                   {mainChurchLocation.address}
                   <ArrowRight className="h-4 w-4" />
                 </a>
-              </div>
+              </motion.div>
 
-              <div className="relative md:justify-self-end">
+              <motion.div
+                initial={{ opacity: 0, x: 26 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.35 }}
+                transition={{ duration: 0.55, delay: 0.12, ease: 'easeOut' }}
+                className="relative md:justify-self-end"
+              >
                 <div className="absolute -inset-5 rounded-[2rem] bg-primary/10 blur-3xl" />
                 <div className="relative h-[292px] w-full overflow-hidden rounded-xl border border-border shadow-2xl md:w-[520px]">
                   <img
@@ -206,14 +223,20 @@ const NewHerePage = () => {
                     </span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </section>
 
         <section className="border-t border-border bg-muted py-14 md:py-24">
           <div className="section-container">
-            <div className="mx-auto mb-10 max-w-3xl text-center md:mb-14">
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="mx-auto mb-10 max-w-3xl text-center md:mb-14"
+            >
               <SectionHeading
                 eyebrow="Sua primeira vez"
                 title="O que esperar"
@@ -222,15 +245,22 @@ const NewHerePage = () => {
                 align="center"
                 titleClassName="text-3xl md:text-5xl"
               />
-            </div>
+            </motion.div>
 
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
               {worshipSteps.map((step, index) => (
                 <motion.div
                   key={step.title}
+                  initial={{ opacity: 0, y: 22 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.35 }}
                   whileHover={{ scale: 1.045, y: -6 }}
                   whileTap={{ scale: 0.98 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                  transition={{
+                    opacity: { duration: 0.45, delay: index * 0.08 },
+                    y: { duration: 0.45, delay: index * 0.08, ease: 'easeOut' },
+                    scale: { type: 'spring', stiffness: 260, damping: 18 },
+                  }}
                   className="rounded-2xl border border-border bg-card p-6 text-center shadow-sm transition-shadow duration-300 hover:shadow-xl"
                 >
                   <div className="mx-auto mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground">
@@ -246,7 +276,13 @@ const NewHerePage = () => {
               ))}
             </div>
 
-            <div className="mx-auto mt-8 max-w-5xl rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center shadow-sm">
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.5, delay: 0.18, ease: 'easeOut' }}
+              className="mx-auto mt-8 max-w-5xl rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center shadow-sm"
+            >
               <p className="text-base font-semibold text-foreground">
                 Durante o culto, crianças e famílias são bem-vindas para participar conosco.
               </p>
@@ -264,7 +300,7 @@ const NewHerePage = () => {
                   Como chegar
                 </Link>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
@@ -421,7 +457,13 @@ const NewHerePage = () => {
 
         <section className="border-t border-border bg-muted py-14 md:py-24">
           <div className="section-container">
-            <div className="mx-auto mb-10 max-w-3xl text-center md:mb-14">
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="mx-auto mb-10 max-w-3xl text-center md:mb-14"
+            >
               <SectionHeading
                 eyebrow="Dúvidas comuns"
                 title="Perguntas"
@@ -429,12 +471,20 @@ const NewHerePage = () => {
                 align="center"
                 titleClassName="text-3xl md:text-5xl"
               />
-            </div>
+            </motion.div>
 
             <div className="mx-auto max-w-4xl space-y-3">
-              {faqs.map((faq) => (
-                <details
+              {faqs.map((faq, index) => (
+                <motion.details
                   key={faq.question}
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.35 }}
+                  transition={{
+                    duration: 0.42,
+                    delay: index * 0.07,
+                    ease: 'easeOut',
+                  }}
                   className="group rounded-2xl border border-border bg-card p-5 shadow-sm"
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-bold text-card-foreground">
@@ -446,7 +496,7 @@ const NewHerePage = () => {
                   <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
                     {faq.answer}
                   </p>
-                </details>
+                </motion.details>
               ))}
             </div>
           </div>

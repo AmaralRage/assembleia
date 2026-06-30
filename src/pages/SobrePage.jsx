@@ -11,43 +11,49 @@ const getMandateStartYear = (periodo) => periodo.split("-")[0].trim();
 const SobrePage = () => {
   const [selectedHistoryPresident, setSelectedHistoryPresident] = useState(null);
 
-  const historyPresidentCards = [
-    {
-      ...exPresidentes[0],
-      label: "Presidente fundador",
-      title: exPresidentes[0].nome,
-      summary:
-        "Liderou os primeiros anos da igreja, fortalecendo a comunhão e a participação das famílias.",
-    },
-    {
-      ...exPresidentes[1],
-      label: "Ensino bíblico",
-      title: exPresidentes[1].nome,
-      summary:
-        "Marcou sua gestão pelo ensino bíblico, evangelização e formação de novas lideranças.",
-    },
-    {
-      ...exPresidentes[2],
-      label: "Cuidado pastoral",
-      title: exPresidentes[2].nome,
-      summary:
-        "Aproximou a igreja da comunidade por meio de projetos sociais e ações de acolhimento.",
-    },
-    {
-      ...exPresidentes[3],
-      label: "Presença digital",
-      title: exPresidentes[3].nome,
-      summary:
-        "Ampliou os canais digitais e manteve os projetos da igreja conectados ao presente.",
-    },
-    {
-      ...presidenteAtual,
-      label: "Presidência atual",
-      title: presidenteAtual.nome,
-      summary:
-        "Preserva a história da igreja enquanto conduz novos passos de comunhão e serviço.",
-    },
+  const historyPresidentCardsSource = [
+    presidenteAtual,
+    exPresidentes[3],
+    exPresidentes[2],
+    exPresidentes[1],
+    exPresidentes[0],
   ];
+
+  const historyPresidentCards = historyPresidentCardsSource.map((president, index) => {
+    const cardDetails = [
+      {
+        label: "Presidência atual",
+        summary:
+          "Preserva a história da igreja enquanto conduz novos passos de comunhão e serviço.",
+      },
+      {
+        label: "Presença digital",
+        summary:
+          "Ampliou os canais digitais e manteve os projetos da igreja conectados ao presente.",
+      },
+      {
+        label: "Cuidado pastoral",
+        summary:
+          "Aproximou a igreja da comunidade por meio de projetos sociais e ações de acolhimento.",
+      },
+      {
+        label: "Ensino bíblico",
+        summary:
+          "Marcou sua gestão pelo ensino bíblico, evangelização e formação de novas lideranças.",
+      },
+      {
+        label: "Presidente fundador",
+        summary:
+          "Liderou os primeiros anos da igreja, fortalecendo a comunhão e a participação das famílias.",
+      },
+    ];
+
+    return {
+      ...president,
+      title: president.nome,
+      ...cardDetails[index],
+    };
+  });
 
   useEffect(() => {
     if (!selectedHistoryPresident) return undefined;
@@ -144,10 +150,10 @@ const SobrePage = () => {
                   <span className="absolute -bottom-7 right-0 text-[8.2rem] font-extrabold leading-none text-white/[0.045]">
                     {getMandateStartYear(historyPresidentCards[0].periodo)}
                   </span>
-                  <span className="pointer-events-none absolute -right-12 top-8 h-36 w-36 rounded-full border border-white/10 bg-white/[0.035]" />
-                  <Church className="pointer-events-none absolute right-9 top-10 h-14 w-14 text-white/[0.07]" />
-                  <span className="pointer-events-none absolute bottom-10 right-36 h-10 w-10 rounded-full bg-primary/10" />
-                  <div className="relative flex max-w-xl flex-col justify-center">
+                  <span className="pointer-events-none absolute -right-12 top-8 z-0 h-36 w-36 rounded-full border border-white/10 bg-white/[0.035]" />
+                  <Church className="pointer-events-none absolute right-10 top-12 z-0 h-14 w-14 text-white/[0.07]" />
+                  <span className="pointer-events-none absolute bottom-10 right-36 z-0 h-10 w-10 rounded-full bg-primary/10" />
+                  <div className="relative z-10 flex max-w-xl flex-col justify-center">
                     <span className="mb-6 inline-flex w-fit rounded-full bg-[#4e8fc4] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-white">
                       {historyPresidentCards[0].label}
                     </span>
@@ -173,10 +179,10 @@ const SobrePage = () => {
                     onClick={() => setSelectedHistoryPresident(historyPresidentCards[3])}
                     className="group relative flex min-h-[165px] flex-col justify-center overflow-hidden rounded-[1.5rem] bg-[#4178aa] p-5 pb-10 pr-16 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6 sm:pb-10 sm:pr-16"
                   >
-                    <span className="pointer-events-none absolute -bottom-12 -right-10 h-28 w-28 rounded-full bg-white/10" />
-                    <span className="pointer-events-none absolute -bottom-5 right-16 h-12 w-12 rounded-full border border-white/15" />
-                    <Church className="pointer-events-none absolute bottom-6 right-7 h-9 w-9 text-white/10" />
-                    <div className="absolute right-5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl bg-white/15 text-white sm:h-12 sm:w-12">
+                    <span className="pointer-events-none absolute -bottom-12 -right-10 z-0 h-28 w-28 rounded-full bg-white/10" />
+                    <span className="pointer-events-none absolute -bottom-5 right-16 z-0 h-12 w-12 rounded-full border border-white/15" />
+                    <Church className="pointer-events-none absolute bottom-5 right-5 z-0 h-9 w-9 text-white/10" />
+                    <div className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white sm:h-12 sm:w-12">
                       <Globe2 className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
                     <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-100">
@@ -207,7 +213,7 @@ const SobrePage = () => {
                     <Church className="pointer-events-none absolute bottom-7 right-8 h-10 w-10 text-white/[0.08]" />
                     <span className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#4e8fc4]" />
-                      Hoje
+                      {historyPresidentCards[4].label}
                     </span>
                     <h3 className="text-lg font-bold uppercase leading-tight sm:text-xl">
                       {historyPresidentCards[4].title}
@@ -230,24 +236,26 @@ const SobrePage = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.45, delay: 0.08 }}
                   onClick={() => setSelectedHistoryPresident(historyPresidentCards[1])}
-                  className="group relative flex min-h-[145px] flex-col justify-center overflow-hidden rounded-[1.5rem] bg-[#254870] p-5 pr-14 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6 sm:pr-16"
+                  className="group relative flex min-h-[145px] flex-col justify-center overflow-hidden rounded-[1.5rem] bg-[#254870] p-5 pb-10 pr-14 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6 sm:pb-10 sm:pr-16"
                 >
-                  <span className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/[0.055]" />
-                  <span className="pointer-events-none absolute -bottom-9 left-8 h-20 w-20 rounded-full border border-white/10" />
-                  <Church className="pointer-events-none absolute bottom-5 right-6 h-9 w-9 text-white/[0.08]" />
-                  <div className="absolute right-5 top-5 text-[#4e8fc4]">
+                  <span className="pointer-events-none absolute -right-10 -top-10 z-0 h-28 w-28 rounded-full bg-white/[0.055]" />
+                  <span className="pointer-events-none absolute -bottom-9 left-8 z-0 h-20 w-20 rounded-full border border-white/10" />
+                  <Church className="pointer-events-none absolute bottom-5 right-6 z-0 h-9 w-9 text-white/[0.08]" />
+                  <div className="absolute right-5 top-5 z-10 text-[#4e8fc4]">
                     <BookOpen className="h-8 w-8" />
                   </div>
-                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
-                    {getMandateStartYear(historyPresidentCards[1].periodo)}
-                  </p>
-                  <h3 className="max-w-[210px] text-base font-bold uppercase leading-tight sm:text-lg">
-                    {historyPresidentCards[1].title}
-                  </h3>
-                  <p className="mt-2 max-w-[220px] text-xs leading-snug text-white/75">
-                    {historyPresidentCards[1].summary}
-                  </p>
-                  <span className="mt-4 translate-y-2 text-[10px] font-bold uppercase tracking-[0.22em] text-blue-200 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <div className="relative z-10">
+                    <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
+                      {getMandateStartYear(historyPresidentCards[1].periodo)}
+                    </p>
+                    <h3 className="max-w-[190px] text-base font-bold uppercase leading-tight sm:text-lg">
+                      {historyPresidentCards[1].title}
+                    </h3>
+                    <p className="mt-2 max-w-[220px] text-xs leading-snug text-white/75">
+                      {historyPresidentCards[1].summary}
+                    </p>
+                  </div>
+                  <span className="absolute bottom-5 left-5 translate-y-1 text-[10px] font-bold uppercase tracking-[0.22em] text-blue-200 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:left-6">
                     Ver biografia →
                   </span>
                 </motion.button>
@@ -352,24 +360,24 @@ const SobrePage = () => {
 
       {selectedHistoryPresident && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="history-president-title"
           onClick={() => setSelectedHistoryPresident(null)}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 18 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.22 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
             onClick={(event) => event.stopPropagation()}
-            className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+            className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl"
           >
             <div className="relative bg-[#071526] px-6 pb-8 pt-10 text-white md:px-9">
               <button
                 type="button"
                 onClick={() => setSelectedHistoryPresident(null)}
-                className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+                className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/10 text-white transition-colors hover:bg-white/20"
                 aria-label="Fechar biografia"
               >
                 <X className="h-5 w-5" />
@@ -379,7 +387,8 @@ const SobrePage = () => {
                 <img
                   src={selectedHistoryPresident.foto}
                   alt={selectedHistoryPresident.nome}
-                  loading="lazy"
+                  loading="eager"
+                  decoding="async"
                   className={`h-28 w-28 rounded-full border-4 border-white shadow-xl md:h-32 md:w-32 ${
                     selectedHistoryPresident.fotoPlaceholder
                       ? "bg-white object-contain p-3"
