@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { churchLocations } from '@/data/churchLocations';
 import { supabase } from '@/lib/supabase';
+import { useModalFocus } from '@/hooks/use-modal-focus';
 import {
   formatEventDateWithWeekday,
   formatEventTime,
@@ -44,6 +45,7 @@ const AddressesPage = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [upcomingServices, setUpcomingServices] = useState([]);
   const [isLoadingServices, setIsLoadingServices] = useState(false);
+  const addressModalRef = useModalFocus(Boolean(selectedAddress));
 
   const addresses = churchLocations.map((location) => ({
     leaderLabel: 'Dirigente',
@@ -182,10 +184,15 @@ const AddressesPage = () => {
                 className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 text-base shadow-none bg-transparent"
               />
               <Button
-                onClick={() => { }}
-                className="rounded-lg px-6 transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCity('todos');
+                }}
+                disabled={!searchQuery && selectedCity === 'todos'}
+                className="rounded-lg px-6 transition-all duration-300 hover:scale-110 hover:shadow-lg disabled:hover:scale-100 disabled:hover:shadow-none"
               >
-                Buscar
+                {searchQuery || selectedCity !== 'todos' ? 'Limpar' : 'Buscar'}
               </Button>
             </div>
           </motion.div>
@@ -333,9 +340,12 @@ const AddressesPage = () => {
           role="dialog"
           aria-modal="true"
           aria-labelledby="location-info-title"
+          aria-describedby="location-info-description"
           onClick={() => setSelectedAddress(null)}
         >
           <motion.div
+            ref={addressModalRef}
+            tabIndex={-1}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
@@ -371,7 +381,7 @@ const AddressesPage = () => {
                   <h2 id="location-info-title" className="pr-8 text-2xl font-semibold leading-none tracking-tight">
                     {selectedAddress.name}
                   </h2>
-                  <p className="mt-2 text-base text-muted-foreground">
+                  <p id="location-info-description" className="mt-2 text-base text-muted-foreground">
                     Informações da congregação
                   </p>
                 </div>

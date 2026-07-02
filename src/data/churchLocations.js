@@ -1,3 +1,22 @@
+const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const lapaFallbackImage = "https://i.imgur.com/WMVJQ9m.jpeg";
+
+const getGoogleStreetViewImage = (location) => {
+  if (!googleMapsApiKey) return null;
+
+  const params = new URLSearchParams({
+    size: "900x420",
+    location,
+    fov: "70",
+    pitch: "5",
+    source: "outdoor",
+    return_error_code: "true",
+    key: googleMapsApiKey,
+  });
+
+  return `https://maps.googleapis.com/maps/api/streetview?${params.toString()}`;
+};
+
 export const churchLocations = [
   {
     id: "lapa-centro",
@@ -7,7 +26,9 @@ export const churchLocations = [
     address: "Rua Joaquim Silva, 52 - Centro, Rio de Janeiro - RJ",
     leaderLabel: "Presidente",
     leader: "Pastor Charles",
-    image: "https://i.imgur.com/WMVJQ9m.jpeg",
+    image:
+      getGoogleStreetViewImage("Rua Joaquim Silva, 52 - Centro, Rio de Janeiro - RJ, Brasil") ||
+      lapaFallbackImage,
     mapUrl:
       "https://maps.google.com/?q=Rua+Joaquim+Silva+52+Centro+Rio+de+Janeiro+RJ+Brasil",
   },

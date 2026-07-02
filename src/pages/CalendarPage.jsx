@@ -28,6 +28,14 @@ import { supabase } from "@/lib/supabase";
 import { churchLocations } from "@/data/churchLocations";
 import { forgetAdminDevice, isAdminSessionFresh } from "@/lib/adminDevice";
 import { Link, useSearchParams } from "react-router-dom";
+import {
+  addDaysToDateKey,
+  dateKeyToDate,
+  getDaysInMonth,
+  getTodayKey,
+  isPastDate,
+  toDateKey,
+} from "@/lib/calendar";
 
 const MAX_DESCRIPTION_LENGTH = 180;
 const MAX_BANNER_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -48,22 +56,6 @@ const monthNames = [
   "Dezembro",
 ];
 
-const toDateKey = (year, month, day) =>
-  `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-const getTodayKey = () => {
-  const today = new Date();
-  return toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
-};
-
-const isPastDate = (dateKey) => Boolean(dateKey && dateKey < getTodayKey());
-
-const addDaysToDateKey = (dateKey, amount) => {
-  const date = dateKeyToDate(dateKey || getTodayKey());
-  date.setDate(date.getDate() + amount);
-  return toDateKey(date.getFullYear(), date.getMonth(), date.getDate());
-};
-
 const getFileExtension = (fileName = "") => {
   const extension = fileName.split(".").pop()?.toLowerCase();
   return extension && extension !== fileName ? extension : "jpg";
@@ -81,13 +73,6 @@ const emptyForm = (date = "") => ({
   highlightImageUrl: "",
   highlightSummary: "",
 });
-
-const dateKeyToDate = (dateKey) => {
-  if (!dateKey) return undefined;
-
-  const [year, month, day] = dateKey.split("-").map(Number);
-  return new Date(year, month - 1, day);
-};
 
 const formatSelectedDate = (dateKey) => {
   const date = dateKeyToDate(dateKey);
@@ -109,8 +94,6 @@ const getDateParts = (dateKey) => {
     year: date.getFullYear(),
   };
 };
-
-const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 
 const timeOptions = Array.from({ length: 32 }, (_, index) => {
   const totalMinutes = 6 * 60 + index * 30;
@@ -139,6 +122,25 @@ const getEventColorStyle = (eventId = "") => {
     .reduce((total, character) => total + character.charCodeAt(0), 0);
 
   return eventColorStyles[hash % eventColorStyles.length];
+};
+
+const eventMarkerStyles = [
+  "bg-blue-500",
+  "bg-amber-500",
+  "bg-emerald-500",
+  "bg-violet-500",
+  "bg-rose-500",
+  "bg-cyan-500",
+  "bg-orange-500",
+  "bg-fuchsia-500",
+];
+
+const getEventMarkerStyle = (eventId = "") => {
+  const hash = String(eventId)
+    .split("")
+    .reduce((total, character) => total + character.charCodeAt(0), 0);
+
+  return eventMarkerStyles[hash % eventMarkerStyles.length];
 };
 
 const categoryLabels = {
@@ -194,6 +196,7 @@ const CalendarPage = () => {
   );
   const [events, setEvents] = useState([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [eventsError, setEventsError] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedDate, setSelectedDate] = useState(
     toDateKey(today.getFullYear(), today.getMonth(), today.getDate()),
@@ -201,7 +204,6 @@ const CalendarPage = () => {
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showPastDateWarning, setShowPastDateWarning] = useState(false);
-  const [showMobileGrid, setShowMobileGrid] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [form, setForm] = useState(() => emptyForm(selectedDate));
 
@@ -255,8 +257,10 @@ const CalendarPage = () => {
       }
 
       if (error) {
+        setEventsError(true);
         toast.error("Não foi possível carregar a agenda.");
       } else {
+        setEventsError(false);
         setEvents(data.map(fromDatabaseEvent));
       }
 
@@ -424,6 +428,19 @@ const CalendarPage = () => {
     const [eventYear, eventMonth] = event.date.split("-").map(Number);
     return eventYear === year && eventMonth === month + 1;
   });
+  const visibleMonthEventDays = Object.values(
+    visibleMonthEvents.reduce((days, event) => {
+      if (!days[event.date]) {
+        days[event.date] = {
+          date: event.date,
+          events: [],
+        };
+      }
+
+      days[event.date].events.push(event);
+      return days;
+    }, {}),
+  ).sort((firstDay, secondDay) => firstDay.date.localeCompare(secondDay.date));
 
   const formatLongDate = (dateKey) => {
     if (!dateKey) return "";
@@ -763,11 +780,67 @@ const CalendarPage = () => {
               <div className="border-b border-border p-4 md:hidden">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2 className="font-bold text-foreground">
-                    Eventos do mês
+                    Agenda do mês
                   </h2>
                   <span className="text-xs font-semibold text-muted-foreground">
                     {visibleMonthEvents.length} eventos
                   </span>
+                </div>
+
+                <div className="mb-4 rounded-2xl border border-border bg-background p-3">
+                  <div className="mb-2 grid grid-cols-7 text-center text-[10px] font-bold uppercase text-muted-foreground">
+                    {weekDays.map((weekDay) => (
+                      <span key={weekDay}>{weekDay.slice(0, 1)}</span>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {calendarDays
+                      .filter((day) => day.isCurrentMonth)
+                      .map((day) => {
+                        const isSelected = selectedDate === day.dateKey;
+                        const isToday = day.dateKey === getTodayKey();
+                        const isPastDay = isPastDate(day.dateKey) && !isToday;
+                        const mobileDayEvents = events.filter(
+                          (event) => event.date === day.dateKey,
+                        );
+                        const hasMobileDayEvents = mobileDayEvents.length > 0;
+
+                        return (
+                          <button
+                            key={`mobile-${day.dateKey}`}
+                            type="button"
+                            onClick={() => selectDay(day)}
+                            className={`relative flex h-10 items-center justify-center rounded-xl text-sm font-bold transition-colors ${
+                              isSelected
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : isToday
+                                  ? "bg-primary/10 text-primary"
+                                  : hasMobileDayEvents
+                                    ? "border border-primary/25 bg-primary/5 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.08)] hover:bg-primary/10"
+                                  : isPastDay
+                                    ? "bg-muted/30 text-muted-foreground/60"
+                                    : "bg-muted/50 text-foreground hover:bg-primary/10 hover:text-primary"
+                            }`}
+                          >
+                            {day.day}
+                            {hasMobileDayEvents && (
+                              <span className="absolute bottom-1 flex max-w-[1.25rem] gap-0.5">
+                                {mobileDayEvents.slice(0, 3).map((event) => (
+                                  <span
+                                    key={event.id}
+                                    className={`h-1 w-1 rounded-full ${
+                                      isSelected
+                                        ? "bg-primary-foreground"
+                                        : getEventMarkerStyle(event.id)
+                                    }`}
+                                  />
+                                ))}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                  </div>
                 </div>
 
                 {isLoadingEvents ? (
@@ -775,32 +848,91 @@ const CalendarPage = () => {
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     Carregando agenda...
                   </div>
-                ) : visibleMonthEvents.length > 0 ? (
-                  <div className="space-y-2">
-                    {visibleMonthEvents.slice(0, 6).map((event) => (
-                      <button
-                        key={event.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedDate(event.date);
-                          setSelectedEventId(event.id);
-                          setIsEditing(false);
-                        }}
-                        className="w-full rounded-xl border border-border bg-background p-4 text-left transition-colors hover:border-primary/50"
-                      >
-                        <p className="font-semibold text-foreground">
-                          {event.title}
-                        </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {formatLongDate(event.date)} · {event.time || "A definir"}
-                        </p>
-                      </button>
-                    ))}
-                    {visibleMonthEvents.length > 6 && (
-                      <p className="pt-1 text-center text-xs font-medium text-muted-foreground">
-                        Role o calendário para ver mais eventos.
-                      </p>
-                    )}
+                ) : eventsError ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-700/60 dark:bg-amber-900/30 dark:text-amber-100">
+                    <div className="flex gap-2">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <p>Não foi possível carregar a agenda agora. Tente novamente em instantes.</p>
+                    </div>
+                  </div>
+                ) : visibleMonthEventDays.length > 0 ? (
+                  <div className="space-y-3">
+                    {visibleMonthEventDays.map((eventDay) => {
+                      const isPastDay = isPastDate(eventDay.date);
+                      const isToday = eventDay.date === getTodayKey();
+
+                      return (
+                        <div
+                          key={eventDay.date}
+                          className={`rounded-2xl border p-4 ${
+                            isPastDay && !isToday
+                              ? "border-border/60 bg-muted/20 opacity-60"
+                              : "border-border bg-background"
+                          }`}
+                        >
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-bold capitalize text-foreground">
+                                {formatLongDate(eventDay.date)}
+                              </p>
+                              {isPastDay && !isToday && (
+                                <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+                                  Data já passou
+                                </p>
+                              )}
+                            </div>
+                            {isToday && (
+                              <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
+                                Hoje
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            {eventDay.events.map((event) => (
+                              <button
+                                key={event.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedDate(event.date);
+                                  setSelectedEventId(event.id);
+                                  setIsEditing(false);
+                                }}
+                                className={`w-full rounded-xl border px-3 py-3 text-left transition-colors hover:border-primary/50 ${
+                                  isPastDay && !isToday
+                                    ? "border-border/70 bg-background/60"
+                                    : "border-border bg-muted/30"
+                                }`}
+                              >
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+                                    {categoryLabels[event.category] || "Evento"}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+                                    <Clock className="h-3.5 w-3.5 text-primary" />
+                                    {event.time || "A definir"}
+                                  </span>
+                                </div>
+                                <p className="min-w-0 text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
+                                  {event.title}
+                                </p>
+                                {event.location && (
+                                  <p className="mt-1 inline-flex min-w-0 items-start gap-1.5 text-xs text-muted-foreground">
+                                    <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                    <span className="min-w-0 [overflow-wrap:anywhere]">{event.location}</span>
+                                  </p>
+                                )}
+                                {event.description && (
+                                  <p className="mt-2 line-clamp-2 min-w-0 text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
+                                    {event.description}
+                                  </p>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
@@ -809,7 +941,7 @@ const CalendarPage = () => {
                 )}
               </div>
 
-              <div className="p-3 md:p-8 overflow-x-auto">
+              <div className="hidden overflow-x-auto p-3 md:block md:p-8">
                 <div className="min-w-[620px] md:min-w-[720px]">
                   <div className="grid grid-cols-7 mb-3">
                     {weekDays.map((day, index) => (
@@ -830,6 +962,14 @@ const CalendarPage = () => {
                     <div className="h-[460px] md:h-[552px] flex items-center justify-center rounded-xl md:rounded-2xl border border-border bg-muted/20">
                       <Loader2 className="w-8 h-8 text-primary animate-spin" />
                     </div>
+                  ) : eventsError ? (
+                    <div className="flex h-[460px] items-center justify-center rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-amber-800 md:h-[552px] md:rounded-2xl dark:border-amber-700/60 dark:bg-amber-900/30 dark:text-amber-100">
+                      <div>
+                        <AlertTriangle className="mx-auto mb-3 h-8 w-8" />
+                        <p className="font-semibold">Não foi possível carregar a agenda.</p>
+                        <p className="mt-1 text-sm">Tente novamente em instantes.</p>
+                      </div>
+                    </div>
                   ) : (
                   <div className="grid grid-cols-7 gap-2">
                     {calendarDays.map((day) => {
@@ -844,6 +984,7 @@ const CalendarPage = () => {
                           today.getMonth(),
                           today.getDate(),
                         );
+                      const isPastDay = isPastDate(day.dateKey) && !isToday;
 
                       return (
                         <button
@@ -853,13 +994,17 @@ const CalendarPage = () => {
                           className={`min-h-28 md:min-h-32 rounded-xl md:rounded-2xl border p-2 text-left align-top transition-all hover:border-primary/50 hover:shadow-md ${
                             isSelected
                               ? "border-primary bg-primary/5 ring-2 ring-primary/15 dark:bg-primary/10 dark:ring-primary/30"
-                              : "border-border bg-card"
-                          } ${day.isCurrentMonth ? "" : "opacity-45"}`}
+                              : isPastDay
+                                ? "border-border/50 bg-muted/20"
+                                : "border-border bg-card"
+                          } ${day.isCurrentMonth ? "" : "opacity-45"} ${isPastDay ? "opacity-55 grayscale-[0.25] hover:opacity-70" : ""}`}
                         >
                           <span
                             className={`inline-flex w-8 h-8 items-center justify-center rounded-full text-sm font-semibold ${
                               isToday
                                 ? "bg-primary text-primary-foreground"
+                                : isPastDay
+                                  ? "text-muted-foreground/70"
                                 : "text-foreground"
                             }`}
                           >
@@ -875,7 +1020,7 @@ const CalendarPage = () => {
                                 }
                                 className={`block truncate rounded-lg border px-2 py-1.5 text-xs font-semibold ${
                                   getEventColorStyle(event.id)
-                                }`}
+                                } ${isPastDay ? "opacity-60 saturate-50" : ""}`}
                               >
                                 {event.time && `${event.time} · `}
                                 {event.title}

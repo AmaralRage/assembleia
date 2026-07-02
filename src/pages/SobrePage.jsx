@@ -5,11 +5,13 @@ import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
 import SectionHeading from "@/components/SectionHeading.jsx";
 import { exPresidentes, presidenteAtual } from "@/data/churchLeadership";
+import { useModalFocus } from "@/hooks/use-modal-focus";
 
 const getMandateStartYear = (periodo) => periodo.split("-")[0].trim();
 
 const SobrePage = () => {
   const [selectedHistoryPresident, setSelectedHistoryPresident] = useState(null);
+  const historyModalRef = useModalFocus(Boolean(selectedHistoryPresident));
 
   const historyPresidentCardsSource = [
     presidenteAtual,
@@ -360,71 +362,74 @@ const SobrePage = () => {
 
       {selectedHistoryPresident && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="history-president-title"
+          aria-describedby="history-president-description"
           onClick={() => setSelectedHistoryPresident(null)}
         >
           <motion.div
+            ref={historyModalRef}
+            tabIndex={-1}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
             onClick={(event) => event.stopPropagation()}
-            className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl"
+            className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-xl sm:max-h-[90vh]"
           >
-            <div className="relative bg-[#071526] px-6 pb-8 pt-10 text-white md:px-9">
+            <div className="relative bg-[#071526] px-5 pb-6 pt-8 text-white sm:px-6 sm:pb-8 sm:pt-10 md:px-9">
               <button
                 type="button"
                 onClick={() => setSelectedHistoryPresident(null)}
-                className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/10 text-white transition-colors hover:bg-white/20"
+                className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-5 sm:top-5 sm:h-10 sm:w-10"
                 aria-label="Fechar biografia"
               >
                 <X className="h-5 w-5" />
               </button>
 
-              <div className="grid gap-6 md:grid-cols-[150px_minmax(0,1fr)] md:items-center">
+              <div className="grid gap-4 pr-10 sm:gap-6 md:grid-cols-[150px_minmax(0,1fr)] md:items-center md:pr-0">
                 <img
                   src={selectedHistoryPresident.foto}
                   alt={selectedHistoryPresident.nome}
                   loading="eager"
                   decoding="async"
-                  className={`h-28 w-28 rounded-full border-4 border-white shadow-xl md:h-32 md:w-32 ${
+                  className={`h-24 w-24 rounded-full border-4 border-white shadow-xl sm:h-28 sm:w-28 md:h-32 md:w-32 ${
                     selectedHistoryPresident.fotoPlaceholder
                       ? "bg-white object-contain p-3"
                       : "object-cover object-top"
                   }`}
                 />
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.32em] text-blue-200">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-200 sm:text-xs sm:tracking-[0.32em]">
                     Período de mandato
                   </p>
-                  <span className="mt-3 inline-flex rounded-full border border-primary/60 bg-primary/10 px-4 py-2 text-sm font-bold text-primary">
+                  <span className="mt-2 inline-flex rounded-full border border-primary/60 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary sm:mt-3 sm:px-4 sm:py-2 sm:text-sm">
                     {selectedHistoryPresident.periodo}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="relative px-6 py-8 md:px-9 md:py-10">
+            <div className="relative px-5 py-6 sm:px-6 sm:py-8 md:px-9 md:py-10">
               <h2
                 id="history-president-title"
-                className="text-3xl font-bold leading-tight text-slate-950 md:text-4xl"
+                className="text-2xl font-bold leading-tight text-slate-950 sm:text-3xl md:text-4xl"
               >
                 {selectedHistoryPresident.nome}
               </h2>
-              <p className="mt-2 text-sm font-semibold text-slate-500">
+              <p id="history-president-description" className="mt-2 text-sm font-semibold text-slate-500">
                 {selectedHistoryPresident.periodo.includes("Atual")
                   ? "Presidente atual"
                   : "Ex-presidente"}
               </p>
 
-              <div className="mt-7 grid gap-8 md:grid-cols-[1fr_0.85fr]">
+              <div className="mt-6 grid gap-6 md:mt-7 md:grid-cols-[1fr_0.85fr] md:gap-8">
                 <div>
                   <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-primary">
                     Biografia
                   </p>
-                  <p className="leading-relaxed text-slate-600">
+                  <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
                     {selectedHistoryPresident.historia ||
                       selectedHistoryPresident.resumo}
                   </p>
@@ -434,7 +439,7 @@ const SobrePage = () => {
                   <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-primary">
                     Informações
                   </p>
-                  <ul className="space-y-3 text-sm font-medium text-slate-600">
+                  <ul className="space-y-2.5 text-sm font-medium text-slate-600 sm:space-y-3">
                     <li className="flex gap-3">
                       <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                       Mandato iniciado em {getMandateStartYear(selectedHistoryPresident.periodo)}
@@ -451,15 +456,15 @@ const SobrePage = () => {
                 </div>
               </div>
 
-              <span className="pointer-events-none absolute -bottom-12 right-5 text-[8rem] font-extrabold leading-none text-slate-950/[0.05] md:text-[10rem]">
+              <span className="pointer-events-none absolute -bottom-12 right-5 hidden text-[8rem] font-extrabold leading-none text-slate-950/[0.05] sm:block md:text-[10rem]">
                 {getMandateStartYear(selectedHistoryPresident.periodo)}
               </span>
 
-              <div className="mt-8 border-t border-slate-200 pt-5 text-right">
+              <div className="mt-6 border-t border-slate-200 pt-5 text-right md:mt-8">
                 <button
                   type="button"
                   onClick={() => setSelectedHistoryPresident(null)}
-                  className="inline-flex rounded-full bg-[#071526] px-7 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-slate-800"
+                  className="inline-flex w-full justify-center rounded-full bg-[#071526] px-7 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-slate-800 sm:w-auto"
                 >
                   Fechar registro
                 </button>

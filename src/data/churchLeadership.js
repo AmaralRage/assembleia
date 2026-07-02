@@ -1,11 +1,15 @@
+import pastorCharlesImage from "@/assets/leadership/Charles.jpg";
+import pastorAntonioSouzaImage from "@/assets/leadership/pastor-antonio-souza.jpg";
+import pastorJoseAlmeidaImage from "@/assets/leadership/pastor-jose-almeida.jpg";
+import pastorMarcosOliveiraImage from "@/assets/leadership/pastor-marcos-oliveira.jpg";
+
 export const leadershipPlaceholderImage = "https://i.imgur.com/SA53Yxc.png";
 
 export const presidenteAtual = {
   nome: "Pastor Charles",
   cargo: "Presidente",
   periodo: "2020 - Atual",
-  foto:
-    "https://admin.cnnbrasil.com.br/wp-content/uploads/sites/12/2023/07/IMG_4005.jpg?w=419&h=283&crop=0",
+  foto: pastorCharlesImage,
   resumo:
     "Conduz a igreja em direção a novos tempos, fortalecendo a presença digital, os projetos sociais e o compromisso com a comunidade.",
   historia:
@@ -24,8 +28,7 @@ export const exPresidentes = [
     nome: "Pastor Antônio Souza",
     cargo: "Presidente fundador",
     periodo: "1998 - 2008",
-    foto: leadershipPlaceholderImage,
-    fotoPlaceholder: true,
+    foto: pastorAntonioSouzaImage,
     resumo:
       "Foi um líder dedicado à expansão da igreja, fortalecendo os ministérios e a comunhão entre os membros.",
     historia:
@@ -40,8 +43,7 @@ export const exPresidentes = [
     nome: "Pastor José Almeida",
     cargo: "Ex-presidente",
     periodo: "2008 - 2016",
-    foto: leadershipPlaceholderImage,
-    fotoPlaceholder: true,
+    foto: pastorJoseAlmeidaImage,
     resumo:
       "Conduziu a igreja em um período de crescimento espiritual, valorizando o ensino bíblico e a evangelização.",
     historia:
@@ -56,8 +58,7 @@ export const exPresidentes = [
     nome: "Pastor Marcos Oliveira",
     cargo: "Ex-presidente",
     periodo: "2016 - 2020",
-    foto: leadershipPlaceholderImage,
-    fotoPlaceholder: true,
+    foto: pastorMarcosOliveiraImage,
     resumo:
       "Trabalhou na modernização da comunicação da igreja e no fortalecimento dos projetos sociais.",
     historia:
@@ -99,7 +100,7 @@ export const homeLeadershipCards = [
     descricao:
       "Referência nos primeiros anos da caminhada, ajudando a consolidar a base comunitária da igreja.",
     foto: exPresidentes[0].foto,
-    fotoPlaceholder: true,
+    fotoPosition: "center top",
   },
   {
     cargo: "Ensino bíblico",
@@ -107,7 +108,7 @@ export const homeLeadershipCards = [
     descricao:
       "Contribuiu para o fortalecimento do ensino, da evangelização e da formação de novas lideranças.",
     foto: exPresidentes[1].foto,
-    fotoPlaceholder: true,
+    fotoPosition: "center top",
   },
   {
     cargo: "Cuidado pastoral",
@@ -115,6 +116,6 @@ export const homeLeadershipCards = [
     descricao:
       "Ajudou a aproximar a igreja da comunidade por meio de projetos sociais e ações de acolhimento.",
     foto: exPresidentes[2].foto,
-    fotoPlaceholder: true,
+    fotoPosition: "center top",
   },
 ];
