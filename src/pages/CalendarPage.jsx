@@ -196,6 +196,177 @@ const toDatabaseEvent = (event) => ({
     canHighlightEvent(event.category) ? event.highlightSummary.trim() : "",
 });
 
+const DatePickerField = ({
+  value,
+  onChange,
+  disabled = false,
+  minDateKey = getTodayKey(),
+  placeholder = "Escolha uma data",
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedParts = getDateParts(value || minDateKey);
+  const [visibleMonth, setVisibleMonth] = useState({
+    month: selectedParts.month,
+    year: selectedParts.year,
+  });
+
+  useEffect(() => {
+    const nextParts = getDateParts(value || minDateKey);
+    setVisibleMonth({
+      month: nextParts.month,
+      year: nextParts.year,
+    });
+  }, [minDateKey, value]);
+
+  const firstWeekDay = new Date(
+    visibleMonth.year,
+    visibleMonth.month,
+    1,
+  ).getDay();
+  const daysInMonth = getDaysInMonth(visibleMonth.year, visibleMonth.month);
+  const pickerCells = [
+    ...Array.from({ length: firstWeekDay }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
+  ];
+
+  const changePickerMonth = (offset) => {
+    const nextDate = new Date(
+      visibleMonth.year,
+      visibleMonth.month + offset,
+      1,
+    );
+
+    setVisibleMonth({
+      month: nextDate.getMonth(),
+      year: nextDate.getFullYear(),
+    });
+  };
+
+  const selectDate = (day) => {
+    const dateKey = toDateKey(visibleMonth.year, visibleMonth.month, day);
+    if (dateKey < minDateKey) return;
+
+    onChange(dateKey);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen((current) => !current)}
+        className="mt-1.5 flex h-12 w-full items-center justify-between rounded-xl border border-input bg-background px-3 text-left text-base font-semibold text-foreground shadow-sm transition-colors hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <span className={value ? "" : "text-muted-foreground"}>
+          {value ? formatShortDate(value) : placeholder}
+        </span>
+        <CalendarDays className="h-4 w-4 text-primary" />
+      </button>
+
+      {isOpen && !disabled && (
+        <div className="absolute left-0 right-0 z-50 mt-2 max-w-full rounded-2xl border border-border bg-background p-2.5 shadow-2xl sm:p-3 md:right-auto md:w-full">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-xl sm:h-9 sm:w-9"
+              onClick={() => changePickerMonth(-1)}
+              aria-label="MÃªs anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <p className="text-sm font-bold capitalize text-foreground">
+              {monthNames[visibleMonth.month]} {visibleMonth.year}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-xl sm:h-9 sm:w-9"
+              onClick={() => changePickerMonth(1)}
+              aria-label="PrÃ³ximo mÃªs"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="mb-2 grid grid-cols-7 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            {weekDays.map((weekDay, index) => (
+              <span
+                key={`picker-week-${weekDay}`}
+                className={index === 0 || index === 6 ? "text-primary" : ""}
+              >
+                {weekDay.slice(0, 1)}
+              </span>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-1">
+            {pickerCells.map((day, index) => {
+              if (!day) {
+                return <span key={`picker-empty-${index}`} className="h-9 sm:h-10" />;
+              }
+
+              const dateKey = toDateKey(
+                visibleMonth.year,
+                visibleMonth.month,
+                day,
+              );
+              const isSelected = value === dateKey;
+              const isToday = getTodayKey() === dateKey;
+              const isDisabledDay = dateKey < minDateKey;
+
+              return (
+                <button
+                  key={dateKey}
+                  type="button"
+                  disabled={isDisabledDay}
+                  onClick={() => selectDate(day)}
+                  className={`relative flex h-9 items-center justify-center rounded-xl text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-30 sm:h-10 ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : isToday
+                        ? "border border-primary/40 bg-primary/10 text-primary"
+                        : "bg-muted/45 text-foreground hover:bg-primary/10 hover:text-primary"
+                  }`}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="min-w-0 rounded-xl px-2 text-sm"
+              onClick={() => {
+                onChange("");
+                setIsOpen(false);
+              }}
+            >
+              Limpar
+            </Button>
+            <Button
+              type="button"
+              className="min-w-0 rounded-xl px-2 text-sm"
+              onClick={() => {
+                onChange(getTodayKey());
+                setIsOpen(false);
+              }}
+            >
+              Hoje
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const CalendarPage = () => {
   const today = useMemo(() => new Date(), []);
   const eventEditorRef = useRef(null);
@@ -481,6 +652,18 @@ const CalendarPage = () => {
       return days;
     }, {}),
   ).sort((firstDay, secondDay) => firstDay.date.localeCompare(secondDay.date));
+  const mobileCalendarDays = useMemo(() => {
+    let lastCurrentMonthIndex = calendarDays.length - 1;
+
+    while (
+      lastCurrentMonthIndex > 0 &&
+      !calendarDays[lastCurrentMonthIndex].isCurrentMonth
+    ) {
+      lastCurrentMonthIndex -= 1;
+    }
+
+    return calendarDays.slice(0, lastCurrentMonthIndex + 1);
+  }, [calendarDays]);
 
   const formatLongDate = (dateKey) => {
     if (!dateKey) return "";
@@ -505,6 +688,15 @@ const CalendarPage = () => {
     setSelectedEventId(null);
     setIsEditing(false);
     setForm(emptyForm(nextDateKey));
+  };
+
+  const goToToday = () => {
+    const todayKey = getTodayKey();
+    setVisibleDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    setSelectedDate(todayKey);
+    setSelectedEventId(null);
+    setIsEditing(false);
+    setForm(emptyForm(todayKey));
   };
 
   const selectDay = (day) => {
@@ -818,6 +1010,15 @@ const CalendarPage = () => {
                   </Button>
                 </div>
 
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={goToToday}
+                  className="rounded-xl md:hidden"
+                >
+                  Hoje
+                </Button>
+
                 {isAdmin && (
                   <>
                     <Button
@@ -855,7 +1056,7 @@ const CalendarPage = () => {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="border-b border-border p-4 md:hidden">
+              <div className="border-b border-border bg-muted/20 p-4 md:hidden">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2 className="font-bold text-foreground">
                     Agenda do mês
@@ -865,65 +1066,78 @@ const CalendarPage = () => {
                   </span>
                 </div>
 
-                <div className="mb-4 rounded-2xl border border-border bg-background p-3">
-                  <div className="mb-2 grid grid-cols-7 text-center text-[10px] font-bold uppercase text-muted-foreground">
-                    {weekDays.map((weekDay) => (
-                      <span key={weekDay}>{weekDay.slice(0, 1)}</span>
+                <div className="mb-4 rounded-2xl border border-border bg-background p-3 shadow-sm">
+                  <div className="mb-2 grid grid-cols-7 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                    {weekDays.map((weekDay, index) => (
+                      <span
+                        key={weekDay}
+                        className={index === 0 || index === 6 ? "text-primary" : ""}
+                      >
+                        {weekDay.slice(0, 1)}
+                      </span>
                     ))}
                   </div>
                   <div className="grid grid-cols-7 gap-1">
-                    {calendarDays
-                      .filter((day) => day.isCurrentMonth)
-                      .map((day) => {
-                        const isSelected = selectedDate === day.dateKey;
-                        const isToday = day.dateKey === getTodayKey();
-                        const isPastDay = isPastDate(day.dateKey) && !isToday;
-                        const mobileDayEvents = events.filter(
-                          (event) => event.date === day.dateKey,
-                        );
-                        const hasMobileDayEvents = mobileDayEvents.length > 0;
-
+                    {mobileCalendarDays.map((day) => {
+                      if (!day.isCurrentMonth) {
                         return (
-                          <button
-                            key={`mobile-${day.dateKey}`}
-                            type="button"
-                            onClick={() => selectDay(day)}
-                            className={`relative flex h-10 items-center justify-center rounded-xl text-sm font-bold transition-colors ${
-                              isSelected
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : isToday
-                                  ? "bg-primary/10 text-primary"
-                                  : hasMobileDayEvents
-                                    ? "border border-primary/25 bg-primary/5 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.08)] hover:bg-primary/10"
-                                  : isPastDay
-                                    ? "bg-muted/30 text-muted-foreground/60"
-                                    : "bg-muted/50 text-foreground hover:bg-primary/10 hover:text-primary"
-                            }`}
-                          >
-                            {day.day}
-                            {hasMobileDayEvents && (
-                              <span className="absolute bottom-1 flex max-w-[1.25rem] gap-0.5">
-                                {mobileDayEvents.slice(0, 3).map((event) => (
-                                  <span
-                                    key={event.id}
-                                    className={`h-1 w-1 rounded-full ${
-                                      isSelected
-                                        ? "bg-primary-foreground"
-                                        : getEventMarkerStyle(event.id)
-                                    }`}
-                                  />
-                                ))}
-                              </span>
-                            )}
-                          </button>
+                          <span
+                            key={`mobile-empty-${day.dateKey}`}
+                            aria-hidden="true"
+                            className="h-12"
+                          />
                         );
-                      })}
+                      }
+
+                      const isSelected = selectedDate === day.dateKey;
+                      const isToday = day.dateKey === getTodayKey();
+                      const isPastDay = isPastDate(day.dateKey) && !isToday;
+                      const mobileDayEvents = events.filter(
+                        (event) => event.date === day.dateKey,
+                      );
+                      const hasMobileDayEvents = mobileDayEvents.length > 0;
+
+                      return (
+                        <button
+                          key={`mobile-${day.dateKey}`}
+                          type="button"
+                          onClick={() => selectDay(day)}
+                          className={`relative flex h-12 items-center justify-center rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                            isSelected
+                              ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                              : isToday
+                                ? "border border-primary/40 bg-primary/10 text-primary"
+                                : hasMobileDayEvents
+                                  ? "border border-primary/25 bg-primary/5 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.08)]"
+                                : isPastDay
+                                  ? "bg-muted/30 text-muted-foreground/60"
+                                  : "bg-muted/50 text-foreground"
+                          }`}
+                        >
+                          {day.day}
+                          {hasMobileDayEvents && (
+                            <span className="absolute bottom-1.5 flex max-w-[1.75rem] gap-0.5">
+                              {mobileDayEvents.slice(0, 3).map((event) => (
+                                <span
+                                  key={event.id}
+                                  className={`h-1.5 w-1.5 rounded-full ${
+                                    isSelected
+                                      ? "bg-primary-foreground"
+                                      : getEventMarkerStyle(event.id)
+                                  }`}
+                                />
+                              ))}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 <div
                   ref={selectedDayDetailsRef}
-                  className="mb-4 scroll-mt-24 rounded-2xl border border-border bg-background p-4"
+                  className="mb-4 scroll-mt-24 rounded-2xl border border-border bg-background p-4 shadow-sm"
                 >
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div>
@@ -951,19 +1165,31 @@ const CalendarPage = () => {
                             setSelectedEventId(event.id);
                             setIsEditing(false);
                           }}
-                          className="grid w-full grid-cols-[3.5rem_minmax(0,1fr)] gap-3 rounded-xl border border-border bg-muted/30 px-3 py-3 text-left transition-colors hover:border-primary/50"
+                          className="w-full rounded-xl border border-border bg-muted/25 px-3 py-3 text-left transition-colors active:border-primary/60 active:bg-primary/5"
                         >
-                          <span className="inline-flex items-center gap-1 text-xs font-bold tabular-nums text-primary">
-                            <Clock className="h-3.5 w-3.5" />
-                            {event.time || "--:--"}
+                          <span className="mb-2 flex items-center justify-between gap-2">
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                                getEventColorStyle(event.id)
+                              }`}
+                            >
+                              {categoryLabels[event.category] || "Evento"}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-xs font-bold tabular-nums text-primary">
+                              <Clock className="h-3.5 w-3.5" />
+                              {event.time || "--:--"}
+                            </span>
                           </span>
-                          <span className="min-w-0">
+                          <span className="block min-w-0">
                             <span className="block text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
                               {event.title}
                             </span>
                             {event.location && (
-                              <span className="mt-1 block text-xs text-muted-foreground [overflow-wrap:anywhere]">
-                                {event.location}
+                              <span className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                                <span className="min-w-0 [overflow-wrap:anywhere]">
+                                  {event.location}
+                                </span>
                               </span>
                             )}
                           </span>
@@ -971,9 +1197,12 @@ const CalendarPage = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="rounded-xl border border-dashed border-border bg-muted/20 p-3 text-sm text-muted-foreground">
-                      Nenhum evento neste dia.
-                    </p>
+                    <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-center">
+                      <CalendarDays className="mx-auto mb-2 h-6 w-6 text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground">
+                        Nenhum evento neste dia.
+                      </p>
+                    </div>
                   )}
 
                   {isAdmin && selectedDateEvents.length > 1 && (
@@ -1014,12 +1243,15 @@ const CalendarPage = () => {
                     {visibleMonthEventDays.map((eventDay) => {
                       const isPastDay = isPastDate(eventDay.date);
                       const isToday = eventDay.date === getTodayKey();
+                      const isSelectedEventDay = eventDay.date === selectedDate;
 
                       return (
                         <div
                           key={eventDay.date}
-                          className={`rounded-2xl border p-3 ${
-                            isPastDay && !isToday
+                          className={`rounded-2xl border p-3 shadow-sm ${
+                            isSelectedEventDay
+                              ? "border-primary/40 bg-primary/5"
+                              : isPastDay && !isToday
                               ? "border-border/60 bg-muted/20 opacity-60"
                               : "border-border bg-background"
                           }`}
@@ -1052,7 +1284,7 @@ const CalendarPage = () => {
                                   setSelectedEventId(event.id);
                                   setIsEditing(false);
                                 }}
-                                className={`w-full rounded-xl border px-3 py-2.5 text-left transition-colors hover:border-primary/50 ${
+                                className={`w-full rounded-xl border px-3 py-2.5 text-left transition-all active:scale-[0.99] active:border-primary/60 ${
                                   isPastDay && !isToday
                                     ? "border-border/70 bg-background/60"
                                     : "border-border bg-muted/30"
@@ -1194,7 +1426,7 @@ const CalendarPage = () => {
                 </div>
               </div>
 
-              <aside ref={eventEditorRef} className="scroll-mt-24 border-t xl:border-t-0 xl:border-l border-border bg-muted/35 p-4 md:p-7">
+              <aside ref={eventEditorRef} className="scroll-mt-24 border-t border-border bg-background p-4 md:p-7 xl:border-l xl:border-t-0 xl:bg-muted/35">
                 {isEditing ? (
                   <div>
                     <div className="flex items-start justify-between gap-4 mb-6">
@@ -1219,8 +1451,8 @@ const CalendarPage = () => {
                       </Button>
                     </div>
 
-                    <form id="calendar-event-form" onSubmit={handleSubmit} className="space-y-4 pb-24 md:pb-0">
-                      <div className="rounded-xl border border-border bg-background px-4 py-3">
+                    <form id="calendar-event-form" onSubmit={handleSubmit} className="space-y-5 pb-28 md:space-y-4 md:pb-0">
+                      <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 md:bg-background">
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
                           Dados básicos
                         </p>
@@ -1306,7 +1538,7 @@ const CalendarPage = () => {
                                     type="button"
                                     disabled={dateKey < getTodayKey()}
                                     onClick={() => updateFormDate({ day })}
-                                    className={`relative h-9 rounded-lg text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
+                                    className={`relative h-10 rounded-lg text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-30 md:h-9 ${
                                       isSelectedFormDay
                                         ? "bg-primary text-primary-foreground shadow-sm"
                                         : "bg-muted/40 text-foreground hover:bg-primary/10 hover:text-primary"
@@ -1552,18 +1784,16 @@ const CalendarPage = () => {
                                 <label className="text-sm font-semibold text-foreground">
                                   Data final
                                 </label>
-                                <Input
-                                  type="date"
+                                <DatePickerField
                                   value={form.highlightUntil}
-                                  min={getTodayKey()}
+                                  minDateKey={getTodayKey()}
                                   disabled={!form.highlightHome}
-                                  onChange={(event) =>
+                                  onChange={(dateKey) =>
                                     setForm({
                                       ...form,
-                                      highlightUntil: event.target.value,
+                                      highlightUntil: dateKey,
                                     })
                                   }
-                                  className="mt-1.5 h-12 bg-background text-base font-semibold"
                                 />
                                 <p className="mt-1.5 text-xs text-muted-foreground">
                                   Depois dessa data, o banner some automaticamente.
@@ -1780,7 +2010,16 @@ const CalendarPage = () => {
                       </Button>
                     </form>
                     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 p-3 shadow-[0_-12px_30px_-20px_rgba(15,23,42,0.45)] backdrop-blur md:hidden">
-                      <div className="mx-auto grid max-w-md grid-cols-[0.8fr_1.2fr] gap-2">
+                      <div className="mx-auto max-w-md">
+                        <div className="mb-2 flex items-center justify-between gap-3 px-1 text-xs">
+                          <span className="truncate font-semibold text-foreground">
+                            {formatShortDate(form.date)}
+                          </span>
+                          <span className="shrink-0 font-bold tabular-nums text-primary">
+                            {form.time || "A definir"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-[0.8fr_1.2fr] gap-2">
                         <Button
                           type="button"
                           variant="outline"
@@ -1795,8 +2034,9 @@ const CalendarPage = () => {
                           className="rounded-xl"
                         >
                           <Save className="mr-2 h-4 w-4" />
-                          Salvar
+                          Salvar evento
                         </Button>
+                        </div>
                       </div>
                     </div>
                   </div>

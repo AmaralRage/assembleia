@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CalendarDays, Info, MapPin, Menu, Moon, PlayCircle, Sun, X } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { getPreferredTheme, saveTheme } from '@/lib/theme';
@@ -12,18 +12,28 @@ const Header = () => {
   const [activeSection, setActiveSection] = useState('');
   const [theme, setTheme] = useState(() => getPreferredTheme());
   const [isAdmin, setIsAdmin] = useState(false);
+  const scrollFrameRef = useRef(null);
+  const isScrolledRef = useRef(false);
+  const activeSectionRef = useRef('');
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-      
+    const updateScrollState = () => {
+      scrollFrameRef.current = null;
+
+      const nextIsScrolled = window.scrollY > 20;
+      if (isScrolledRef.current !== nextIsScrolled) {
+        isScrolledRef.current = nextIsScrolled;
+        setIsScrolled(nextIsScrolled);
+      }
+
+      let nextActiveSection = '';
+
       if (location.pathname === '/') {
         const sections = ['agenda', 'localizacoes', 'sobre'];
         const scrollPosition = window.scrollY + 100;
-        
-        let found = false;
+
         for (const section of sections) {
           const element = document.getElementById(section);
           if (element) {
@@ -31,21 +41,36 @@ const Header = () => {
             const offsetBottom = offsetTop + element.offsetHeight;
             
             if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
-              setActiveSection(section);
-              found = true;
+              nextActiveSection = section;
               break;
             }
           }
         }
-        if (!found) setActiveSection('');
       } else {
-        setActiveSection(location.pathname.substring(1));
+        nextActiveSection = location.pathname.substring(1);
+      }
+
+      if (activeSectionRef.current !== nextActiveSection) {
+        activeSectionRef.current = nextActiveSection;
+        setActiveSection(nextActiveSection);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Check on mount
-    return () => window.removeEventListener('scroll', handleScroll);
+    const handleScroll = () => {
+      if (scrollFrameRef.current) return;
+      scrollFrameRef.current = window.requestAnimationFrame(updateScrollState);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    updateScrollState();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollFrameRef.current) {
+        window.cancelAnimationFrame(scrollFrameRef.current);
+        scrollFrameRef.current = null;
+      }
+    };
   }, [location.pathname]);
 
   useEffect(() => {

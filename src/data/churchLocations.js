@@ -34,13 +34,15 @@ export const churchLocations = [
   },
   {
     id: "vila-nova",
-    name: "Assembleia de Deus - Vila Nova",
-    city: "São Paulo",
-    state: "SP",
-    address: "Avenida Paulista, 1000 - Vila Nova, São Paulo - SP",
-    image: "https://images.unsplash.com/photo-1609926795947-0738627824c5",
+    name: "Assembleia de Deus da Lapa - Filial Vila Kennedy",
+    city: "Rio de Janeiro",
+    state: "RJ",
+    address: "Estr. Srg. Miguel Filho, 71A, Rio de Janeiro, RJ",
+    image:
+      getGoogleStreetViewImage("Estr. Srg. Miguel Filho, 71A, Rio de Janeiro, RJ, Brasil") ||
+      "https://images.unsplash.com/photo-1609926795947-0738627824c5",
     mapUrl:
-      "https://maps.google.com/?q=Avenida+Paulista,+1000+-+Vila+Nova,+São+Paulo,+SP",
+      "https://maps.google.com/?q=Estr.+Srg.+Miguel+Filho,+71A,+Rio+de+Janeiro,+RJ",
   },
   {
     id: "santa-cruz",

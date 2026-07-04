@@ -137,10 +137,10 @@ const NewHerePage = () => {
                 Assembleia de Deus da Lapa.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex w-full max-w-full flex-col gap-3 sm:w-auto sm:flex-row">
                 <Link
                   to="/#agenda"
-                  className="inline-flex items-center justify-center rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all duration-200 hover:scale-105 hover:bg-primary/90 hover:shadow-xl active:scale-95"
+                  className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all duration-200 hover:bg-primary/90 hover:shadow-xl active:scale-95 sm:w-auto sm:hover:scale-105"
                 >
                   Entrar em contato
                 </Link>
@@ -148,7 +148,7 @@ const NewHerePage = () => {
                   href={mainChurchLocation.mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-full border border-white/20 bg-transparent px-7 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-white/10 active:scale-95"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-white/20 bg-transparent px-7 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/10 active:scale-95 sm:w-auto sm:hover:scale-105"
                 >
                   Como chegar
                 </a>
@@ -157,12 +157,12 @@ const NewHerePage = () => {
           </div>
         </section>
 
-        <section className="bg-background py-16 md:py-20">
+        <section className="overflow-hidden bg-background py-16 md:py-20">
           <div className="section-container">
             <div className="mx-auto grid max-w-6xl items-center gap-11 md:grid-cols-2 lg:gap-14">
               <motion.div
-                initial={{ opacity: 0, x: -26 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 22 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.35 }}
                 transition={{ duration: 0.55, ease: 'easeOut' }}
                 className="max-w-[520px]"
@@ -193,16 +193,18 @@ const NewHerePage = () => {
                   href={mainChurchLocation.mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-7 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary transition-colors hover:text-primary/80"
+                  className="mt-7 flex w-full max-w-full items-start justify-between gap-3 text-xs font-bold uppercase leading-relaxed tracking-[0.12em] text-primary transition-colors hover:text-primary/80 sm:inline-flex sm:w-auto sm:items-center sm:justify-start sm:tracking-[0.18em]"
                 >
-                  {mainChurchLocation.address}
-                  <ArrowRight className="h-4 w-4" />
+                  <span className="min-w-0 [overflow-wrap:anywhere]">
+                    {mainChurchLocation.address}
+                  </span>
+                  <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 sm:mt-0" />
                 </a>
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, x: 26 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 22 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.35 }}
                 transition={{ duration: 0.55, delay: 0.12, ease: 'easeOut' }}
                 className="relative md:justify-self-end"

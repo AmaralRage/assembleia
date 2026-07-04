@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from "react-helmet-async";
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
   Accessibility,
   CalendarDays,
@@ -37,6 +38,11 @@ const categoryLabels = {
   jovens: 'Jovens',
   festividade: 'Festividade',
   reuniao: 'Reunião',
+};
+
+const hasUsefulInfo = (value) => {
+  if (!value) return false;
+  return !value.trim().toLowerCase().includes('informado');
 };
 
 const AddressesPage = () => {
@@ -127,6 +133,10 @@ const AddressesPage = () => {
       isCurrentRequest = false;
     };
   }, [selectedAddress]);
+
+  const visibleUpcomingServices = upcomingServices.slice(0, 3);
+  const hasMoreUpcomingServices =
+    upcomingServices.length > visibleUpcomingServices.length;
 
   return (
     <>
@@ -350,18 +360,39 @@ const AddressesPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
             onClick={(event) => event.stopPropagation()}
-            className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-background shadow-xl"
+            className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-background shadow-2xl md:rounded-3xl"
           >
+            <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur md:px-6">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                  {selectedAddress.city}, {selectedAddress.state}
+                </p>
+                <h2
+                  id="location-info-title"
+                  className="truncate text-base font-bold text-foreground md:text-lg"
+                >
+                  {selectedAddress.name}
+                </h2>
+              </div>
               <button
                 type="button"
                 onClick={() => setSelectedAddress(null)}
-                className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md transition-colors hover:text-primary"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/50 text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                aria-label="Fechar informaÃ§Ãµes"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+              <button
+                type="button"
+                onClick={() => setSelectedAddress(null)}
+                className="hidden"
                 aria-label="Fechar informações"
               >
                 <X className="h-5 w-5" />
               </button>
 
-              <div className="relative h-52 overflow-hidden rounded-t-3xl">
+              <div className="relative h-40 overflow-hidden md:h-48">
                 <img
                   src={selectedAddress.image}
                   alt={selectedAddress.name}
@@ -370,7 +401,7 @@ const AddressesPage = () => {
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
-                <span className="absolute bottom-4 left-5 inline-flex items-center gap-2 rounded-full bg-background/90 px-3 py-1.5 text-xs font-semibold text-foreground">
+                <span className="absolute bottom-4 left-5 inline-flex items-center gap-2 rounded-full bg-background/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm">
                   <MapPin className="h-4 w-4 text-primary" />
                   {selectedAddress.city}, {selectedAddress.state}
                 </span>
@@ -378,12 +409,32 @@ const AddressesPage = () => {
 
               <div className="p-6 md:p-8">
                 <div>
-                  <h2 id="location-info-title" className="pr-8 text-2xl font-semibold leading-none tracking-tight">
+                  <h2 className="pr-8 text-2xl font-semibold leading-none tracking-tight">
                     {selectedAddress.name}
                   </h2>
                   <p id="location-info-description" className="mt-2 text-base text-muted-foreground">
                     Informações da congregação
                   </p>
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 md:max-w-xl">
+                  <Button
+                    type="button"
+                    onClick={() => window.open(selectedAddress.mapUrl, '_blank')}
+                    className="rounded-xl"
+                  >
+                    <Map className="mr-2 h-4 w-4" />
+                    Ver rota
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleCopy(selectedAddress.fullAddress)}
+                    className="rounded-xl"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copiar
+                  </Button>
                 </div>
 
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -399,6 +450,7 @@ const AddressesPage = () => {
                     </div>
                   </div>
 
+                  {hasUsefulInfo(selectedAddress.leader) && (
                   <div className="rounded-2xl border border-border bg-muted/40 p-4">
                     <div className="flex gap-3">
                       <UserRound className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -412,7 +464,9 @@ const AddressesPage = () => {
                       </div>
                     </div>
                   </div>
+                  )}
 
+                  {hasUsefulInfo(selectedAddress.contact) && (
                   <div className="rounded-2xl border border-border bg-muted/40 p-4">
                     <div className="flex gap-3">
                       <Phone className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -424,7 +478,9 @@ const AddressesPage = () => {
                       </div>
                     </div>
                   </div>
+                  )}
 
+                  {hasUsefulInfo(selectedAddress.accessibility) && (
                   <div className="rounded-2xl border border-border bg-muted/40 p-4">
                     <div className="flex gap-3">
                       <Accessibility className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -436,6 +492,7 @@ const AddressesPage = () => {
                       </div>
                     </div>
                   </div>
+                  )}
                 </div>
 
                 <div className="mt-4 rounded-2xl border border-border bg-muted/40 p-4">
@@ -452,7 +509,7 @@ const AddressesPage = () => {
                         </div>
                       ) : upcomingServices.length > 0 ? (
                         <div className="mt-3 space-y-2">
-                          {upcomingServices.map((service) => (
+                          {visibleUpcomingServices.map((service) => (
                             <div
                               key={service.id}
                               className="flex flex-col gap-1 rounded-xl border border-border bg-background/70 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
@@ -474,6 +531,15 @@ const AddressesPage = () => {
                               </span>
                             </div>
                           ))}
+                          {hasMoreUpcomingServices && (
+                            <Link
+                              to="/calendario"
+                              onClick={() => setSelectedAddress(null)}
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                            >
+                              Ver agenda completa
+                            </Link>
+                          )}
                         </div>
                       ) : (
                         <p className="mt-2 text-sm text-muted-foreground">
@@ -484,12 +550,12 @@ const AddressesPage = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-2 border-t border-border bg-background/95 p-3 shadow-[0_-12px_30px_-20px_rgba(15,23,42,0.45)] backdrop-blur md:hidden">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => handleCopy(selectedAddress.fullAddress)}
-                    className="rounded-xl transition-transform duration-200 hover:scale-105"
+                    className="rounded-xl"
                   >
                     <Copy className="mr-2 h-4 w-4" />
                     Copiar endereço
@@ -497,10 +563,10 @@ const AddressesPage = () => {
                   <Button
                     type="button"
                     onClick={() => window.open(selectedAddress.mapUrl, '_blank')}
-                    className="rounded-xl transition-transform duration-200 hover:scale-105"
+                    className="rounded-xl"
                   >
                     <Map className="mr-2 h-4 w-4" />
-                    Como chegar
+                    Rota
                   </Button>
                 </div>
               </div>

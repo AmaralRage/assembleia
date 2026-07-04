@@ -286,15 +286,15 @@ const SobrePage = () => {
                       Ver biografia →
                     </span>
                   </div>
-                  <span className="absolute -bottom-16 -right-12 h-36 w-36 rounded-full bg-[#eef3f8]" />
-                  <Church className="pointer-events-none absolute bottom-8 right-8 h-12 w-12 text-[#2f6fa9]/10" />
+                  <span className="absolute -bottom-16 -right-12 h-36 w-36 rounded-full bg-[#d8e6f3]/80" />
+                  <Church className="pointer-events-none absolute bottom-8 right-8 h-12 w-12 text-[#2f6fa9]/14" />
                 </motion.button>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-12 md:py-24 lg:py-32 bg-muted">
+        <section className="py-12 md:py-24 lg:py-32 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.25fr] gap-7 md:gap-10 lg:gap-16 items-center">
               <motion.div
@@ -424,8 +424,11 @@ const SobrePage = () => {
                   : "Ex-presidente"}
               </p>
 
-              <div className="mt-6 grid gap-6 md:mt-7 md:grid-cols-[1fr_0.85fr] md:gap-8">
-                <div>
+              <div className="relative mt-6 grid gap-6 md:mt-7 md:grid-cols-[1fr_0.85fr] md:gap-8">
+                <span className="pointer-events-none absolute -bottom-4 right-0 z-0 text-[5.5rem] font-extrabold leading-none text-slate-950/[0.04] sm:-bottom-8 sm:text-[8rem] md:-bottom-10 md:text-[10rem]">
+                  {getMandateStartYear(selectedHistoryPresident.periodo)}
+                </span>
+                <div className="relative z-10">
                   <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-primary">
                     Biografia
                   </p>
@@ -435,7 +438,7 @@ const SobrePage = () => {
                   </p>
                 </div>
 
-                <div>
+                <div className="relative z-10">
                   <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-primary">
                     Informações
                   </p>
@@ -455,10 +458,6 @@ const SobrePage = () => {
                   </ul>
                 </div>
               </div>
-
-              <span className="pointer-events-none absolute -bottom-12 right-5 hidden text-[8rem] font-extrabold leading-none text-slate-950/[0.05] sm:block md:text-[10rem]">
-                {getMandateStartYear(selectedHistoryPresident.periodo)}
-              </span>
 
               <div className="mt-6 border-t border-slate-200 pt-5 text-right md:mt-8">
                 <button

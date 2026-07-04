@@ -13,8 +13,31 @@ const WatchPage = lazy(() => import('./pages/WatchPage.jsx'));
 const NewHerePage = lazy(() => import('./pages/NewHerePage.jsx'));
 
 const PageLoadingFallback = () => (
-  <div className="flex min-h-screen items-center justify-center bg-background text-sm font-semibold text-muted-foreground">
-    Carregando...
+  <div className="flex min-h-screen items-center justify-center bg-[#071526] px-6 text-white">
+    <div className="flex flex-col items-center text-center">
+      <div className="relative mb-6">
+        <span className="absolute inset-0 rounded-full border-2 border-primary/20" />
+        <span className="absolute inset-[-8px] rounded-full border border-primary/20" />
+        <span className="absolute inset-[-8px] rounded-full border-t-primary animate-spin border border-transparent" />
+        <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white p-1.5 shadow-2xl shadow-primary/20">
+          <img
+            src="https://i.imgur.com/SA53Yxc.png"
+            alt="Assembleia de Deus da Lapa"
+            className="h-full w-full rounded-full object-cover"
+          />
+        </div>
+      </div>
+
+      <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">
+        Assembleia de Deus da Lapa
+      </p>
+      <p className="mt-3 text-lg font-bold text-white">
+        Preparando a página
+      </p>
+      <p className="mt-2 text-sm font-medium text-white/60">
+        Carregando sua experiência...
+      </p>
+    </div>
   </div>
 );
 

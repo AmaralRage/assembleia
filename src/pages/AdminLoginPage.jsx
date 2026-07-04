@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, LockKeyhole, LogIn, Mail } from "lucide-react";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Loader2,
+  LockKeyhole,
+  LogIn,
+  Mail,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
@@ -20,6 +28,7 @@ const AdminLoginPage = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
   const [recoveryLogin, setRecoveryLogin] = useState("");
   const [isSendingRecovery, setIsSendingRecovery] = useState(false);
@@ -233,19 +242,35 @@ const AdminLoginPage = () => {
                       <label className="text-sm font-semibold text-foreground">
                         Senha
                       </label>
-                      <Input
-                        type="password"
-                        autoComplete="current-password"
-                        value={credentials.password}
-                        onChange={(event) =>
-                          setCredentials({
-                            ...credentials,
-                            password: event.target.value,
-                          })
-                        }
-                        className="mt-1.5"
-                        required
-                      />
+                      <div className="relative mt-1.5">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          autoComplete="current-password"
+                          value={credentials.password}
+                          onChange={(event) =>
+                            setCredentials({
+                              ...credentials,
+                              password: event.target.value,
+                            })
+                          }
+                          className="pr-11"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((current) => !current)}
+                          className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                          aria-label={
+                            showPassword ? "Ocultar senha" : "Mostrar senha"
+                          }
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     <Button

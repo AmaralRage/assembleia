@@ -3,8 +3,15 @@ const easeInOutCubic = (progress) =>
     ? 4 * progress * progress * progress
     : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-export const smoothScrollTo = (targetTop, { duration = 850 } = {}) => {
+let activeScrollFrame = null;
+
+export const smoothScrollTo = (targetTop, { duration = 650 } = {}) => {
   if (typeof window === 'undefined') return;
+
+  if (activeScrollFrame) {
+    window.cancelAnimationFrame(activeScrollFrame);
+    activeScrollFrame = null;
+  }
 
   const prefersReducedMotion = window.matchMedia(
     '(prefers-reduced-motion: reduce)',
@@ -27,19 +34,24 @@ export const smoothScrollTo = (targetTop, { duration = 850 } = {}) => {
     window.scrollTo(0, startTop + distance * easedProgress);
 
     if (progress < 1) {
-      window.requestAnimationFrame(animate);
+      activeScrollFrame = window.requestAnimationFrame(animate);
+    } else {
+      activeScrollFrame = null;
     }
   };
 
-  window.requestAnimationFrame(animate);
+  activeScrollFrame = window.requestAnimationFrame(animate);
 };
 
 export const smoothScrollToElement = (
   element,
-  { offset = 80, duration = 850 } = {},
+  { offset = 80, duration = 650 } = {},
 ) => {
   if (!element) return;
 
-  const targetTop = Math.max(element.offsetTop - offset, 0);
+  const targetTop = Math.max(
+    window.scrollY + element.getBoundingClientRect().top - offset,
+    0,
+  );
   smoothScrollTo(targetTop, { duration });
 };

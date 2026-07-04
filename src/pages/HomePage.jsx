@@ -83,7 +83,7 @@ const HomePage = () => {
 
       const { data, error } = await supabase
         .from('calendar_events')
-        .select('id, title, event_date, event_time, description, location')
+        .select('id, title, event_date, event_time, description, location, category')
         .gte('event_date', todayKey)
         .order('event_date', { ascending: true })
         .order('event_time', { ascending: true })
@@ -226,8 +226,18 @@ const HomePage = () => {
   };
 
   const featuredLocations = churchLocations.slice(0, 3);
+  const highlightedService =
+    upcomingEvents.find(
+      (event) =>
+        event.category === 'culto' || event.title.toLowerCase().includes('culto'),
+    ) || upcomingEvents[0];
+  const highlightedServiceLocation =
+    highlightedService && getChurchLocation(highlightedService.location);
+  const agendaListEvents = highlightedService
+    ? upcomingEvents.filter((event) => event.id !== highlightedService.id)
+    : upcomingEvents;
   const agendaDays = Object.values(
-    upcomingEvents.reduce((days, event) => {
+    agendaListEvents.reduce((days, event) => {
       if (!days[event.event_date]) {
         days[event.event_date] = {
           date: event.event_date,
@@ -338,7 +348,8 @@ const HomePage = () => {
                 }} transition={{
                   delay: 0.7,
                   duration: 0.8
-                }} className="inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-semibold text-white underline-offset-4 transition-colors hover:text-white/85 hover:underline sm:w-auto sm:bg-white sm:px-7 sm:py-3.5 sm:text-base sm:text-primary sm:no-underline sm:shadow-lg sm:hover:bg-white/90 sm:hover:text-primary md:px-8 md:py-4">
+                }} className="inline-flex w-full max-w-[16rem] items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-primary shadow-lg transition-all duration-200 hover:bg-white/90 hover:text-primary active:scale-[0.98] sm:w-auto sm:max-w-none sm:px-7 sm:py-3.5 sm:text-base md:px-8 md:py-4">
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
                   Ver agenda
                 </motion.a>
             </div>
@@ -395,7 +406,7 @@ const HomePage = () => {
                         />
                       </motion.div>
                     </AnimatePresence>
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/88 via-slate-950/28 to-transparent xl:bg-gradient-to-r xl:from-transparent xl:via-slate-950/10 xl:to-slate-950/70" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/92 via-slate-950/34 to-transparent xl:bg-gradient-to-r xl:from-transparent xl:via-slate-950/12 xl:to-slate-950/74" />
 
                     {hasMultipleFeaturedFestivities && (
                       <>
@@ -421,21 +432,21 @@ const HomePage = () => {
                       </>
                     )}
 
-                    <div className="absolute bottom-4 left-4 right-4 min-w-0 rounded-xl border border-white/25 bg-slate-950/78 p-4 text-white shadow-lg backdrop-blur-md [overflow-wrap:anywhere] md:bottom-7 md:left-7 md:right-auto md:max-w-sm md:rounded-2xl md:p-6 md:shadow-xl">
+                    <div className="absolute bottom-3 left-3 right-3 min-w-0 rounded-xl border border-white/15 bg-slate-950/78 px-3 py-2.5 text-white shadow-[0_14px_40px_-20px_rgba(0,0,0,0.85)] backdrop-blur-xl [overflow-wrap:anywhere] sm:bottom-4 sm:left-4 sm:right-4 sm:px-4 sm:py-3 md:bottom-7 md:left-7 md:right-auto md:max-w-sm md:rounded-2xl md:bg-slate-950/74 md:p-6 md:shadow-xl">
                       <div className="mb-3 flex items-center gap-2 md:mb-4">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground md:h-10 md:w-10 md:rounded-xl">
+                        <span className="hidden h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground sm:flex md:h-10 md:w-10 md:rounded-xl">
                           <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
                         </span>
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200 md:text-xs md:tracking-[0.2em]">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-blue-200 sm:text-[10px] md:text-xs md:tracking-[0.2em]">
                             Convite especial
                           </p>
-                          <p className="text-xs font-semibold text-white/80 md:text-sm">
+                          <p className="text-[11px] font-semibold text-white/80 sm:text-xs md:text-sm">
                             Entrada livre para visitantes
                           </p>
                         </div>
                       </div>
-                      <p className="text-xl font-bold leading-tight md:text-3xl">
+                      <p className="text-base font-bold leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-xl md:text-3xl">
                         Venha viver uma noite de fé com a gente.
                       </p>
                     </div>
@@ -699,7 +710,75 @@ const HomePage = () => {
                     Tente novamente em instantes ou acesse o calendário completo.
                   </p>
                 </div>
-              ) : agendaDays.length > 0 ? (
+              ) : highlightedService || agendaDays.length > 0 ? (
+                <>
+                {highlightedService && (
+                  <div className="border-b border-border bg-background px-5 py-5 md:px-7 md:py-7">
+                    <div className="grid gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:p-6">
+                      <div className="min-w-0">
+                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary-foreground">
+                            Próximo culto
+                          </span>
+                          <span className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                            {formatWeekDay(highlightedService.event_date)}
+                          </span>
+                        </div>
+                        <h3 className="text-xl font-bold leading-tight text-foreground md:text-3xl">
+                          {highlightedService.title}
+                        </h3>
+                        <div className="mt-4 grid gap-2 text-sm font-medium text-muted-foreground sm:grid-cols-2 md:text-base">
+                          <p className="inline-flex items-center gap-2">
+                            <Calendar className="h-4 w-4 shrink-0 text-primary" />
+                            <span className="capitalize">
+                              {formatEventDate(highlightedService.event_date)}
+                            </span>
+                          </p>
+                          <p className="inline-flex items-center gap-2">
+                            <Clock className="h-4 w-4 shrink-0 text-primary" />
+                            {formatEventTime(highlightedService.event_time)}
+                          </p>
+                          {highlightedService.location && (
+                            <p className="inline-flex items-start gap-2 sm:col-span-2">
+                              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                              <span className="min-w-0 [overflow-wrap:anywhere]">
+                                {highlightedService.location}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                        {highlightedService.description && (
+                          <p className="mt-4 line-clamp-2 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
+                            {highlightedService.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="grid gap-2 sm:grid-cols-2 md:w-44 md:grid-cols-1">
+                        {highlightedServiceLocation && (
+                          <a
+                            href={highlightedServiceLocation.mapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                          >
+                            <MapPin className="h-4 w-4" />
+                            Ver rota
+                          </a>
+                        )}
+                        <Link
+                          to="/calendario"
+                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                        >
+                          <Calendar className="h-4 w-4" />
+                          Agenda completa
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {agendaDays.length > 0 ? (
                 <>
                 <div className="divide-y divide-border md:hidden">
                   {agendaDays.map((day, dayIndex) => (
@@ -718,12 +797,8 @@ const HomePage = () => {
                           const churchLocation = getChurchLocation(event.location);
 
                           return (
-                            <motion.div
+                            <div
                               key={event.id}
-                              initial={{ opacity: 0, y: 16 }}
-                              whileInView={{ opacity: 1, y: 0 }}
-                              viewport={{ once: true }}
-                              transition={{ duration: 0.35, delay: (dayIndex + eventIndex) * 0.05 }}
                               className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-border/70 bg-background/55 p-3 md:gap-4 md:rounded-none md:border-0 md:bg-transparent md:px-0 md:pb-0 ${
                                 eventIndex > 0 ? "md:border-t md:border-border md:pt-6" : "md:pt-0"
                               }`}
@@ -776,7 +851,7 @@ const HomePage = () => {
                                   </a>
                                 )}
                               </div>
-                            </motion.div>
+                            </div>
                           );
                         })}
                       </div>
@@ -807,12 +882,8 @@ const HomePage = () => {
                                 const churchLocation = getChurchLocation(event.location);
 
                                 return (
-                                  <motion.div
+                                  <div
                                     key={event.id}
-                                    initial={{ opacity: 0, y: 16 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.35, delay: (dayIndex + eventIndex) * 0.05 }}
                                     className={`grid grid-cols-[minmax(0,1fr)_auto] gap-4 ${
                                       eventIndex > 0 ? "border-t border-border pt-5" : ""
                                     }`}
@@ -859,7 +930,7 @@ const HomePage = () => {
                                         </a>
                                       )}
                                     </div>
-                                  </motion.div>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -875,7 +946,7 @@ const HomePage = () => {
                                   : "border-border px-6 py-6 md:col-span-1 xl:col-span-1"
                             }
                           >
-                            <div className="flex h-full min-h-[190px] flex-col items-start justify-center rounded-xl border border-dashed border-border bg-muted/25 p-6">
+                            <div className="flex h-full min-h-[190px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/25 p-6 text-center">
                               <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
                                 Agenda completa
                               </p>
@@ -900,12 +971,42 @@ const HomePage = () => {
                   ))}
                 </div>
                 </>
+                ) : (
+                  <div className="border-t border-border px-6 py-8">
+                    <div className="mx-auto flex min-h-[190px] max-w-xl flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/25 p-6 text-center">
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                        Agenda completa
+                      </p>
+                      <h3 className="mt-2 text-lg font-bold text-foreground">
+                        Veja os próximos eventos
+                      </h3>
+                      <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                        Acompanhe todos os cultos, encontros e atualizações no calendário.
+                      </p>
+                      <Link
+                        to="/calendario"
+                        className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                      >
+                        Calendário completo
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
+                </>
               ) : (
                 <div className="px-6 py-14 text-center">
                   <Calendar className="mx-auto mb-3 h-9 w-9 text-muted-foreground/50" />
                   <p className="text-muted-foreground">
                     Nenhum evento futuro cadastrado no momento.
                   </p>
+                  <Link
+                    to="/calendario"
+                    className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    Calendário completo
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </div>
               )}
             </motion.div>
