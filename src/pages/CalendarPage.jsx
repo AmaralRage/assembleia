@@ -40,6 +40,11 @@ import {
 const MAX_DESCRIPTION_LENGTH = 180;
 const MAX_BANNER_IMAGE_SIZE = 5 * 1024 * 1024;
 const BANNER_IMAGE_BUCKET = "calendar-banners";
+const featuredInviteMessagePresets = [
+  "Venha viver uma noite de fé com a gente.",
+  "Prepare-se para uma noite especial de comunhão e Palavra.",
+  "Traga sua família e participe desse momento especial.",
+];
 const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const monthNames = [
   "Janeiro",
@@ -1802,8 +1807,30 @@ const CalendarPage = () => {
 
                               <div>
                                 <label className="text-sm font-semibold text-foreground">
-                                  Descrição do banner
+                                  Mensagem do convite
                                 </label>
+                                <div className="mt-2 grid gap-2">
+                                  {featuredInviteMessagePresets.map((message) => (
+                                    <button
+                                      key={message}
+                                      type="button"
+                                      disabled={!form.highlightHome}
+                                      onClick={() =>
+                                        setForm({
+                                          ...form,
+                                          highlightSummary: message,
+                                        })
+                                      }
+                                      className={`rounded-xl border px-3 py-2 text-left text-xs font-semibold leading-relaxed transition-colors ${
+                                        form.highlightSummary === message
+                                          ? "border-primary bg-primary text-primary-foreground"
+                                          : "border-border bg-background text-foreground hover:border-primary/50"
+                                      } disabled:cursor-not-allowed disabled:opacity-50`}
+                                    >
+                                      {message}
+                                    </button>
+                                  ))}
+                                </div>
                                 <Textarea
                                   value={form.highlightSummary}
                                   maxLength={240}

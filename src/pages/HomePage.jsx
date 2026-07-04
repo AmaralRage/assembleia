@@ -34,6 +34,8 @@ const getImageRatio = (imageUrl) =>
     image.src = imageUrl;
   });
 
+const defaultFeaturedInviteMessage = 'Venha viver uma noite de fé com a gente.';
+
 const HomePage = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
@@ -144,8 +146,8 @@ const HomePage = () => {
                 ? 'Festividade em destaque'
                 : 'Evento especial em destaque',
             title: festivity.title,
+            inviteMessage: festivity.highlight_summary || defaultFeaturedInviteMessage,
             subtitle:
-              festivity.highlight_summary ||
               festivity.description ||
               'Uma programação especial preparada para receber você e sua família.',
             date: formatEventDate(festivity.event_date),
@@ -447,7 +449,7 @@ const HomePage = () => {
                         </div>
                       </div>
                       <p className="text-base font-bold leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-xl md:text-3xl">
-                        Venha viver uma noite de fé com a gente.
+                        {featuredFestivity.inviteMessage || defaultFeaturedInviteMessage}
                       </p>
                     </div>
                   </div>
