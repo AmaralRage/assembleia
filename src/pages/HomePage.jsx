@@ -241,6 +241,10 @@ const HomePage = () => {
       return days;
     }, {})
   );
+  const agendaDesktopRows = [];
+  for (let index = 0; index < agendaDays.length; index += 4) {
+    agendaDesktopRows.push(agendaDays.slice(index, index + 4));
+  }
 
   return (
     <>
@@ -253,7 +257,7 @@ const HomePage = () => {
 
       <main className="flex flex-col">
         {/* HERO SECTION */}
-        <section className="relative order-1 min-h-[76dvh] sm:min-h-[84dvh] md:min-h-[96dvh] lg:min-h-[100dvh] flex items-center justify-center overflow-hidden">
+        <section className="relative order-1 flex min-h-[68svh] items-center justify-center overflow-hidden pb-9 pt-20 sm:min-h-[84dvh] sm:pb-14 sm:pt-28 md:min-h-[96dvh] md:pb-20 md:pt-32 lg:min-h-[100dvh]">
           <div className="absolute inset-0 bg-cover bg-center" style={{
             backgroundImage: 'url(https://i.imgur.com/WMVJQ9m.jpeg)'
           }}>
@@ -269,27 +273,27 @@ const HomePage = () => {
               y: 0
             }} transition={{
               duration: 0.8
-            }} className="flex flex-col items-center gap-4 sm:gap-6 md:gap-8">
-              <div className="h-20 w-20 overflow-hidden rounded-2xl bg-white shadow-2xl ring-4 ring-white/20 sm:h-32 sm:w-32 md:h-40 md:w-40">
+            }} className="flex flex-col items-center gap-3 sm:gap-6 md:gap-8">
+              <div className="hidden h-16 w-16 overflow-hidden rounded-2xl bg-white shadow-2xl ring-4 ring-white/20 min-[390px]:block sm:h-28 sm:w-28 md:h-40 md:w-40">
                 <img src="https://i.imgur.com/SA53Yxc.png" alt="Logo da Assembleia de Deus" className="w-full h-full object-cover" />
               </div>
 
               <div>
-                <h1 className="mb-3 text-3xl font-bold text-white sm:mb-4 sm:text-5xl md:text-6xl lg:text-7xl" style={{
+                <h1 className="mb-3 text-[1.7rem] font-bold leading-tight text-white min-[390px]:text-[1.9rem] sm:mb-4 sm:text-5xl md:text-6xl lg:text-7xl" style={{
                   textWrap: 'balance'
                 }}>
                   Assembleia de Deus da Lapa
                 </h1>
-                <p className="text-lg md:text-2xl text-white/90 font-light max-w-2xl mx-auto leading-relaxed">
+                <p className="mx-auto max-w-2xl text-base font-light leading-relaxed text-white/90 sm:text-lg md:text-2xl">
                   Bem-vindo à nossa comunidade de fé
                 </p>
-                <div className="mt-5 inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 shadow-lg backdrop-blur-sm sm:text-base">
+                <div className="mt-4 inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white/90 shadow-lg backdrop-blur-sm min-[390px]:text-sm sm:mt-5 sm:px-4 sm:text-base">
                   <MapPin className="h-4 w-4 shrink-0 text-[#93caff]" />
                   <span className="truncate">Rio de Janeiro, RJ · Rua Joaquim Silva, 52</span>
                 </div>
               </div>
 
-              <div className="flex w-full max-w-[18rem] flex-col items-center gap-2.5 sm:mt-4 sm:w-auto sm:max-w-none sm:flex-row sm:gap-4 md:mt-8">
+              <div className="flex w-full max-w-[16rem] flex-col items-center gap-2.5 sm:mt-4 sm:w-auto sm:max-w-none sm:flex-row sm:gap-4 md:mt-8">
               <motion.div initial={{
                 opacity: 0
               }} animate={{
@@ -334,7 +338,7 @@ const HomePage = () => {
                 }} transition={{
                   delay: 0.7,
                   duration: 0.8
-                }} className="w-full max-w-[16rem] rounded-xl bg-white px-5 py-2.5 text-center text-sm font-semibold text-primary shadow-lg transition-all duration-200 hover:bg-white/90 hover:shadow-xl active:scale-[0.98] sm:w-auto sm:max-w-none sm:px-7 sm:py-3.5 sm:text-base md:px-8 md:py-4">
+                }} className="inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-semibold text-white underline-offset-4 transition-colors hover:text-white/85 hover:underline sm:w-auto sm:bg-white sm:px-7 sm:py-3.5 sm:text-base sm:text-primary sm:no-underline sm:shadow-lg sm:hover:bg-white/90 sm:hover:text-primary md:px-8 md:py-4">
                   Ver agenda
                 </motion.a>
             </div>
@@ -696,11 +700,12 @@ const HomePage = () => {
                   </p>
                 </div>
               ) : agendaDays.length > 0 ? (
-                <div className="grid grid-cols-1 divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-4">
+                <>
+                <div className="divide-y divide-border md:hidden">
                   {agendaDays.map((day, dayIndex) => (
-                    <div key={day.date} className="min-h-[300px] p-5 md:p-6">
-                      <div className="mb-8">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-primary">
+                    <div key={day.date} className="p-4 md:min-h-[300px] md:p-6">
+                      <div className="mb-4 flex items-baseline justify-between gap-3 md:mb-8 md:block">
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary md:mb-2 md:tracking-[0.22em]">
                           {day.label}
                         </p>
                         <p className="text-sm font-medium capitalize text-muted-foreground">
@@ -708,7 +713,7 @@ const HomePage = () => {
                         </p>
                       </div>
 
-                      <div className="space-y-6">
+                      <div className="space-y-3 md:space-y-6">
                         {day.events.map((event, eventIndex) => {
                           const churchLocation = getChurchLocation(event.location);
 
@@ -719,37 +724,44 @@ const HomePage = () => {
                               whileInView={{ opacity: 1, y: 0 }}
                               viewport={{ once: true }}
                               transition={{ duration: 0.35, delay: (dayIndex + eventIndex) * 0.05 }}
-                              className="grid grid-cols-[minmax(0,1fr)_auto] gap-4"
+                              className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-border/70 bg-background/55 p-3 md:gap-4 md:rounded-none md:border-0 md:bg-transparent md:px-0 md:pb-0 ${
+                                eventIndex > 0 ? "md:border-t md:border-border md:pt-6" : "md:pt-0"
+                              }`}
                             >
-                              <div>
+                              <div className="min-w-0">
                                 <div className="mb-2 flex items-center gap-2 text-primary">
                                   <Clock className="h-3.5 w-3.5" />
                                   <span className="text-xs font-bold uppercase tracking-[0.16em]">
                                     {formatEventTime(event.event_time)}
                                   </span>
                                 </div>
-                                <h3 className="text-base font-bold leading-snug text-card-foreground">
+                                <h3 className="text-sm font-bold leading-snug text-card-foreground md:text-base">
                                   {event.title}
                                 </h3>
                                 {event.location && (
-                                  <p className="mt-1 line-clamp-2 text-sm font-medium text-muted-foreground">
+                                  <p className="mt-1 line-clamp-1 text-xs font-medium text-muted-foreground md:line-clamp-2 md:text-sm">
                                     {event.location}
                                   </p>
                                 )}
                                 {event.description && (
-                                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                                  <p className="mt-2 hidden line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:block">
                                     {event.description}
                                   </p>
                                 )}
                               </div>
 
-                              <div className="flex flex-col gap-2">
+                              <div
+                                className={`col-span-2 grid gap-2 ${
+                                  churchLocation ? "grid-cols-2" : "grid-cols-1"
+                                } md:col-span-1 md:flex md:flex-col`}
+                              >
                                 <Link
                                   to="/calendario"
                                   aria-label={`Ver ${event.title} no calendário`}
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary md:h-9 md:w-9 md:rounded-full md:px-0"
                                 >
                                   <Calendar className="h-4 w-4" />
+                                  <span className="md:hidden">Calendário</span>
                                 </Link>
                                 {churchLocation && (
                                   <a
@@ -757,9 +769,10 @@ const HomePage = () => {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     aria-label={`Como chegar em ${event.location}`}
-                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+                                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 md:h-9 md:w-9 md:rounded-full md:px-0"
                                   >
                                     <MapPin className="h-4 w-4" />
+                                    <span className="md:hidden">Rota</span>
                                   </a>
                                 )}
                               </div>
@@ -770,6 +783,123 @@ const HomePage = () => {
                     </div>
                   ))}
                 </div>
+
+                <div className="hidden md:block">
+                  {agendaDesktopRows.map((columnDays, columnIndex) => (
+                    <div
+                      key={`agenda-row-${columnIndex}`}
+                      className={`grid md:grid-cols-2 xl:grid-cols-4 ${columnIndex > 0 ? "border-t border-border" : ""}`}
+                    >
+                      <div className="contents">
+                        {columnDays.map((day, dayIndex) => (
+                          <div key={`desktop-${day.date}`} className="border-border px-6 py-6 md:[&:not(:nth-child(2n))]:border-r xl:[&:not(:nth-child(4n))]:border-r">
+                            <div className="mb-5">
+                              <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-primary">
+                                {day.label}
+                              </p>
+                              <p className="text-sm font-medium capitalize text-muted-foreground">
+                                {day.dateLabel}
+                              </p>
+                            </div>
+
+                            <div className="space-y-5">
+                              {day.events.map((event, eventIndex) => {
+                                const churchLocation = getChurchLocation(event.location);
+
+                                return (
+                                  <motion.div
+                                    key={event.id}
+                                    initial={{ opacity: 0, y: 16 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.35, delay: (dayIndex + eventIndex) * 0.05 }}
+                                    className={`grid grid-cols-[minmax(0,1fr)_auto] gap-4 ${
+                                      eventIndex > 0 ? "border-t border-border pt-5" : ""
+                                    }`}
+                                  >
+                                    <div className="min-w-0">
+                                      <div className="mb-2 flex items-center gap-2 text-primary">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        <span className="text-xs font-bold uppercase tracking-[0.16em]">
+                                          {formatEventTime(event.event_time)}
+                                        </span>
+                                      </div>
+                                      <h3 className="text-base font-bold leading-snug text-card-foreground">
+                                        {event.title}
+                                      </h3>
+                                      {event.location && (
+                                        <p className="mt-1 line-clamp-2 text-sm font-medium text-muted-foreground">
+                                          {event.location}
+                                        </p>
+                                      )}
+                                      {event.description && (
+                                        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                                          {event.description}
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    <div className="flex flex-col gap-2">
+                                      <Link
+                                        to="/calendario"
+                                        aria-label={`Ver ${event.title} no calendário`}
+                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                                      >
+                                        <Calendar className="h-4 w-4" />
+                                      </Link>
+                                      {churchLocation && (
+                                        <a
+                                          href={churchLocation.mapUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          aria-label={`Como chegar em ${event.location}`}
+                                          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+                                        >
+                                          <MapPin className="h-4 w-4" />
+                                        </a>
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                        {columnIndex === agendaDesktopRows.length - 1 && columnDays.length < 4 && (
+                          <div
+                            className={
+                              columnDays.length === 1
+                                ? "border-border px-6 py-6 md:col-span-1 xl:col-span-3"
+                                : columnDays.length === 2
+                                  ? "border-border px-6 py-6 md:col-span-2 xl:col-span-2"
+                                  : "border-border px-6 py-6 md:col-span-1 xl:col-span-1"
+                            }
+                          >
+                            <div className="flex h-full min-h-[190px] flex-col items-start justify-center rounded-xl border border-dashed border-border bg-muted/25 p-6">
+                              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                                Agenda completa
+                              </p>
+                              <h3 className="mt-2 text-lg font-bold text-foreground">
+                                Veja os próximos eventos
+                              </h3>
+                              <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                                Acompanhe todos os cultos, encontros e atualizações no calendário.
+                              </p>
+                              <Link
+                                to="/calendario"
+                                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                              >
+                                Calendário completo
+                                <ArrowRight className="h-4 w-4" />
+                              </Link>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                </>
               ) : (
                 <div className="px-6 py-14 text-center">
                   <Calendar className="mx-auto mb-3 h-9 w-9 text-muted-foreground/50" />

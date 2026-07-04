@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Moon, Sun, X } from 'lucide-react';
+import { CalendarDays, Info, MapPin, Menu, Moon, PlayCircle, Sun, X } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { getPreferredTheme, saveTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
@@ -88,14 +88,19 @@ const Header = () => {
   }, []);
 
   const navLinks = [
-    { name: 'Agenda e cultos', href: '/#agenda', isAnchor: true },
-    { name: 'Assista', href: '/assistir', isAnchor: false },
+    { name: 'Agenda e cultos', href: '/#agenda', isAnchor: true, icon: CalendarDays },
+    { name: 'Assista', href: '/assistir', isAnchor: false, icon: PlayCircle },
     { name: 'Endereços', href: '/enderecos', isAnchor: false },
-    { name: 'Sobre', href: '/sobre', isAnchor: false },
+    { name: 'Sobre', href: '/sobre', isAnchor: false, icon: Info },
      ...(isAdmin
       ? [{ name: 'Calendário', href: '/calendario', isAnchor: false }]
       : []),
   ];
+
+  const navIconByHref = {
+    '/enderecos': MapPin,
+    '/calendario': CalendarDays,
+  };
 
   const handleNavClick = (e, link) => {
     e.preventDefault();
@@ -145,20 +150,20 @@ const Header = () => {
       }`}
     >
       <nav className="section-container md:pr-20">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex h-16 items-center justify-between md:h-20">
           <Link 
             to="/" 
             onClick={() => smoothScrollTo(0)}
             className="flex items-center gap-3 group"
           >
-            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center transition-transform duration-200 group-hover:scale-105 overflow-hidden">
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary transition-transform duration-200 group-hover:scale-105 md:h-12 md:w-12">
               <img 
                 src="https://i.imgur.com/SA53Yxc.png"
                 alt="Logo da Assembleia de Deus"
                 className="w-full h-full rounded-full object-cover"
               />
             </div>
-            <span className="font-bold text-xl text-foreground hidden sm:block">
+            <span className="hidden text-lg font-bold text-foreground sm:block md:text-xl">
               Assembleia de Deus da Lapa
             </span>
           </Link>
@@ -187,7 +192,7 @@ const Header = () => {
             <button
               type="button"
               onClick={toggleTheme}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-muted/70 text-foreground transition-all hover:border-primary/40 hover:text-primary md:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-muted/70 text-foreground transition-all hover:border-primary/40 hover:text-primary md:hidden"
               aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
               title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
             >
@@ -196,7 +201,7 @@ const Header = () => {
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`md:hidden flex h-10 w-10 items-center justify-center rounded-xl border transition-colors duration-200 ${
+              className={`md:hidden flex h-9 w-9 items-center justify-center rounded-xl border transition-colors duration-200 ${
                 isMobileMenuOpen
                   ? 'border-secondary text-foreground'
                   : 'border-border bg-muted/70 text-foreground hover:border-primary/40 hover:text-primary'
@@ -209,22 +214,35 @@ const Header = () => {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-border py-3">
-            <div className="flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={(e) => handleNavClick(e, link)}
-                  className={`rounded-xl px-3 py-3 font-medium transition-colors duration-200 ${
-                    isActive(link)
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-foreground/70 hover:bg-muted hover:text-primary'
-                  }`}
-                >
-                  {link.name}
-                </a>
-              ))}
+          <div className="md:hidden max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-border py-2">
+            <div className="flex flex-col gap-1 rounded-b-2xl bg-background/95 py-1">
+              {navLinks.map((link) => {
+                const LinkIcon = link.icon ?? navIconByHref[link.href] ?? Info;
+
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => handleNavClick(e, link)}
+                    className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors duration-200 ${
+                      isActive(link)
+                        ? 'border-primary/25 bg-primary/10 text-primary'
+                        : 'border-border/70 bg-muted/35 text-foreground/75 hover:border-primary/30 hover:bg-muted hover:text-primary'
+                    }`}
+                  >
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                        isActive(link)
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-background text-primary'
+                      }`}
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                    </span>
+                    <span>{link.name}</span>
+                  </a>
+                );
+              })}
             </div>
           </div>
         )}

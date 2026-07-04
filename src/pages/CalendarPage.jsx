@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import {
@@ -85,6 +85,11 @@ const formatSelectedDate = (dateKey) => {
   }).format(date);
 };
 
+const formatShortDate = (dateKey) => {
+  const [year, month, day] = (dateKey || "").split("-");
+  return day && month && year ? `${day}/${month}` : "";
+};
+
 const getDateParts = (dateKey) => {
   const date = dateKeyToDate(dateKey) || dateKeyToDate(getTodayKey());
 
@@ -151,6 +156,11 @@ const categoryLabels = {
   reuniao: "Reunião",
 };
 
+const categoryOptions = Object.entries(categoryLabels).map(([value, label]) => ({
+  value,
+  label,
+}));
+
 const highlightableCategories = ["especial", "festividade"];
 const canHighlightEvent = (category) => highlightableCategories.includes(category);
 
@@ -188,6 +198,8 @@ const toDatabaseEvent = (event) => ({
 
 const CalendarPage = () => {
   const today = useMemo(() => new Date(), []);
+  const eventEditorRef = useRef(null);
+  const selectedDayDetailsRef = useRef(null);
   const [searchParams] = useSearchParams();
   const deepLinkedEventId = searchParams.get("event");
   const shouldEditDeepLinkedEvent = searchParams.get("edit") === "1";
@@ -204,8 +216,36 @@ const CalendarPage = () => {
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showPastDateWarning, setShowPastDateWarning] = useState(false);
+  const [showDeleteEventWarning, setShowDeleteEventWarning] = useState(false);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [showDeleteDayWarning, setShowDeleteDayWarning] = useState(false);
+  const [isDeletingDayEvents, setIsDeletingDayEvents] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [form, setForm] = useState(() => emptyForm(selectedDate));
+
+  const scrollToEventEditorOnMobile = () => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(min-width: 768px)").matches) return;
+
+    window.requestAnimationFrame(() => {
+      eventEditorRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
+
+  const scrollToSelectedDayOnMobile = () => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(min-width: 768px)").matches) return;
+
+    window.requestAnimationFrame(() => {
+      selectedDayDetailsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
 
   useEffect(() => {
     let sessionRetryId;
@@ -510,6 +550,7 @@ const CalendarPage = () => {
     setSelectedEventId(null);
     setForm(emptyForm(date));
     setIsEditing(true);
+    scrollToEventEditorOnMobile();
   };
 
   const startEditing = () => {
@@ -651,15 +692,20 @@ const CalendarPage = () => {
     );
     setSelectedDate(form.date);
     setIsEditing(false);
+    scrollToSelectedDayOnMobile();
   };
 
   const deleteEvent = async () => {
     if (!selectedEventId || !isAdmin) return;
 
+    setIsDeletingEvent(true);
+
     const { error } = await supabase
       .from("calendar_events")
       .delete()
       .eq("id", selectedEventId);
+
+    setIsDeletingEvent(false);
 
     if (error) {
       toast.error("Não foi possível remover o evento.");
@@ -671,7 +717,36 @@ const CalendarPage = () => {
     );
     setSelectedEventId(null);
     setIsEditing(false);
+    setShowDeleteEventWarning(false);
+    scrollToSelectedDayOnMobile();
     toast.success("Evento removido.");
+  };
+
+  const deleteSelectedDateEvents = async () => {
+    if (!isAdmin || selectedDateEvents.length <= 1) return;
+
+    setIsDeletingDayEvents(true);
+
+    const { error } = await supabase
+      .from("calendar_events")
+      .delete()
+      .eq("event_date", selectedDate);
+
+    setIsDeletingDayEvents(false);
+
+    if (error) {
+      toast.error("Não foi possível remover os eventos deste dia.");
+      return;
+    }
+
+    setEvents((currentEvents) =>
+      currentEvents.filter((event) => event.date !== selectedDate),
+    );
+    setSelectedEventId(null);
+    setIsEditing(false);
+    setShowDeleteDayWarning(false);
+    scrollToSelectedDayOnMobile();
+    toast.success("Eventos do dia removidos.");
   };
 
   const handleLogout = async () => {
@@ -693,7 +768,7 @@ const CalendarPage = () => {
       </Helmet>
 
       <Header />
-      <main className="min-h-screen bg-muted pt-24 md:pt-28 pb-14 md:pb-20">
+      <main className="min-h-screen bg-muted pb-14 pt-28 md:pb-20 md:pt-28">
         <div className="section-container">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
@@ -701,17 +776,17 @@ const CalendarPage = () => {
             transition={{ duration: 0.5 }}
             className="bg-background border border-border rounded-xl md:rounded-3xl shadow-xl overflow-hidden"
           >
-            <div className="flex flex-col gap-5 p-4 md:p-8 border-b border-border lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-4 border-b border-border bg-background/95 p-4 backdrop-blur md:gap-5 md:p-8 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <CalendarDays className="w-6 h-6 text-primary" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 md:h-11 md:w-11">
+                    <CalendarDays className="h-5 w-5 text-primary md:h-6 md:w-6" />
                   </div>
                   <div>
                     <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.14em] md:tracking-[0.18em] text-primary dark:text-white">
                       Agenda da Assembleia de Deus da Lapa
                     </p>
-                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                    <h1 className="text-xl font-bold text-foreground md:text-3xl">
                       Calendário
                     </h1>
                   </div>
@@ -719,7 +794,7 @@ const CalendarPage = () => {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                <div className="flex w-full items-center justify-between bg-muted rounded-xl border border-border p-1 sm:w-auto">
+                <div className="flex w-full items-center justify-between rounded-xl border border-border bg-muted p-1 sm:w-auto">
                   <Button
                     type="button"
                     variant="ghost"
@@ -751,7 +826,10 @@ const CalendarPage = () => {
                       className="rounded-xl shadow-md"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Novo evento
+                      <span className="md:hidden">
+                        Novo em {formatShortDate(selectedDate)}
+                      </span>
+                      <span className="hidden md:inline">Novo evento</span>
                     </Button>
                     <Button
                       type="button"
@@ -843,6 +921,74 @@ const CalendarPage = () => {
                   </div>
                 </div>
 
+                <div
+                  ref={selectedDayDetailsRef}
+                  className="mb-4 scroll-mt-24 rounded-2xl border border-border bg-background p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                        Dia selecionado
+                      </p>
+                      <p className="mt-1 text-sm font-bold capitalize text-foreground">
+                        {formatLongDate(selectedDate)}
+                      </p>
+                    </div>
+                    {selectedDate === getTodayKey() && (
+                      <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
+                        Hoje
+                      </span>
+                    )}
+                  </div>
+
+                  {selectedDateEvents.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedDateEvents.map((event) => (
+                        <button
+                          key={`selected-${event.id}`}
+                          type="button"
+                          onClick={() => {
+                            setSelectedEventId(event.id);
+                            setIsEditing(false);
+                          }}
+                          className="grid w-full grid-cols-[3.5rem_minmax(0,1fr)] gap-3 rounded-xl border border-border bg-muted/30 px-3 py-3 text-left transition-colors hover:border-primary/50"
+                        >
+                          <span className="inline-flex items-center gap-1 text-xs font-bold tabular-nums text-primary">
+                            <Clock className="h-3.5 w-3.5" />
+                            {event.time || "--:--"}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
+                              {event.title}
+                            </span>
+                            {event.location && (
+                              <span className="mt-1 block text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                                {event.location}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="rounded-xl border border-dashed border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+                      Nenhum evento neste dia.
+                    </p>
+                  )}
+
+                  {isAdmin && selectedDateEvents.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowDeleteDayWarning(true)}
+                      className="mt-3 w-full rounded-xl border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir todos do dia
+                    </Button>
+                  )}
+                </div>
+
                 {isLoadingEvents ? (
                   <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -857,6 +1003,14 @@ const CalendarPage = () => {
                   </div>
                 ) : visibleMonthEventDays.length > 0 ? (
                   <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-sm font-bold text-foreground">
+                        Eventos do mês
+                      </h3>
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        {monthNames[month]} {year}
+                      </span>
+                    </div>
                     {visibleMonthEventDays.map((eventDay) => {
                       const isPastDay = isPastDate(eventDay.date);
                       const isToday = eventDay.date === getTodayKey();
@@ -864,13 +1018,13 @@ const CalendarPage = () => {
                       return (
                         <div
                           key={eventDay.date}
-                          className={`rounded-2xl border p-4 ${
+                          className={`rounded-2xl border p-3 ${
                             isPastDay && !isToday
                               ? "border-border/60 bg-muted/20 opacity-60"
                               : "border-border bg-background"
                           }`}
                         >
-                          <div className="mb-3 flex items-center justify-between gap-3">
+                          <div className="mb-2 flex items-center justify-between gap-3">
                             <div>
                               <p className="text-sm font-bold capitalize text-foreground">
                                 {formatLongDate(eventDay.date)}
@@ -898,14 +1052,14 @@ const CalendarPage = () => {
                                   setSelectedEventId(event.id);
                                   setIsEditing(false);
                                 }}
-                                className={`w-full rounded-xl border px-3 py-3 text-left transition-colors hover:border-primary/50 ${
+                                className={`w-full rounded-xl border px-3 py-2.5 text-left transition-colors hover:border-primary/50 ${
                                   isPastDay && !isToday
                                     ? "border-border/70 bg-background/60"
                                     : "border-border bg-muted/30"
                                 }`}
                               >
-                                <div className="mb-2 flex items-center justify-between gap-2">
-                                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+                                <div className="mb-1.5 flex items-center justify-between gap-2">
+                                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
                                     {categoryLabels[event.category] || "Evento"}
                                   </span>
                                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
@@ -923,7 +1077,7 @@ const CalendarPage = () => {
                                   </p>
                                 )}
                                 {event.description && (
-                                  <p className="mt-2 line-clamp-2 min-w-0 text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
+                                  <p className="mt-2 line-clamp-1 min-w-0 text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
                                     {event.description}
                                   </p>
                                 )}
@@ -1040,7 +1194,7 @@ const CalendarPage = () => {
                 </div>
               </div>
 
-              <aside className="border-t xl:border-t-0 xl:border-l border-border bg-muted/35 p-4 md:p-7">
+              <aside ref={eventEditorRef} className="scroll-mt-24 border-t xl:border-t-0 xl:border-l border-border bg-muted/35 p-4 md:p-7">
                 {isEditing ? (
                   <div>
                     <div className="flex items-start justify-between gap-4 mb-6">
@@ -1065,7 +1219,13 @@ const CalendarPage = () => {
                       </Button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form id="calendar-event-form" onSubmit={handleSubmit} className="space-y-4 pb-24 md:pb-0">
+                      <div className="rounded-xl border border-border bg-background px-4 py-3">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                          Dados básicos
+                        </p>
+                      </div>
+
                       <div>
                         <label className="text-sm font-semibold text-foreground">
                           Título
@@ -1127,29 +1287,49 @@ const CalendarPage = () => {
                               ))}
                             </div>
                             <div className="grid grid-cols-7 gap-1">
-                              {formCalendarCells.map((day, index) =>
-                                day ? (
+                              {formCalendarCells.map((day, index) => {
+                                if (!day) return <span key={`blank-${index}`} />;
+
+                                const dateKey = toDateKey(
+                                  formDateParts.year,
+                                  formDateParts.month,
+                                  day,
+                                );
+                                const dayEvents = events.filter(
+                                  (event) => event.date === dateKey,
+                                );
+                                const isSelectedFormDay = formDateParts.day === day;
+
+                                return (
                                   <button
                                     key={`${formDateParts.month}-${day}`}
                                     type="button"
-                                    disabled={toDateKey(
-                                      formDateParts.year,
-                                      formDateParts.month,
-                                      day,
-                                    ) < getTodayKey()}
+                                    disabled={dateKey < getTodayKey()}
                                     onClick={() => updateFormDate({ day })}
-                                    className={`h-9 rounded-lg text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
-                                      formDateParts.day === day
+                                    className={`relative h-9 rounded-lg text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
+                                      isSelectedFormDay
                                         ? "bg-primary text-primary-foreground shadow-sm"
                                         : "bg-muted/40 text-foreground hover:bg-primary/10 hover:text-primary"
                                     }`}
                                   >
                                     {day}
+                                    {dayEvents.length > 0 && (
+                                      <span className="absolute bottom-1 left-1/2 flex max-w-[1.4rem] -translate-x-1/2 gap-0.5">
+                                        {dayEvents.slice(0, 3).map((event) => (
+                                          <span
+                                            key={event.id}
+                                            className={`h-1 w-1 rounded-full ${
+                                              isSelectedFormDay
+                                                ? "bg-primary-foreground"
+                                                : getEventMarkerStyle(event.id)
+                                            }`}
+                                          />
+                                        ))}
+                                      </span>
+                                    )}
                                   </button>
-                                ) : (
-                                  <span key={`blank-${index}`} />
-                                ),
-                              )}
+                                );
+                              })}
                             </div>
                             <div className="hidden grid-cols-[0.8fr_1.2fr_1fr] gap-2">
                               <select
@@ -1295,6 +1475,12 @@ const CalendarPage = () => {
                       </div>
 
                       {canHighlightEvent(form.category) && (
+                        <>
+                        <div className="rounded-xl border border-border bg-background px-4 py-3">
+                          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                            Destaque
+                          </p>
+                        </div>
                         <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background shadow-sm">
                           <div className="border-b border-primary/15 p-4">
                             <div className="flex flex-col gap-3">
@@ -1491,7 +1677,14 @@ const CalendarPage = () => {
                             </div>
                           </div>
                         </div>
+                        </>
                       )}
+
+                      <div className="rounded-xl border border-border bg-background px-4 py-3">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                          Detalhes
+                        </p>
+                      </div>
 
                       <div>
                         <label className="text-sm font-semibold text-foreground">
@@ -1555,11 +1748,57 @@ const CalendarPage = () => {
                         </p>
                       </div>
 
-                      <Button type="submit" className="w-full rounded-xl">
+                      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 md:hidden">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                          Resumo
+                        </p>
+                        <div className="mt-3 space-y-2 text-sm">
+                          <p className="flex items-center justify-between gap-3">
+                            <span className="text-muted-foreground">Data</span>
+                            <span className="font-semibold text-foreground">
+                              {formatShortDate(form.date)}
+                            </span>
+                          </p>
+                          <p className="flex items-center justify-between gap-3">
+                            <span className="text-muted-foreground">Horário</span>
+                            <span className="font-semibold text-foreground">
+                              {form.time || "A definir"}
+                            </span>
+                          </p>
+                          <p className="flex items-start justify-between gap-3">
+                            <span className="text-muted-foreground">Local</span>
+                            <span className="max-w-[12rem] text-right font-semibold text-foreground">
+                              {form.location || "A definir"}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button type="submit" className="hidden w-full rounded-xl md:inline-flex">
                         <Save className="w-4 h-4 mr-2" />
                         Salvar evento
                       </Button>
                     </form>
+                    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 p-3 shadow-[0_-12px_30px_-20px_rgba(15,23,42,0.45)] backdrop-blur md:hidden">
+                      <div className="mx-auto grid max-w-md grid-cols-[0.8fr_1.2fr] gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={closeForm}
+                          className="rounded-xl"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          type="submit"
+                          form="calendar-event-form"
+                          className="rounded-xl"
+                        >
+                          <Save className="mr-2 h-4 w-4" />
+                          Salvar
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 ) : selectedEvent ? (
                   <div>
@@ -1607,25 +1846,39 @@ const CalendarPage = () => {
                     </p>
 
                     {isAdmin && (
-                    <div className="grid grid-cols-[1fr_auto] gap-3">
-                      <Button
-                        type="button"
-                        onClick={startEditing}
-                        className="rounded-xl"
-                      >
-                        Editar evento
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={deleteEvent}
-                        className="rounded-xl border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
-                        aria-label="Excluir evento"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-[1fr_auto] gap-3">
+                          <Button
+                            type="button"
+                            onClick={startEditing}
+                            className="rounded-xl"
+                          >
+                            Editar evento
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setShowDeleteEventWarning(true)}
+                            className="rounded-xl border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                            aria-label="Excluir evento"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        {selectedDateEvents.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowDeleteDayWarning(true)}
+                            className="w-full rounded-xl border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir todos os eventos deste dia
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -1636,6 +1889,18 @@ const CalendarPage = () => {
                     <h2 className="text-xl md:text-2xl font-bold text-foreground capitalize">
                       {formatLongDate(selectedDate)}
                     </h2>
+
+                    {isAdmin && selectedDateEvents.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowDeleteDayWarning(true)}
+                        className="mt-5 w-full rounded-xl border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir todos os eventos do dia
+                      </Button>
+                    )}
 
                     {selectedDateEvents.length > 0 ? (
                       <div className="mt-6 space-y-3">
@@ -1671,7 +1936,7 @@ const CalendarPage = () => {
                         className="w-full mt-6 rounded-xl"
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Adicionar evento nesta data
+                        Adicionar em {formatShortDate(selectedDate)}
                       </Button>
                     )}
                   </div>
@@ -1717,6 +1982,129 @@ const CalendarPage = () => {
             >
               Entendi
             </Button>
+          </motion.div>
+        </div>
+      )}
+
+      {showDeleteEventWarning && selectedEvent && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-event-title"
+          onClick={() => {
+            if (!isDeletingEvent) setShowDeleteEventWarning(false);
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={(event) => event.stopPropagation()}
+            className="w-full max-w-md rounded-3xl border border-border bg-background p-7 text-center shadow-2xl"
+          >
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
+              <Trash2 className="h-8 w-8 text-destructive" />
+            </div>
+            <h2
+              id="delete-event-title"
+              className="text-2xl font-bold text-foreground"
+            >
+              Excluir este evento?
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              Você tem certeza que deseja excluir{" "}
+              <strong className="font-semibold text-foreground">
+                {selectedEvent.title}
+              </strong>
+              ? Esta ação não poderá ser desfeita.
+            </p>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDeleteEventWarning(false)}
+                disabled={isDeletingEvent}
+                className="rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={deleteEvent}
+                disabled={isDeletingEvent}
+                className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeletingEvent ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Excluir evento
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {showDeleteDayWarning && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-day-title"
+          onClick={() => {
+            if (!isDeletingDayEvents) setShowDeleteDayWarning(false);
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={(event) => event.stopPropagation()}
+            className="w-full max-w-md rounded-3xl border border-border bg-background p-7 text-center shadow-2xl"
+          >
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
+              <Trash2 className="h-8 w-8 text-destructive" />
+            </div>
+            <h2
+              id="delete-day-title"
+              className="text-2xl font-bold text-foreground"
+            >
+              Excluir todos os eventos?
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              Você tem certeza que deseja excluir todos os eventos de{" "}
+              <strong className="font-semibold text-foreground">
+                {formatLongDate(selectedDate)}
+              </strong>
+              ? Esta ação removerá {selectedDateEvents.length} eventos e não
+              poderá ser desfeita.
+            </p>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDeleteDayWarning(false)}
+                disabled={isDeletingDayEvents}
+                className="rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={deleteSelectedDateEvents}
+                disabled={isDeletingDayEvents}
+                className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeletingDayEvents ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Excluir todos
+              </Button>
+            </div>
           </motion.div>
         </div>
       )}
