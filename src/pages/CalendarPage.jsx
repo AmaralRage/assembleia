@@ -95,6 +95,18 @@ const formatShortDate = (dateKey) => {
   return day && month && year ? `${day}/${month}` : "";
 };
 
+const formatDateTime = (value) => {
+  if (!value) return "";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+};
+
 const getDateParts = (dateKey) => {
   const date = dateKeyToDate(dateKey) || dateKeyToDate(getTodayKey());
 
@@ -113,7 +125,7 @@ const timeOptions = Array.from({ length: 32 }, (_, index) => {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 });
 
-const quickTimeOptions = ["18:00", "19:00", "19:30", "20:00"];
+const quickTimeOptions = ["09:00", "18:00", "19:00", "19:30", "20:00"];
 
 const eventColorStyles = [
   "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/60 dark:text-blue-200 dark:border-blue-600/70",
@@ -166,6 +178,34 @@ const categoryOptions = Object.entries(categoryLabels).map(([value, label]) => (
   label,
 }));
 
+const categorySuggestions = {
+  especial: {
+    title: "Evento Especial",
+    time: "19:00",
+    description: "Uma programação especial para toda a igreja.",
+  },
+  culto: {
+    title: "Culto de Adoração",
+    time: "19:00",
+    description: "Venha cultuar conosco em comunhão.",
+  },
+  jovens: {
+    title: "Culto de Jovens",
+    time: "19:30",
+    description: "Um encontro de comunhão, louvor e Palavra para a juventude.",
+  },
+  festividade: {
+    title: "Culto de Celebração",
+    time: "19:00",
+    description: "Uma programação especial para celebrarmos juntos.",
+  },
+  reuniao: {
+    title: "Reunião",
+    time: "19:00",
+    description: "Um momento de alinhamento, comunhão e serviço.",
+  },
+};
+
 const highlightableCategories = ["especial", "festividade"];
 const canHighlightEvent = (category) => highlightableCategories.includes(category);
 
@@ -181,6 +221,8 @@ const fromDatabaseEvent = (event) => ({
   highlightUntil: event.highlight_until || "",
   highlightImageUrl: event.highlight_image_url || "",
   highlightSummary: event.highlight_summary || "",
+  createdAt: event.created_at || "",
+  updatedAt: event.updated_at || "",
 });
 
 const toDatabaseEvent = (event) => ({
@@ -200,6 +242,42 @@ const toDatabaseEvent = (event) => ({
   highlight_summary:
     canHighlightEvent(event.category) ? event.highlightSummary.trim() : "",
 });
+
+const hasMeaningfulText = (value) => /[\p{L}\p{N}]/u.test(value || "");
+
+const getFormWarnings = (form) => {
+  const warnings = [];
+  const title = form.title.trim();
+  const location = form.location.trim();
+  const description = form.description.trim();
+
+  if (title && title.length < 4) {
+    warnings.push("O título parece curto demais.");
+  }
+
+  if (!form.time) {
+    warnings.push("O evento está sem horário.");
+  }
+
+  if (location && !churchLocations.some((church) => church.name === location)) {
+    warnings.push("O local não está na lista de congregações cadastradas.");
+  }
+
+  if (description && !hasMeaningfulText(description)) {
+    warnings.push("A descrição parece conter apenas símbolos ou emojis.");
+  }
+
+  if (isPastDate(form.date)) {
+    warnings.push("A data selecionada está no passado.");
+  }
+
+  return warnings;
+};
+
+const compareCalendarEvents = (firstEvent, secondEvent) =>
+  `${firstEvent.date || ""} ${firstEvent.time || "99:99"}`.localeCompare(
+    `${secondEvent.date || ""} ${secondEvent.time || "99:99"}`,
+  );
 
 const DatePickerField = ({
   value,
@@ -397,6 +475,11 @@ const CalendarPage = () => {
   const [showDeleteDayWarning, setShowDeleteDayWarning] = useState(false);
   const [isDeletingDayEvents, setIsDeletingDayEvents] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [locationSearch, setLocationSearch] = useState("");
+  const [recurrence, setRecurrence] = useState({
+    enabled: false,
+    weeks: 4,
+  });
   const [form, setForm] = useState(() => emptyForm(selectedDate));
 
   const scrollToEventEditorOnMobile = () => {
@@ -591,6 +674,25 @@ const CalendarPage = () => {
     ],
     [form.date],
   );
+  const formWarnings = getFormWarnings(form);
+  const filteredChurchLocations = churchLocations.filter((location) => {
+    const search = locationSearch.trim().toLowerCase();
+    if (!search) return true;
+
+    return `${location.name} ${location.address || ""}`
+      .toLowerCase()
+      .includes(search);
+  });
+  const upcomingEventsWithForm = [
+    ...events.filter(
+      (event) => event.id !== selectedEventId && event.date >= getTodayKey(),
+    ),
+    ...(form.date >= getTodayKey()
+      ? [{ ...form, id: selectedEventId || "form-preview" }]
+      : []),
+  ].sort(compareCalendarEvents);
+  const willBeNextHomeEvent =
+    Boolean(form.date) && upcomingEventsWithForm[0]?.id === (selectedEventId || "form-preview");
 
   const updateFormDate = (changes) => {
     const nextParts = { ...formDateParts, ...changes };
@@ -633,6 +735,31 @@ const CalendarPage = () => {
     setForm({
       ...form,
       time: `${String(nextHour).padStart(2, "0")}:${String(nextMinute).padStart(2, "0")}`,
+    });
+  };
+
+  const applyCategorySuggestion = () => {
+    const suggestion = categorySuggestions[form.category];
+    if (!suggestion) return;
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      title: currentForm.title.trim() ? currentForm.title : suggestion.title,
+      time: currentForm.time || suggestion.time,
+      description: currentForm.description.trim()
+        ? currentForm.description
+        : suggestion.description,
+    }));
+  };
+
+  const cleanDescription = () => {
+    const normalizedDescription = form.description.replace(/\s+/g, " ").trim();
+
+    setForm({
+      ...form,
+      description: hasMeaningfulText(normalizedDescription)
+        ? normalizedDescription
+        : "",
     });
   };
 
@@ -746,6 +873,7 @@ const CalendarPage = () => {
 
     setSelectedEventId(null);
     setForm(emptyForm(date));
+    setRecurrence({ enabled: false, weeks: 4 });
     setIsEditing(true);
     scrollToEventEditorOnMobile();
   };
@@ -762,6 +890,25 @@ const CalendarPage = () => {
 
     setForm({ ...selectedEvent });
     setIsEditing(true);
+  };
+
+  const duplicateSelectedEvent = () => {
+    if (!selectedEvent || !isAdmin) return;
+
+    setSelectedEventId(null);
+    setSelectedDate(selectedEvent.date);
+    setForm({
+      ...selectedEvent,
+      id: undefined,
+      title: `${selectedEvent.title} (cópia)`,
+      highlightHome: false,
+      highlightUntil: "",
+      highlightImageUrl: "",
+      highlightSummary: "",
+    });
+    setRecurrence({ enabled: false, weeks: 4 });
+    setIsEditing(true);
+    scrollToEventEditorOnMobile();
   };
 
   const closeForm = () => {
@@ -865,6 +1012,34 @@ const CalendarPage = () => {
         ),
       );
       toast.success("Evento atualizado.");
+    } else if (recurrence.enabled) {
+      const recurringEvents = Array.from({ length: recurrence.weeks }, (_, index) => ({
+        ...databaseEvent,
+        event_date: addDaysToDateKey(form.date, index * 7),
+        highlight_home: false,
+        highlight_until: null,
+        highlight_image_url: "",
+        highlight_summary: "",
+      }));
+
+      const { data, error } = await supabase
+        .from("calendar_events")
+        .insert(recurringEvents)
+        .select();
+
+      if (error) {
+        toast.error("Não foi possível adicionar os eventos recorrentes.");
+        return;
+      }
+
+      const newEvents = data.map(fromDatabaseEvent);
+      setEvents((currentEvents) =>
+        [...currentEvents, ...newEvents].sort((first, second) =>
+          `${first.date} ${first.time}`.localeCompare(`${second.date} ${second.time}`),
+        ),
+      );
+      setSelectedEventId(newEvents[0]?.id || null);
+      toast.success(`${newEvents.length} eventos recorrentes adicionados.`);
     } else {
       const { data, error } = await supabase
         .from("calendar_events")
@@ -1463,6 +1638,20 @@ const CalendarPage = () => {
                         </p>
                       </div>
 
+                      {formWarnings.length > 0 && (
+                        <div className="rounded-xl border border-amber-300/50 bg-amber-50 p-3 text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/35 dark:text-amber-100">
+                          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em]">
+                            <AlertTriangle className="h-4 w-4" />
+                            Atenção antes de salvar
+                          </p>
+                          <ul className="mt-2 space-y-1 text-xs font-medium leading-relaxed">
+                            {formWarnings.map((warning) => (
+                              <li key={warning}>- {warning}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
                       <div>
                         <label className="text-sm font-semibold text-foreground">
                           Título
@@ -1692,6 +1881,68 @@ const CalendarPage = () => {
                         </div>
                       </div>
 
+                      {!selectedEventId && (
+                        <details className="group rounded-xl border border-border bg-background">
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+                            <span>
+                              <span className="block text-sm font-bold text-foreground">
+                                Recorrência
+                              </span>
+                              <span className="block text-xs text-muted-foreground">
+                                Repita este evento semanalmente se precisar.
+                              </span>
+                            </span>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                          </summary>
+                          <div className="border-t border-border p-4">
+                          <label className="flex cursor-pointer items-center justify-between gap-3">
+                            <span>
+                              <span className="block text-sm font-bold text-foreground">
+                                Repetir semanalmente
+                              </span>
+                              <span className="block text-xs text-muted-foreground">
+                                Cria cópias nas próximas semanas.
+                              </span>
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={recurrence.enabled}
+                              onChange={(event) =>
+                                setRecurrence({
+                                  ...recurrence,
+                                  enabled: event.target.checked,
+                                })
+                              }
+                              className="h-5 w-5 rounded border-input accent-primary"
+                            />
+                          </label>
+                          {recurrence.enabled && (
+                            <div className="mt-3 grid grid-cols-3 gap-2">
+                              {[4, 8, 12].map((weeks) => (
+                                <button
+                                  key={weeks}
+                                  type="button"
+                                  onClick={() =>
+                                    setRecurrence({
+                                      ...recurrence,
+                                      weeks,
+                                    })
+                                  }
+                                  className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+                                    recurrence.weeks === weeks
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "border-border bg-muted/30 text-foreground hover:border-primary/40"
+                                  }`}
+                                >
+                                  {weeks} semanas
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          </div>
+                        </details>
+                      )}
+
                       <div>
                         <label className="text-sm font-semibold text-foreground">
                           Categoria
@@ -1709,16 +1960,38 @@ const CalendarPage = () => {
                           <option value="festividade">Festividade</option>
                           <option value="reuniao">Reunião</option>
                         </select>
+                        {categorySuggestions[form.category] && (
+                          <div className="mt-2 rounded-xl border border-primary/15 bg-primary/5 p-3">
+                            <p className="text-xs font-semibold leading-relaxed text-muted-foreground">
+                              Sugestão: {categorySuggestions[form.category].title} às{" "}
+                              {categorySuggestions[form.category].time}
+                            </p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="mt-2 h-9 w-full rounded-lg text-xs font-bold"
+                              onClick={applyCategorySuggestion}
+                            >
+                              Aplicar sugestão
+                            </Button>
+                          </div>
+                        )}
                       </div>
 
                       {canHighlightEvent(form.category) && (
-                        <>
-                        <div className="rounded-xl border border-border bg-background px-4 py-3">
-                          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                            Destaque
-                          </p>
-                        </div>
-                        <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background shadow-sm">
+                        <details className="group rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background shadow-sm">
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+                            <span>
+                              <span className="block text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                                Destaque na Home
+                              </span>
+                              <span className="block text-xs text-muted-foreground">
+                                Banner, imagem e tempo de destaque.
+                              </span>
+                            </span>
+                            <ChevronRight className="h-4 w-4 text-primary transition-transform group-open:rotate-90" />
+                          </summary>
+                          <div className="border-t border-primary/15">
                           <div className="border-b border-primary/15 p-4">
                             <div className="flex flex-col gap-3">
                               <div className="min-w-0">
@@ -1933,8 +2206,8 @@ const CalendarPage = () => {
                               </div>
                             </div>
                           </div>
-                        </div>
-                        </>
+                          </div>
+                        </details>
                       )}
 
                       <div className="rounded-xl border border-border bg-background px-4 py-3">
@@ -1947,6 +2220,46 @@ const CalendarPage = () => {
                         <label className="text-sm font-semibold text-foreground">
                           Local
                         </label>
+                        <Input
+                          type="search"
+                          value={locationSearch}
+                          onChange={(event) => setLocationSearch(event.target.value)}
+                          placeholder="Buscar congregação..."
+                          className="mt-1.5 bg-background"
+                        />
+                        <div className="mt-2 grid max-h-44 gap-2 overflow-y-auto rounded-xl border border-border bg-muted/20 p-2">
+                          {filteredChurchLocations.slice(0, 6).map((location) => (
+                            <button
+                              key={location.id}
+                              type="button"
+                              onClick={() =>
+                                setForm({
+                                  ...form,
+                                  location: location.name,
+                                })
+                              }
+                              className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                                form.location === location.name
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border bg-background hover:border-primary/40"
+                              }`}
+                            >
+                              <span className="block text-xs font-bold text-foreground">
+                                {location.name}
+                              </span>
+                              {location.address && (
+                                <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                                  {location.address}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                          {filteredChurchLocations.length === 0 && (
+                            <p className="px-2 py-3 text-center text-xs font-medium text-muted-foreground">
+                              Nenhuma congregação encontrada.
+                            </p>
+                          )}
+                        </div>
                         <select
                           value={form.location}
                           onChange={(event) =>
@@ -1984,7 +2297,19 @@ const CalendarPage = () => {
                           )}
                       </div>
 
-                      <div>
+                      <details className="group rounded-xl border border-border bg-background">
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+                          <span>
+                            <span className="block text-sm font-bold text-foreground">
+                              Descrição
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              Texto opcional para explicar melhor o evento.
+                            </span>
+                          </span>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                        </summary>
+                        <div className="border-t border-border p-4">
                         <label className="text-sm font-semibold text-foreground">
                           Descrição
                         </label>
@@ -2000,8 +2325,79 @@ const CalendarPage = () => {
                           placeholder="Conte brevemente sobre o evento..."
                           className="mt-1.5 min-h-28 bg-background resize-none"
                         />
-                        <p className="mt-1.5 text-right text-xs text-muted-foreground">
-                          {form.description.length}/{MAX_DESCRIPTION_LENGTH}
+                        <div className="mt-1.5 flex items-center justify-between gap-3">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="h-8 px-2 text-xs font-bold text-primary"
+                            onClick={cleanDescription}
+                            disabled={!form.description}
+                          >
+                            Limpar descrição
+                          </Button>
+                          <p className="text-xs text-muted-foreground">
+                            {form.description.length}/{MAX_DESCRIPTION_LENGTH}
+                          </p>
+                        </div>
+                        </div>
+                      </details>
+
+                      <details className="group rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background shadow-sm">
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+                          <span>
+                            <span className="block text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                              Prévia e impacto
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              Veja como o evento está ficando antes de salvar.
+                            </span>
+                          </span>
+                          <ChevronRight className="h-4 w-4 text-primary transition-transform group-open:rotate-90" />
+                        </summary>
+                        <div className="space-y-4 border-t border-primary/15 p-4">
+                      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background p-4 shadow-sm">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                          Prévia do evento
+                        </p>
+                        <div className="mt-3 rounded-xl border border-border bg-background p-4">
+                          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+                            <Clock className="h-3.5 w-3.5" />
+                            {form.time || "Horário a definir"}
+                          </div>
+                          <h3 className="text-lg font-black leading-tight text-foreground">
+                            {form.title.trim() || "Título do evento"}
+                          </h3>
+                          <p className="mt-1 text-sm font-medium capitalize text-muted-foreground">
+                            {formatSelectedDate(form.date)}
+                          </p>
+                          {form.location && (
+                            <p className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
+                              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                              <span>{form.location}</span>
+                            </p>
+                          )}
+                          <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                            {hasMeaningfulText(form.description)
+                              ? form.description
+                              : "A descrição aparecerá aqui quando houver um texto de apoio."}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`rounded-xl border p-3 ${
+                          willBeNextHomeEvent
+                            ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/35 dark:text-emerald-100"
+                            : "border-border bg-muted/25 text-muted-foreground"
+                        }`}
+                      >
+                        <p className="text-xs font-bold uppercase tracking-[0.14em]">
+                          Status na home
+                        </p>
+                        <p className="mt-1 text-xs font-medium leading-relaxed">
+                          {willBeNextHomeEvent
+                            ? "Este será o próximo evento destacado na programação semanal."
+                            : "Existe outro evento antes deste na programação semanal."}
                         </p>
                       </div>
 
@@ -2030,6 +2426,8 @@ const CalendarPage = () => {
                           </p>
                         </div>
                       </div>
+                        </div>
+                      </details>
 
                       <Button type="submit" className="hidden w-full rounded-xl md:inline-flex">
                         <Save className="w-4 h-4 mr-2" />
@@ -2114,6 +2512,26 @@ const CalendarPage = () => {
 
                     {isAdmin && (
                       <div className="space-y-3">
+                        <div className="rounded-xl border border-border bg-muted/25 p-3">
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                            Histórico
+                          </p>
+                          {selectedEvent.createdAt || selectedEvent.updatedAt ? (
+                            <div className="mt-2 space-y-1 text-xs font-medium text-muted-foreground">
+                              {selectedEvent.createdAt && (
+                                <p>Criado em {formatDateTime(selectedEvent.createdAt)}</p>
+                              )}
+                              {selectedEvent.updatedAt && (
+                                <p>Atualizado em {formatDateTime(selectedEvent.updatedAt)}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-xs font-medium text-muted-foreground">
+                              Metadados ainda não disponíveis para este evento.
+                            </p>
+                          )}
+                        </div>
+
                         <div className="grid grid-cols-[1fr_auto] gap-3">
                           <Button
                             type="button"
@@ -2133,6 +2551,15 @@ const CalendarPage = () => {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={duplicateSelectedEvent}
+                          className="w-full rounded-xl"
+                        >
+                          Duplicar evento
+                        </Button>
 
                         {selectedDateEvents.length > 1 && (
                           <Button

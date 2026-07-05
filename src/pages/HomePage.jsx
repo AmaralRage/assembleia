@@ -11,7 +11,7 @@ import { smoothScrollToElement } from '@/lib/smoothScroll';
 import { churchLocations, getChurchLocation, mainChurchLocation } from '@/data/churchLocations';
 import { homeLeadershipCards } from '@/data/churchLeadership';
 import { featuredFestivity as fallbackFestivity } from '@/data/churchHighlights';
-import { formatEventDate, formatEventTime, formatWeekDay, getTodayKey } from '@/lib/calendar';
+import { dateKeyToDate, dateKeyToUtcNoon, formatEventDate, formatEventTime, formatWeekDay, getTodayKey } from '@/lib/calendar';
 import { isAdminSessionFresh } from '@/lib/adminDevice';
 
 const getImageRatio = (imageUrl) =>
@@ -35,6 +35,81 @@ const getImageRatio = (imageUrl) =>
   });
 
 const defaultFeaturedInviteMessage = 'Venha viver uma noite de fé com a gente.';
+
+const hasMeaningfulText = (value) => /[\p{L}\p{N}]/u.test(value || '');
+
+const formatEventDayNumber = (dateKey) =>
+  new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    timeZone: 'UTC',
+  }).format(dateKeyToUtcNoon(dateKey));
+
+const formatEventShortMonth = (dateKey) =>
+  new Intl.DateTimeFormat('pt-BR', {
+    month: 'short',
+    timeZone: 'UTC',
+  })
+    .format(dateKeyToUtcNoon(dateKey))
+    .replace('.', '')
+    .toUpperCase();
+
+const compareUpcomingEvents = (firstEvent, secondEvent) => {
+  const firstDate = firstEvent.event_date || '';
+  const secondDate = secondEvent.event_date || '';
+
+  if (firstDate !== secondDate) {
+    return firstDate.localeCompare(secondDate);
+  }
+
+  const firstTime = firstEvent.event_time || '99:99:99';
+  const secondTime = secondEvent.event_time || '99:99:99';
+
+  return firstTime.localeCompare(secondTime);
+};
+
+const getRelativeEventLabel = (dateKey) => {
+  if (!dateKey) return '';
+
+  const today = dateKeyToDate(getTodayKey());
+  const eventDate = dateKeyToDate(dateKey);
+  const dayDifference = Math.round((eventDate - today) / 86400000);
+
+  if (dayDifference === 0) return 'hoje';
+  if (dayDifference === 1) return 'amanhã';
+  if (dayDifference > 1) return `em ${dayDifference} dias`;
+
+  return '';
+};
+
+const getEventFallbackDescription = (event) => {
+  const title = event?.title?.toLowerCase() || '';
+  const category = event?.category || '';
+
+  if (category === 'oração' || title.includes('oração')) {
+    return 'Um momento de busca e fortalecimento espiritual.';
+  }
+
+  if (category === 'festividade' || category === 'especial' || title.includes('celebração')) {
+    return 'Uma programação especial para toda a igreja.';
+  }
+
+  if (category === 'culto' || title.includes('culto')) {
+    return 'Venha cultuar conosco em comunhão.';
+  }
+
+  return 'Uma programação para vivermos fé, comunhão e Palavra.';
+};
+
+const getLocationParts = (location) => {
+  if (!location) return { primary: '', secondary: '' };
+
+  const [primary, ...rest] = location.split(/\s+-\s+/);
+
+  return {
+    primary: primary?.trim() || location,
+    secondary: rest.join(' - ').trim(),
+  };
+};
 
 const HomePage = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
@@ -95,7 +170,7 @@ const HomePage = () => {
         setUpcomingEventsError(true);
       } else {
         setUpcomingEventsError(false);
-        setUpcomingEvents(data || []);
+        setUpcomingEvents([...(data || [])].sort(compareUpcomingEvents));
       }
 
       setIsLoadingEvents(false);
@@ -228,13 +303,14 @@ const HomePage = () => {
   };
 
   const featuredLocations = churchLocations.slice(0, 3);
-  const highlightedService =
-    upcomingEvents.find(
-      (event) =>
-        event.category === 'culto' || event.title.toLowerCase().includes('culto'),
-    ) || upcomingEvents[0];
+  const highlightedService = upcomingEvents[0] || null;
   const highlightedServiceLocation =
     highlightedService && getChurchLocation(highlightedService.location);
+  const highlightedServiceRelativeLabel = getRelativeEventLabel(highlightedService?.event_date);
+  const highlightedServiceDescription = hasMeaningfulText(highlightedService?.description)
+    ? highlightedService.description.trim()
+    : getEventFallbackDescription(highlightedService);
+  const highlightedServiceLocationParts = getLocationParts(highlightedService?.location);
   const agendaListEvents = highlightedService
     ? upcomingEvents.filter((event) => event.id !== highlightedService.id)
     : upcomingEvents;
@@ -715,65 +791,90 @@ const HomePage = () => {
               ) : highlightedService || agendaDays.length > 0 ? (
                 <>
                 {highlightedService && (
-                  <div className="border-b border-border bg-background px-5 py-5 md:px-7 md:py-7">
-                    <div className="grid gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:p-6">
-                      <div className="min-w-0">
-                        <div className="mb-3 flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary-foreground">
+                  <div className="border-b border-border bg-background px-4 py-5 md:px-7 md:py-7">
+                    <div className="mx-auto grid max-w-[20.5rem] gap-4 rounded-2xl border border-border bg-background p-4 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-lg dark:border-border/70 dark:bg-slate-950/35 dark:hover:border-primary/35 md:max-w-none md:grid-cols-[minmax(0,1fr)_11rem] md:items-center md:gap-6 md:p-6">
+                      <div className="grid min-w-0 gap-4 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center md:gap-7">
+                        <div className="flex h-40 w-full flex-col items-center justify-center rounded-xl border border-primary/10 bg-gradient-to-br from-primary/10 via-primary/15 to-primary/30 px-4 py-5 text-center text-primary shadow-sm dark:border-primary/25 dark:from-primary/15 dark:via-primary/25 dark:to-primary/40 dark:text-blue-100 sm:h-24 sm:w-24 sm:px-0 sm:py-0 md:h-28 md:w-28">
+                          <span className="mb-1 text-[7px] font-bold uppercase tracking-[0.18em] text-primary/80 dark:text-blue-200/80 sm:hidden">
                             Próximo culto
                           </span>
-                          <span className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                            {formatWeekDay(highlightedService.event_date)}
+                          <span className="text-3xl font-black leading-none sm:text-4xl md:text-5xl">
+                            {formatEventDayNumber(highlightedService.event_date)}
+                          </span>
+                          <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary/70 dark:text-blue-200/75 sm:text-[11px] md:text-xs">
+                            {formatEventShortMonth(highlightedService.event_date)}
                           </span>
                         </div>
-                        <h3 className="text-xl font-bold leading-tight text-foreground md:text-3xl">
+
+                        <div className="min-w-0">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.14em] text-primary dark:bg-primary/15 dark:text-blue-200 md:text-[10px]">
+                            {highlightedServiceRelativeLabel
+                              ? `Próximo evento · ${highlightedServiceRelativeLabel}`
+                              : 'Próximo evento'}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-black leading-tight text-foreground sm:text-xl md:text-3xl">
                           {highlightedService.title}
                         </h3>
-                        <div className="mt-4 grid gap-2 text-sm font-medium text-muted-foreground sm:grid-cols-2 md:text-base">
-                          <p className="inline-flex items-center gap-2">
-                            <Calendar className="h-4 w-4 shrink-0 text-primary" />
-                            <span className="capitalize">
-                              {formatEventDate(highlightedService.event_date)}
+                        <p className="mt-1.5 max-w-2xl text-[11px] leading-relaxed text-muted-foreground md:text-base">
+                          {highlightedServiceDescription || 'Uma noite dedicada ao louvor e à palavra transformadora.'}
+                        </p>
+                        <div className="mt-4 grid grid-cols-2 gap-2 text-[8px] font-bold uppercase tracking-[0.08em] text-muted-foreground sm:flex sm:flex-wrap sm:items-center sm:gap-x-8 md:text-xs">
+                          <p className="inline-flex items-start gap-1.5 rounded-lg bg-muted/35 p-2.5 dark:bg-primary/10 sm:bg-transparent sm:p-0 sm:dark:bg-transparent">
+                            <Calendar className="mt-0.5 h-3 w-3 shrink-0 text-primary md:h-5 md:w-5" />
+                            <span>
+                              <span className="block">Dia</span>
+                              <span className="mt-0.5 block whitespace-nowrap text-[10px] font-black normal-case tracking-normal text-foreground md:text-base">
+                                {formatWeekDay(highlightedService.event_date)}
+                              </span>
                             </span>
                           </p>
-                          <p className="inline-flex items-center gap-2">
-                            <Clock className="h-4 w-4 shrink-0 text-primary" />
-                            {formatEventTime(highlightedService.event_time)}
+                          <p className="inline-flex items-start gap-1.5 rounded-lg bg-muted/35 p-2.5 dark:bg-primary/10 sm:bg-transparent sm:p-0 sm:dark:bg-transparent">
+                            <Clock className="mt-0.5 h-3 w-3 shrink-0 text-primary md:h-5 md:w-5" />
+                            <span>
+                              <span className="block">Horário</span>
+                              <span className="mt-0.5 block whitespace-nowrap text-[10px] font-black normal-case tracking-normal text-foreground md:text-base">
+                                {formatEventTime(highlightedService.event_time)}
+                              </span>
+                            </span>
                           </p>
                           {highlightedService.location && (
-                            <p className="inline-flex items-start gap-2 sm:col-span-2">
-                              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                            <p className="col-span-2 inline-flex min-w-0 items-start gap-1.5 text-[10px] font-medium normal-case tracking-normal text-muted-foreground sm:basis-full md:text-sm">
+                              <MapPin className="mt-0.5 h-3 w-3 shrink-0 text-primary md:h-4 md:w-4" />
                               <span className="min-w-0 [overflow-wrap:anywhere]">
-                                {highlightedService.location}
+                                <span className="block font-semibold text-foreground/85 dark:text-slate-200">
+                                  {highlightedServiceLocationParts.primary}
+                                </span>
+                                {highlightedServiceLocationParts.secondary && (
+                                  <span className="block text-muted-foreground">
+                                    {highlightedServiceLocationParts.secondary}
+                                  </span>
+                                )}
                               </span>
                             </p>
                           )}
                         </div>
-                        {highlightedService.description && (
-                          <p className="mt-4 line-clamp-2 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
-                            {highlightedService.description}
-                          </p>
-                        )}
+                      </div>
                       </div>
 
-                      <div className="grid gap-2 sm:grid-cols-2 md:w-44 md:grid-cols-1">
+                      <div className="grid gap-2 sm:grid-cols-2 md:w-44 md:grid-cols-1 md:gap-3">
                         {highlightedServiceLocation && (
                           <a
                             href={highlightedServiceLocation.mapUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-[10px] font-bold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md md:gap-2 md:px-5 md:py-3 md:text-sm"
                           >
-                            <MapPin className="h-4 w-4" />
-                            Ver rota
+                            <MapPin className="h-3 w-3 md:h-4 md:w-4" />
+                            Ver Rota
                           </a>
                         )}
                         <Link
                           to="/calendario"
-                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-[10px] font-bold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary hover:shadow-sm dark:bg-slate-950/50 dark:hover:border-primary/50 md:px-5 md:py-3 md:text-sm"
                         >
-                          <Calendar className="h-4 w-4" />
-                          Agenda completa
+                          Agenda Completa
                         </Link>
                       </div>
                     </div>
@@ -782,9 +883,9 @@ const HomePage = () => {
 
                 {agendaDays.length > 0 ? (
                 <>
-                <div className="divide-y divide-border md:hidden">
+                <div className="space-y-4 p-4 md:hidden">
                   {agendaDays.map((day, dayIndex) => (
-                    <div key={day.date} className="p-4 md:min-h-[300px] md:p-6">
+                    <div key={day.date} className="rounded-2xl border border-border bg-background p-4 shadow-sm dark:border-border/70 dark:bg-slate-950/35">
                       <div className="mb-4 flex items-baseline justify-between gap-3 md:mb-8 md:block">
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary md:mb-2 md:tracking-[0.22em]">
                           {day.label}
@@ -797,16 +898,20 @@ const HomePage = () => {
                       <div className="space-y-3 md:space-y-6">
                         {day.events.map((event, eventIndex) => {
                           const churchLocation = getChurchLocation(event.location);
+                          const eventDescription = hasMeaningfulText(event.description)
+                            ? event.description.trim()
+                            : '';
+                          const eventLocationParts = getLocationParts(event.location);
 
                           return (
                             <div
                               key={event.id}
-                              className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-border/70 bg-background/55 p-3 md:gap-4 md:rounded-none md:border-0 md:bg-transparent md:px-0 md:pb-0 ${
-                                eventIndex > 0 ? "md:border-t md:border-border md:pt-6" : "md:pt-0"
+                              className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 transition-all duration-200 hover:border-primary/25 hover:bg-primary/5 dark:bg-primary/5 dark:hover:border-primary/35 ${
+                                eventIndex > 0 ? "" : ""
                               }`}
                             >
                               <div className="min-w-0">
-                                <div className="mb-2 flex items-center gap-2 text-primary">
+                                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-2.5 py-1 text-primary dark:bg-primary/15 dark:text-blue-200">
                                   <Clock className="h-3.5 w-3.5" />
                                   <span className="text-xs font-bold uppercase tracking-[0.16em]">
                                     {formatEventTime(event.event_time)}
@@ -816,13 +921,23 @@ const HomePage = () => {
                                   {event.title}
                                 </h3>
                                 {event.location && (
-                                  <p className="mt-1 line-clamp-1 text-xs font-medium text-muted-foreground md:line-clamp-2 md:text-sm">
-                                    {event.location}
+                                  <p className="mt-2 inline-flex min-w-0 items-start gap-1.5 text-xs font-medium text-muted-foreground">
+                                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                                    <span className="min-w-0 [overflow-wrap:anywhere]">
+                                      <span className="block font-semibold text-foreground/85 dark:text-slate-200">
+                                        {eventLocationParts.primary}
+                                      </span>
+                                      {eventLocationParts.secondary && (
+                                        <span className="block text-muted-foreground">
+                                          {eventLocationParts.secondary}
+                                        </span>
+                                      )}
+                                    </span>
                                   </p>
                                 )}
-                                {event.description && (
-                                  <p className="mt-2 hidden line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:block">
-                                    {event.description}
+                                {eventDescription && (
+                                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                                    {eventDescription}
                                   </p>
                                 )}
                               </div>
@@ -846,7 +961,7 @@ const HomePage = () => {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     aria-label={`Como chegar em ${event.location}`}
-                                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 md:h-9 md:w-9 md:rounded-full md:px-0"
+                                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-sm md:h-9 md:w-9 md:rounded-full md:px-0"
                                   >
                                     <MapPin className="h-4 w-4" />
                                     <span className="md:hidden">Rota</span>
