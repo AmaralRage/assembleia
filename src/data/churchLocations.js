@@ -1,3 +1,9 @@
+import vilaKennedyChurchImage from "@/assets/locations/vila-kennedy-church.jpg";
+import santaCruzChurchImage from "@/assets/locations/santa-cruz-church.jpg";
+import cidadeDeDeusChurchImage from "@/assets/locations/cidade-de-deus-church.jpg";
+import cateteChurchImage from "@/assets/locations/catete-church.jpg";
+import campoGrandeChurchImage from "@/assets/locations/campo-grande-church.jpg";
+
 const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const lapaFallbackImage = "https://i.imgur.com/WMVJQ9m.jpeg";
 
@@ -38,9 +44,7 @@ export const churchLocations = [
     city: "Rio de Janeiro",
     state: "RJ",
     address: "Estr. Srg. Miguel Filho, 71A, Rio de Janeiro, RJ",
-    image:
-      getGoogleStreetViewImage("Estr. Srg. Miguel Filho, 71A, Rio de Janeiro, RJ, Brasil") ||
-      "https://images.unsplash.com/photo-1609926795947-0738627824c5",
+    image: vilaKennedyChurchImage,
     mapUrl:
       "https://maps.google.com/?q=Estr.+Srg.+Miguel+Filho,+71A,+Rio+de+Janeiro,+RJ",
   },
@@ -50,8 +54,7 @@ export const churchLocations = [
     city: "Rio de Janeiro",
     state: "RJ",
     address: "Rua Felipe Cardoso, 500 - Santa Cruz, Rio de Janeiro - RJ",
-    image:
-      "https://chicaslokas.com.br/wp-content/uploads/2022/05/Santa-cruz-rio-de-janeiro.jpg",
+    image: santaCruzChurchImage,
     mapUrl:
       "https://maps.google.com/?q=Rua+Felipe+Cardoso+500+Santa+Cruz+Rio+de+Janeiro+RJ",
     isExample: true,
@@ -62,8 +65,7 @@ export const churchLocations = [
     city: "Rio de Janeiro",
     state: "RJ",
     address: "Rua Josias, 150 - Cidade de Deus, Rio de Janeiro - RJ",
-    image:
-      "https://webquarto-photos.nyc3.cdn.digitaloceanspaces.com/district/24157/district_image_0.jpg",
+    image: cidadeDeDeusChurchImage,
     mapUrl:
       "https://maps.google.com/?q=Rua+Josias+150+Cidade+de+Deus+Rio+de+Janeiro+RJ",
     isExample: true,
@@ -74,8 +76,7 @@ export const churchLocations = [
     city: "Rio de Janeiro",
     state: "RJ",
     address: "Rua do Catete, 250 - Catete, Rio de Janeiro - RJ",
-    image:
-      "https://portal.loft.com.br/wp-content/uploads/2023/01/bairros-rj-catete-shutterstock.jpg",
+    image: cateteChurchImage,
     mapUrl:
       "https://maps.google.com/?q=Rua+do+Catete+250+Catete+Rio+de+Janeiro+RJ",
     isExample: true,
@@ -87,8 +88,7 @@ export const churchLocations = [
     state: "RJ",
     address:
       "Estrada do Monteiro, 900 - Campo Grande, Rio de Janeiro - RJ",
-    image:
-      "https://b3577058.smushcdn.com/3577058/wp-content/uploads/2024/06/Bairro-mais-populoso-do-Brasil-Campo-Grande-720x511.webp?lossy=1&strip=0&webp=1",
+    image: campoGrandeChurchImage,
     mapUrl:
       "https://maps.google.com/?q=Estrada+do+Monteiro+900+Campo+Grande+Rio+de+Janeiro+RJ",
     isExample: true,

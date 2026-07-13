@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarDays,
   AlertTriangle,
@@ -279,6 +279,28 @@ const compareCalendarEvents = (firstEvent, secondEvent) =>
     `${secondEvent.date || ""} ${secondEvent.time || "99:99"}`,
   );
 
+const eventDateTime = (event) => {
+  if (!event?.date || !event.time) return null;
+
+  const [year, month, day] = event.date.split("-").map(Number);
+  const [hour = 0, minute = 0] = event.time.split(":").map(Number);
+
+  if (!year || !month || !day) return null;
+
+  return new Date(year, month - 1, day, hour, minute);
+};
+
+const hasEventTimePassed = (event, currentDateTime) => {
+  if (!event?.date) return false;
+
+  const currentDateKey = toDateKey(currentDateTime);
+  if (event.date < currentDateKey) return true;
+  if (event.date > currentDateKey) return false;
+
+  const startsAt = eventDateTime(event);
+  return startsAt ? startsAt <= currentDateTime : false;
+};
+
 const DatePickerField = ({
   value,
   onChange,
@@ -452,6 +474,7 @@ const DatePickerField = ({
 
 const CalendarPage = () => {
   const today = useMemo(() => new Date(), []);
+  const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
   const eventEditorRef = useRef(null);
   const selectedDayDetailsRef = useRef(null);
   const monthDayRefs = useRef({});
@@ -475,6 +498,9 @@ const CalendarPage = () => {
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const [showDeleteDayWarning, setShowDeleteDayWarning] = useState(false);
   const [isDeletingDayEvents, setIsDeletingDayEvents] = useState(false);
+  const [showLogoutWarning, setShowLogoutWarning] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showEndedMonthEvents, setShowEndedMonthEvents] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
@@ -483,6 +509,14 @@ const CalendarPage = () => {
     weeks: 4,
   });
   const [form, setForm] = useState(() => emptyForm(selectedDate));
+
+  useEffect(() => {
+    const clockId = window.setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 60 * 1000);
+
+    return () => window.clearInterval(clockId);
+  }, []);
 
   const scrollToEventEditorOnMobile = () => {
     if (typeof window === "undefined") return;
@@ -723,9 +757,11 @@ const CalendarPage = () => {
   });
   const upcomingEventsWithForm = [
     ...events.filter(
-      (event) => event.id !== selectedEventId && event.date >= getTodayKey(),
+      (event) =>
+        event.id !== selectedEventId &&
+        !hasEventTimePassed(event, currentDateTime),
     ),
-    ...(form.date >= getTodayKey()
+    ...(!hasEventTimePassed(form, currentDateTime)
       ? [{ ...form, id: selectedEventId || "form-preview" }]
       : []),
   ].sort(compareCalendarEvents);
@@ -804,13 +840,41 @@ const CalendarPage = () => {
   };
 
   const selectedEvent = events.find((event) => event.id === selectedEventId);
+  const selectedEventIsPast = selectedEvent
+    ? hasEventTimePassed(selectedEvent, currentDateTime)
+    : false;
+  const nextUpcomingEvent = [...events]
+    .filter((event) => !hasEventTimePassed(event, currentDateTime))
+    .sort(compareCalendarEvents)[0];
+  const canSelectEvent = (event) =>
+    isAdmin || !hasEventTimePassed(event, currentDateTime);
   const selectedDateEvents = events.filter(
     (event) => event.date === selectedDate,
+  );
+  const selectedDateUpcomingEvents = selectedDateEvents.filter(
+    (event) => !hasEventTimePassed(event, currentDateTime),
+  );
+  const selectedDateEndedEvents = selectedDateEvents.filter((event) =>
+    hasEventTimePassed(event, currentDateTime),
   );
   const visibleMonthEvents = events.filter((event) => {
     const [eventYear, eventMonth] = event.date.split("-").map(Number);
     return eventYear === year && eventMonth === month + 1;
   });
+  const groupEventsByDate = (eventList) =>
+    Object.values(
+      eventList.reduce((days, event) => {
+        if (!days[event.date]) {
+          days[event.date] = {
+            date: event.date,
+            events: [],
+          };
+        }
+
+        days[event.date].events.push(event);
+        return days;
+      }, {}),
+    ).sort((firstDay, secondDay) => firstDay.date.localeCompare(secondDay.date));
   const visibleMonthEventDays = Object.values(
     visibleMonthEvents.reduce((days, event) => {
       if (!days[event.date]) {
@@ -824,8 +888,16 @@ const CalendarPage = () => {
       return days;
     }, {}),
   ).sort((firstDay, secondDay) => firstDay.date.localeCompare(secondDay.date));
+  const visibleMonthUpcomingEvents = visibleMonthEvents
+    .filter((event) => !hasEventTimePassed(event, currentDateTime))
+    .sort(compareCalendarEvents);
+  const visibleMonthEndedEvents = visibleMonthEvents
+    .filter((event) => hasEventTimePassed(event, currentDateTime))
+    .sort(compareCalendarEvents);
+  const visibleMonthUpcomingEventDays = groupEventsByDate(visibleMonthUpcomingEvents);
+  const visibleMonthEndedEventDays = groupEventsByDate(visibleMonthEndedEvents);
   const nextVisibleMonthEvents = visibleMonthEvents
-    .filter((event) => event.date >= getTodayKey())
+    .filter((event) => !hasEventTimePassed(event, currentDateTime))
     .sort(compareCalendarEvents)
     .slice(0, 3);
   const mobileCalendarDays = useMemo(() => {
@@ -850,6 +922,187 @@ const CalendarPage = () => {
       year: "numeric",
       timeZone: "UTC",
     }).format(new Date(`${dateKey}T12:00:00Z`));
+  };
+
+  const getEventStatusLabel = (event) => {
+    if (hasEventTimePassed(event, currentDateTime)) {
+      return event.date === getTodayKey() ? "Encerrado hoje" : "Encerrado";
+    }
+
+    if (nextUpcomingEvent?.id === event.id) return "Próximo evento";
+    if (event.date === getTodayKey()) {
+      return event.time ? `Hoje às ${event.time}` : "Acontece hoje";
+    }
+
+    return "Programado";
+  };
+
+  const getEventStatusStyle = (event) => {
+    if (hasEventTimePassed(event, currentDateTime)) {
+      return "bg-muted text-muted-foreground";
+    }
+
+    if (nextUpcomingEvent?.id === event.id) {
+      return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200";
+    }
+
+    if (event.date === getTodayKey()) {
+      return "bg-primary text-primary-foreground";
+    }
+
+    return "bg-muted text-muted-foreground";
+  };
+
+  const renderMobileMonthEventDay = (eventDay, section = "upcoming") => {
+    const isPastDay = isPastDate(eventDay.date);
+    const isToday = eventDay.date === getTodayKey();
+    const isSelectedEventDay = eventDay.date === selectedDate;
+    const isEndedSection = section === "ended";
+
+    return (
+      <div
+        key={`${section}-${eventDay.date}`}
+        ref={(element) => {
+          if (element) {
+            monthDayRefs.current[eventDay.date] = element;
+          } else {
+            delete monthDayRefs.current[eventDay.date];
+          }
+        }}
+        className={`rounded-2xl border p-3 shadow-sm ${
+          isSelectedEventDay
+            ? "border-primary/40 bg-primary/5"
+            : isEndedSection
+              ? "border-border/60 bg-muted/20"
+              : "border-border bg-background"
+        } ${isEndedSection ? "opacity-80" : ""}`}
+      >
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold capitalize text-foreground">
+              {formatLongDate(eventDay.date)}
+            </p>
+            {(isPastDay && !isToday) || isEndedSection ? (
+              <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+                {isToday ? "Eventos de hoje que já passaram" : "Data já passou"}
+              </p>
+            ) : null}
+          </div>
+          {isToday && (
+            <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
+              Hoje
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          {eventDay.events.map((event) => {
+            const eventIsLocked = !canSelectEvent(event);
+
+            return (
+              <button
+                key={event.id}
+                type="button"
+                disabled={eventIsLocked}
+                onClick={() => selectEvent(event)}
+                className={`w-full rounded-xl border px-3 py-2.5 text-left transition-all active:scale-[0.99] active:border-primary/60 disabled:cursor-not-allowed ${
+                  selectedEventId === event.id
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : eventIsLocked
+                      ? "border-border/70 bg-muted/10 opacity-75"
+                      : "border-border bg-muted/30"
+                }`}
+              >
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                    {categoryLabels[event.category] || "Evento"}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${getEventStatusStyle(event)}`}
+                  >
+                    {eventIsLocked ? (
+                      <LockKeyhole className="h-3 w-3" />
+                    ) : (
+                      <Clock className="h-3 w-3" />
+                    )}
+                    {getEventStatusLabel(event)}
+                  </span>
+                </div>
+                <p className="min-w-0 text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
+                  {event.title}
+                </p>
+                {event.location && (
+                  <p className="mt-1 inline-flex min-w-0 items-start gap-1.5 text-xs text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="min-w-0 [overflow-wrap:anywhere]">{event.location}</span>
+                  </p>
+                )}
+                {event.description && (
+                  <p className="mt-2 line-clamp-1 min-w-0 text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
+                    {event.description}
+                  </p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSelectedDateEventButton = (event) => {
+    const eventIsLocked = !canSelectEvent(event);
+
+    return (
+      <button
+        key={`selected-${event.id}`}
+        type="button"
+        disabled={eventIsLocked}
+        onClick={() => selectEvent(event)}
+        className={`w-full rounded-xl border px-3 py-3 text-left transition-colors active:border-primary/60 active:bg-primary/5 disabled:cursor-not-allowed ${
+          selectedEventId === event.id
+            ? "border-primary bg-primary/5"
+            : eventIsLocked
+              ? "border-border/70 bg-muted/15 opacity-70"
+              : "border-border bg-muted/25"
+        }`}
+      >
+        <span className="mb-2 flex items-center justify-between gap-2">
+          <span
+            className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+              getEventColorStyle(event.id)
+            }`}
+          >
+            {categoryLabels[event.category] || "Evento"}
+          </span>
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${
+              eventIsLocked ? "bg-muted text-muted-foreground" : getEventStatusStyle(event)
+            }`}
+          >
+            {eventIsLocked ? (
+              <LockKeyhole className="h-3 w-3" />
+            ) : (
+              <Clock className="h-3 w-3" />
+            )}
+            {getEventStatusLabel(event)}
+          </span>
+        </span>
+        <span className="block min-w-0">
+          <span className="block text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
+            {event.title}
+          </span>
+          {event.location && (
+            <span className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                {event.location}
+              </span>
+            </span>
+          )}
+        </span>
+      </button>
+    );
   };
 
   const changeMonth = (offset) => {
@@ -903,6 +1156,8 @@ const CalendarPage = () => {
 
   const selectEvent = (event, eventObject) => {
     eventObject?.stopPropagation();
+    if (!canSelectEvent(event)) return;
+
     setSelectedDate(event.date);
     setSelectedEventId(event.id);
     setIsEditing(false);
@@ -1177,10 +1432,13 @@ const CalendarPage = () => {
   };
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     await supabase.auth.signOut();
     forgetAdminDevice();
     setIsAdmin(false);
     setIsEditing(false);
+    setShowLogoutWarning(false);
+    setIsLoggingOut(false);
     toast.warning("Sessão administrativa encerrada.");
   };
 
@@ -1270,7 +1528,7 @@ const CalendarPage = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={handleLogout}
+                      onClick={() => setShowLogoutWarning(true)}
                       className="rounded-xl"
                     >
                       <LogOut className="w-4 h-4 mr-2" />
@@ -1292,6 +1550,23 @@ const CalendarPage = () => {
 
             <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
               <div className="border-b border-border bg-muted/20 p-4 md:hidden">
+                {isAdmin && (
+                  <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-950/35 dark:text-emerald-100">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em]">
+                          Modo admin ativo
+                        </p>
+                        <p className="mt-1 text-xs font-medium leading-relaxed">
+                          Você está editando como administrador. As alterações
+                          aparecem no calendário público.
+                        </p>
+                      </div>
+                      <LockKeyhole className="mt-0.5 h-5 w-5 shrink-0" />
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2 className="font-bold text-foreground">
                     Agenda do mês
@@ -1392,7 +1667,7 @@ const CalendarPage = () => {
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                          Próximos no mês
+                          Próximos eventos
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
                           Acesse rapidamente os próximos compromissos.
@@ -1428,8 +1703,12 @@ const CalendarPage = () => {
                   </div>
                 )}
 
-                <div
+                <motion.div
                   ref={selectedDayDetailsRef}
+                  key={selectedDate}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                   className="mb-4 scroll-mt-24 rounded-2xl border border-border bg-background p-4 shadow-sm"
                 >
                   <div className="mb-3 flex items-center justify-between gap-3">
@@ -1449,46 +1728,44 @@ const CalendarPage = () => {
                   </div>
 
                   {selectedDateEvents.length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedDateEvents.map((event) => (
-                        <button
-                          key={`selected-${event.id}`}
-                          type="button"
-                          onClick={() => selectEvent(event)}
-                          className={`w-full rounded-xl border px-3 py-3 text-left transition-colors active:border-primary/60 active:bg-primary/5 ${
-                            selectedEventId === event.id
-                              ? "border-primary bg-primary/5"
-                              : "border-border bg-muted/25"
-                          }`}
+                    <div className="space-y-4">
+                      {selectedDateUpcomingEvents.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.18 }}
+                          className="space-y-2"
                         >
-                          <span className="mb-2 flex items-center justify-between gap-2">
-                            <span
-                              className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
-                                getEventColorStyle(event.id)
-                              }`}
-                            >
-                              {categoryLabels[event.category] || "Evento"}
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
+                              Ainda vai acontecer
+                            </p>
+                            <span className="text-xs font-semibold text-muted-foreground">
+                              {selectedDateUpcomingEvents.length}
                             </span>
-                            <span className="inline-flex items-center gap-1 text-xs font-bold tabular-nums text-primary">
-                              <Clock className="h-3.5 w-3.5" />
-                              {event.time || "--:--"}
+                          </div>
+                          {selectedDateUpcomingEvents.map(renderSelectedDateEventButton)}
+                        </motion.div>
+                      )}
+
+                      {selectedDateEndedEvents.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.18, delay: 0.03 }}
+                          className="space-y-2"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                              Já passou
+                            </p>
+                            <span className="text-xs font-semibold text-muted-foreground">
+                              {selectedDateEndedEvents.length}
                             </span>
-                          </span>
-                          <span className="block min-w-0">
-                            <span className="block text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
-                              {event.title}
-                            </span>
-                            {event.location && (
-                              <span className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
-                                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="min-w-0 [overflow-wrap:anywhere]">
-                                  {event.location}
-                                </span>
-                              </span>
-                            )}
-                          </span>
-                        </button>
-                      ))}
+                          </div>
+                          {selectedDateEndedEvents.map(renderSelectedDateEventButton)}
+                        </motion.div>
+                      )}
                     </div>
                   ) : (
                     <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-center">
@@ -1510,7 +1787,7 @@ const CalendarPage = () => {
                       Excluir todos do dia
                     </Button>
                   )}
-                </div>
+                </motion.div>
 
                 {isLoadingEvents ? (
                   <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
@@ -1525,16 +1802,17 @@ const CalendarPage = () => {
                     </div>
                   </div>
                 ) : visibleMonthEventDays.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="text-sm font-bold text-foreground">
-                        Eventos do mês
+                        Próximos eventos
                       </h3>
                       <span className="text-xs font-semibold text-muted-foreground">
-                        {monthNames[month]} {year}
+                        {visibleMonthUpcomingEvents.length} neste mês
                       </span>
                     </div>
-                    {visibleMonthEventDays.map((eventDay) => {
+                    {visibleMonthUpcomingEventDays.length > 0 ? (
+                      visibleMonthUpcomingEventDays.map((eventDay) => {
                       const isPastDay = isPastDate(eventDay.date);
                       const isToday = eventDay.date === getTodayKey();
                       const isSelectedEventDay = eventDay.date === selectedDate;
@@ -1576,27 +1854,40 @@ const CalendarPage = () => {
                           </div>
 
                           <div className="space-y-2">
-                            {eventDay.events.map((event) => (
+                            {eventDay.events.map((event) => {
+                              const eventIsLocked = !canSelectEvent(event);
+
+                              return (
                               <button
                                 key={event.id}
                                 type="button"
+                                disabled={eventIsLocked}
                                 onClick={() => selectEvent(event)}
-                                className={`w-full rounded-xl border px-3 py-2.5 text-left transition-all active:scale-[0.99] active:border-primary/60 ${
+                                className={`w-full rounded-xl border px-3 py-2.5 text-left transition-all active:scale-[0.99] active:border-primary/60 disabled:cursor-not-allowed ${
                                   selectedEventId === event.id
                                     ? "border-primary bg-primary/5 shadow-sm"
-                                    : isPastDay && !isToday
-                                    ? "border-border/70 bg-background/60"
-                                    : "border-border bg-muted/30"
+                                    : eventIsLocked
+                                      ? "border-border/70 bg-muted/10 opacity-75"
+                                      : isPastDay && !isToday
+                                        ? "border-border/70 bg-background/60"
+                                        : "border-border bg-muted/30"
                                 }`}
                               >
                                 <div className="mb-1.5 flex items-center justify-between gap-2">
                                   <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
                                     {categoryLabels[event.category] || "Evento"}
                                   </span>
-                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-                                    <Clock className="h-3.5 w-3.5 text-primary" />
-                                    {event.time || "A definir"}
-                                  </span>
+                                  {eventIsLocked ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                                      <LockKeyhole className="h-3 w-3" />
+                                      {getEventStatusLabel(event)}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+                                      <Clock className="h-3.5 w-3.5 text-primary" />
+                                      {event.time || "A definir"}
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="min-w-0 text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
                                   {event.title}
@@ -1613,11 +1904,64 @@ const CalendarPage = () => {
                                   </p>
                                 )}
                               </button>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       );
-                    })}
+                    })
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-border bg-background p-4 text-sm text-muted-foreground">
+                        Não há próximos eventos neste mês.
+                      </div>
+                    )}
+                    {visibleMonthEndedEvents.length > 0 && (
+                      <div className="space-y-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowEndedMonthEvents((current) => !current)
+                          }
+                          className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3 text-left shadow-sm"
+                        >
+                          <span>
+                            <span className="block text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                              Eventos encerrados
+                            </span>
+                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                              {visibleMonthEndedEvents.length} evento(s) que já passaram
+                            </span>
+                          </span>
+                          <ChevronRight
+                            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                              showEndedMonthEvents ? "rotate-90" : ""
+                            }`}
+                          />
+                        </button>
+
+                        <AnimatePresence initial={false}>
+                          {showEndedMonthEvents && (
+                            <motion.div
+                              key="ended-month-events"
+                              initial={{ height: 0, opacity: 0, y: -6 }}
+                              animate={{ height: "auto", opacity: 1, y: 0 }}
+                              exit={{ height: 0, opacity: 0, y: -6 }}
+                              transition={{
+                                duration: 0.24,
+                                ease: [0.22, 1, 0.36, 1],
+                              }}
+                              className="overflow-hidden"
+                            >
+                              <div className="space-y-3 pt-0.5">
+                                {visibleMonthEndedEventDays.map((eventDay) =>
+                                  renderMobileMonthEventDay(eventDay, "ended"),
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
@@ -1656,7 +2000,13 @@ const CalendarPage = () => {
                       </div>
                     </div>
                   ) : (
-                  <div className="grid grid-cols-7 gap-2">
+                  <motion.div
+                    key={`${year}-${month}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    className="grid grid-cols-7 gap-2"
+                  >
                     {calendarDays.map((day) => {
                       const dayEvents = events.filter(
                         (event) => event.date === day.dateKey,
@@ -1672,10 +2022,13 @@ const CalendarPage = () => {
                       const isPastDay = isPastDate(day.dateKey) && !isToday;
 
                       return (
-                        <button
+                        <motion.button
                           key={day.dateKey}
+                          layout
                           type="button"
                           onClick={() => selectDay(day)}
+                          whileTap={{ scale: 0.985 }}
+                          transition={{ duration: 0.18 }}
                           className={`min-h-28 md:min-h-32 rounded-xl md:rounded-2xl border p-2 text-left align-top transition-all hover:border-primary/50 hover:shadow-md ${
                             isSelected
                               ? "border-primary bg-primary/5 ring-2 ring-primary/15 dark:bg-primary/10 dark:ring-primary/30"
@@ -1697,30 +2050,59 @@ const CalendarPage = () => {
                           </span>
 
                           <div className="mt-2 space-y-1.5">
-                            {dayEvents.slice(0, 3).map((event) => (
+                            {dayEvents.slice(0, 3).map((event) => {
+                              const eventIsLocked = !canSelectEvent(event);
+
+                              return (
                               <span
                                 key={event.id}
                                 onClick={(clickEvent) =>
                                   selectEvent(event, clickEvent)
                                 }
-                                className={`block truncate rounded-lg border px-2 py-1.5 text-xs font-semibold ${
+                                className={`block rounded-lg border px-2 py-1.5 text-xs font-semibold ${
                                   getEventColorStyle(event.id)
-                                } ${isPastDay ? "opacity-60 saturate-50" : ""}`}
+                                } ${
+                                  eventIsLocked
+                                    ? "cursor-not-allowed opacity-55 saturate-50"
+                                    : isPastDay
+                                      ? "opacity-60 saturate-50"
+                                      : ""
+                                }`}
                               >
-                                {event.time && `${event.time} · `}
-                                {event.title}
+                                {eventIsLocked && !isAdmin ? (
+                                  <LockKeyhole className="mr-1 inline h-3 w-3 align-[-2px]" />
+                                ) : null}
+                                <span className="block truncate">
+                                  {event.time && `${event.time} · `}
+                                  {event.title}
+                                </span>
+                                <span
+                                  className={`mt-1 inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] ${
+                                    eventIsLocked
+                                      ? "bg-background/70 text-muted-foreground"
+                                      : getEventStatusStyle(event)
+                                  }`}
+                                >
+                                  {eventIsLocked ? (
+                                    <LockKeyhole className="h-2.5 w-2.5" />
+                                  ) : (
+                                    <Clock className="h-2.5 w-2.5" />
+                                  )}
+                                  <span className="truncate">{getEventStatusLabel(event)}</span>
+                                </span>
                               </span>
-                            ))}
+                              );
+                            })}
                             {dayEvents.length > 3 && (
                               <span className="block px-2 text-xs font-medium text-muted-foreground">
                                 + {dayEvents.length - 3} eventos
                               </span>
                             )}
                           </div>
-                        </button>
+                        </motion.button>
                       );
                     })}
-                  </div>
+                  </motion.div>
                   )}
                 </div>
               </div>
@@ -1761,7 +2143,7 @@ const CalendarPage = () => {
                             <p className="mt-1 text-xs font-medium leading-relaxed">
                               {isSavingEvent
                                 ? "Gravando as alterações no calendário..."
-                                : "Revise os dados e salve quando estiver tudo certo."}
+                                : "Revise os dados antes de publicar no calendário público."}
                             </p>
                           </div>
                           {isSavingEvent && (
@@ -2631,47 +3013,81 @@ const CalendarPage = () => {
                     </div>
                   </div>
                 ) : selectedEvent ? (
-                  <div className={isAdmin ? "pb-28 md:pb-0" : ""}>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary dark:text-white mb-3">
+                  <motion.div
+                    key={selectedEvent.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    className={isAdmin ? "pb-28 md:pb-0" : ""}
+                  >
+                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-primary dark:text-white">
                       Evento selecionado
                     </p>
-                    <span
-                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold mb-4 ${
-                        getEventColorStyle(selectedEvent.id)
-                      }`}
-                    >
-                      {categoryLabels[selectedEvent.category] || "Evento"}
-                    </span>
-                    <h2 className="text-xl md:text-2xl font-bold text-foreground leading-tight mb-5">
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
+                          getEventColorStyle(selectedEvent.id)
+                        }`}
+                      >
+                        {categoryLabels[selectedEvent.category] || "Evento"}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${getEventStatusStyle(selectedEvent)}`}
+                      >
+                        {selectedEventIsPast && <LockKeyhole className="h-3.5 w-3.5" />}
+                        {getEventStatusLabel(selectedEvent)}
+                      </span>
+                    </div>
+                    <h2 className="mb-5 text-xl font-bold leading-tight text-foreground md:text-2xl">
                       {selectedEvent.title}
                     </h2>
 
-                    <div className="space-y-4 border-y border-border py-5">
-                      <div className="flex gap-3">
-                        <CalendarDays className="w-5 h-5 text-primary shrink-0" />
-                        <p className="text-sm text-muted-foreground capitalize">
+                    {isAdmin && !isPastDate(selectedEvent.date) && (
+                      <Button
+                        type="button"
+                        onClick={startEditing}
+                        className="mb-5 h-11 w-full rounded-xl md:hidden"
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        Editar evento
+                      </Button>
+                    )}
+
+                    <div className="grid gap-3 border-y border-border py-5 sm:grid-cols-2">
+                      <div className="rounded-xl border border-border bg-muted/20 p-3">
+                        <CalendarDays className="mb-2 h-5 w-5 text-primary" />
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                          Data
+                        </p>
+                        <p className="mt-1 text-sm font-semibold capitalize text-foreground">
                           {formatLongDate(selectedEvent.date)}
                         </p>
                       </div>
                       {selectedEvent.time && (
-                        <div className="flex gap-3">
-                          <Clock className="w-5 h-5 text-primary shrink-0" />
-                          <p className="text-sm text-muted-foreground">
+                        <div className="rounded-xl border border-border bg-muted/20 p-3">
+                          <Clock className="mb-2 h-5 w-5 text-primary" />
+                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                            Horário
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-foreground">
                             {selectedEvent.time}
                           </p>
                         </div>
                       )}
                       {selectedEvent.location && (
-                        <div className="flex gap-3">
-                          <MapPin className="w-5 h-5 text-primary shrink-0" />
-                          <p className="text-sm text-muted-foreground">
+                        <div className="rounded-xl border border-border bg-muted/20 p-3 sm:col-span-2">
+                          <MapPin className="mb-2 h-5 w-5 text-primary" />
+                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                            Local
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
                             {selectedEvent.location}
                           </p>
                         </div>
                       )}
                     </div>
 
-                    <p className="text-muted-foreground leading-relaxed my-6">
+                    <p className="my-6 rounded-xl border border-border bg-background p-4 leading-relaxed text-muted-foreground">
                       {selectedEvent.description || "Sem descrição adicional."}
                     </p>
 
@@ -2803,7 +3219,7 @@ const CalendarPage = () => {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 ) : (
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary mb-3">
@@ -2827,13 +3243,27 @@ const CalendarPage = () => {
 
                     {selectedDateEvents.length > 0 ? (
                       <div className="mt-6 space-y-3">
-                        {selectedDateEvents.map((event) => (
+                        {selectedDateEvents.map((event) => {
+                          const eventIsLocked = !canSelectEvent(event);
+
+                          return (
                           <button
                             key={event.id}
                             type="button"
-                            onClick={() => setSelectedEventId(event.id)}
-                            className="w-full text-left bg-background border border-border rounded-xl p-4 hover:border-primary/50 transition-colors"
+                            disabled={eventIsLocked}
+                            onClick={() => selectEvent(event)}
+                            className={`w-full rounded-xl border p-4 text-left transition-colors disabled:cursor-not-allowed ${
+                              eventIsLocked
+                                ? "border-border/70 bg-muted/15 opacity-70"
+                                : "border-border bg-background hover:border-primary/50"
+                            }`}
                           >
+                            {eventIsLocked && (
+                              <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                                <LockKeyhole className="h-3 w-3" />
+                                {getEventStatusLabel(event)}
+                              </span>
+                            )}
                             <p className="font-semibold text-foreground">
                               {event.title}
                             </p>
@@ -2841,7 +3271,8 @@ const CalendarPage = () => {
                               {event.time || "Horário não informado"}
                             </p>
                           </button>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="mt-8 rounded-2xl border border-dashed border-border bg-background p-6 text-center">
@@ -3026,6 +3457,64 @@ const CalendarPage = () => {
                   <Trash2 className="mr-2 h-4 w-4" />
                 )}
                 Excluir todos
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {showLogoutWarning && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="logout-title"
+          onClick={() => {
+            if (!isLoggingOut) setShowLogoutWarning(false);
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={(event) => event.stopPropagation()}
+            className="w-full max-w-md rounded-3xl border border-border bg-background p-7 text-center shadow-2xl"
+          >
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+              <LogOut className="h-8 w-8 text-primary" />
+            </div>
+            <h2
+              id="logout-title"
+              className="text-2xl font-bold text-foreground"
+            >
+              Sair da conta administrativa?
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              Ao sair, será necessário acessar novamente a área administrativa
+              para criar, editar ou remover eventos.
+            </p>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowLogoutWarning(false)}
+                disabled={isLoggingOut}
+                className="rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="rounded-xl"
+              >
+                {isLoggingOut ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="mr-2 h-4 w-4" />
+                )}
+                {isLoggingOut ? "Saindo..." : "Sair da conta"}
               </Button>
             </div>
           </motion.div>

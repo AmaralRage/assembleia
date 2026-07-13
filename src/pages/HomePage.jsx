@@ -67,6 +67,28 @@ const compareUpcomingEvents = (firstEvent, secondEvent) => {
   return firstTime.localeCompare(secondTime);
 };
 
+const eventDateTime = (event) => {
+  if (!event?.event_date || !event.event_time) return null;
+
+  const [year, month, day] = event.event_date.split('-').map(Number);
+  const [hour = 0, minute = 0] = event.event_time.split(':').map(Number);
+
+  if (!year || !month || !day) return null;
+
+  return new Date(year, month - 1, day, hour, minute);
+};
+
+const hasEventTimePassed = (event, currentDateTime = new Date()) => {
+  if (!event?.event_date) return false;
+
+  const currentDateKey = getTodayKey();
+  if (event.event_date < currentDateKey) return true;
+  if (event.event_date > currentDateKey) return false;
+
+  const startsAt = eventDateTime(event);
+  return startsAt ? startsAt <= currentDateTime : false;
+};
+
 const getRelativeEventLabel = (dateKey) => {
   if (!dateKey) return '';
 
@@ -164,13 +186,18 @@ const HomePage = () => {
         .gte('event_date', todayKey)
         .order('event_date', { ascending: true })
         .order('event_time', { ascending: true })
-        .limit(8);
+        .limit(16);
 
       if (error) {
         setUpcomingEventsError(true);
       } else {
         setUpcomingEventsError(false);
-        setUpcomingEvents([...(data || [])].sort(compareUpcomingEvents));
+        setUpcomingEvents(
+          [...(data || [])]
+            .filter((event) => !hasEventTimePassed(event))
+            .sort(compareUpcomingEvents)
+            .slice(0, 8),
+        );
       }
 
       setIsLoadingEvents(false);
@@ -568,7 +595,7 @@ const HomePage = () => {
                       {featuredFestivity.subtitle}
                     </p>
 
-                    <div className="mt-5 grid gap-2 sm:grid-cols-3 md:mt-8 md:gap-3">
+                    <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:mt-8 md:gap-3">
                       <div className="rounded-xl border border-white/12 bg-white/[0.07] p-3 md:p-4">
                         <Calendar className="mb-2 h-4 w-4 text-[#76b7ff] md:mb-3 md:h-5 md:w-5" />
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100 md:text-xs md:tracking-[0.16em]">
@@ -583,7 +610,7 @@ const HomePage = () => {
                         </p>
                         <p className="mt-1 text-base font-bold md:text-lg">{featuredFestivity.time}</p>
                       </div>
-                      <div className="rounded-xl border border-white/12 bg-white/[0.07] p-3 sm:col-span-1 md:p-4">
+                      <div className="col-span-2 rounded-xl border border-white/12 bg-white/[0.07] p-3 sm:col-span-1 md:p-4">
                         <MapPin className="mb-2 h-4 w-4 text-[#76b7ff] md:mb-3 md:h-5 md:w-5" />
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100 md:text-xs md:tracking-[0.16em]">
                           Local
@@ -792,9 +819,9 @@ const HomePage = () => {
                 <>
                 {highlightedService && (
                   <div className="border-b border-border bg-background px-4 py-5 md:px-7 md:py-7">
-                    <div className="mx-auto grid max-w-[20.5rem] gap-4 rounded-2xl border border-border bg-background p-4 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-lg dark:border-border/70 dark:bg-slate-950/35 dark:hover:border-primary/35 md:max-w-none md:grid-cols-[minmax(0,1fr)_11rem] md:items-center md:gap-6 md:p-6">
-                      <div className="grid min-w-0 gap-4 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center md:gap-7">
-                        <div className="flex h-40 w-full flex-col items-center justify-center rounded-xl border border-primary/10 bg-gradient-to-br from-primary/10 via-primary/15 to-primary/30 px-4 py-5 text-center text-primary shadow-sm dark:border-primary/25 dark:from-primary/15 dark:via-primary/25 dark:to-primary/40 dark:text-blue-100 sm:h-24 sm:w-24 sm:px-0 sm:py-0 md:h-28 md:w-28">
+                    <div className="mx-auto grid max-w-[20.5rem] gap-5 rounded-2xl border border-border bg-background p-[1.125rem] shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-lg dark:border-border/70 dark:bg-slate-950/35 dark:hover:border-primary/35 md:max-w-none md:grid-cols-[minmax(0,1fr)_11rem] md:items-center md:gap-6 md:p-6">
+                      <div className="grid min-w-0 gap-5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center md:gap-7">
+                        <div className="flex h-48 w-full flex-col items-center justify-center rounded-xl border border-primary/10 bg-gradient-to-br from-primary/10 via-primary/15 to-primary/30 px-4 py-7 text-center text-primary shadow-sm dark:border-primary/25 dark:from-primary/15 dark:via-primary/25 dark:to-primary/40 dark:text-blue-100 sm:h-24 sm:w-24 sm:px-0 sm:py-0 md:h-28 md:w-28">
                           <span className="mb-1 text-[7px] font-bold uppercase tracking-[0.18em] text-primary/80 dark:text-blue-200/80 sm:hidden">
                             Próximo culto
                           </span>
@@ -808,39 +835,39 @@ const HomePage = () => {
 
                         <div className="min-w-0">
                         <div className="mb-2 flex flex-wrap items-center gap-2">
-                          <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.14em] text-primary dark:bg-primary/15 dark:text-blue-200 md:text-[10px]">
+                          <span className="rounded-sm bg-primary/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-primary dark:bg-primary/15 dark:text-blue-200 md:text-[10px]">
                             {highlightedServiceRelativeLabel
                               ? `Próximo evento · ${highlightedServiceRelativeLabel}`
                               : 'Próximo evento'}
                           </span>
                         </div>
-                        <h3 className="text-base font-black leading-tight text-foreground sm:text-xl md:text-3xl">
+                        <h3 className="text-lg font-black leading-tight text-foreground sm:text-xl md:text-3xl">
                           {highlightedService.title}
                         </h3>
-                        <p className="mt-1.5 max-w-2xl text-[11px] leading-relaxed text-muted-foreground md:text-base">
+                        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
                           {highlightedServiceDescription || 'Uma noite dedicada ao louvor e à palavra transformadora.'}
                         </p>
-                        <div className="mt-4 grid grid-cols-2 gap-2 text-[8px] font-bold uppercase tracking-[0.08em] text-muted-foreground sm:flex sm:flex-wrap sm:items-center sm:gap-x-8 md:text-xs">
-                          <p className="inline-flex items-start gap-1.5 rounded-lg bg-muted/35 p-2.5 dark:bg-primary/10 sm:bg-transparent sm:p-0 sm:dark:bg-transparent">
-                            <Calendar className="mt-0.5 h-3 w-3 shrink-0 text-primary md:h-5 md:w-5" />
-                            <span>
-                              <span className="block">Dia</span>
-                              <span className="mt-0.5 block whitespace-nowrap text-[10px] font-black normal-case tracking-normal text-foreground md:text-base">
+                        <div className="mt-4 grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground sm:flex sm:flex-wrap sm:items-center sm:gap-x-8 md:text-xs">
+                          <p className="inline-flex min-h-[4.25rem] items-center gap-2 rounded-lg bg-muted/35 p-3 dark:bg-primary/10 sm:min-h-0 sm:bg-transparent sm:p-0 sm:dark:bg-transparent">
+                            <Calendar className="h-3.5 w-3.5 shrink-0 text-primary md:h-5 md:w-5" />
+                            <span className="min-w-0 leading-none">
+                              <span className="block leading-none">Dia</span>
+                              <span className="mt-1.5 block whitespace-nowrap text-[13px] font-black leading-tight normal-case tracking-normal text-foreground md:text-base">
                                 {formatWeekDay(highlightedService.event_date)}
                               </span>
                             </span>
                           </p>
-                          <p className="inline-flex items-start gap-1.5 rounded-lg bg-muted/35 p-2.5 dark:bg-primary/10 sm:bg-transparent sm:p-0 sm:dark:bg-transparent">
-                            <Clock className="mt-0.5 h-3 w-3 shrink-0 text-primary md:h-5 md:w-5" />
-                            <span>
-                              <span className="block">Horário</span>
-                              <span className="mt-0.5 block whitespace-nowrap text-[10px] font-black normal-case tracking-normal text-foreground md:text-base">
+                          <p className="inline-flex min-h-[4.25rem] items-center gap-2 rounded-lg bg-muted/35 p-3 dark:bg-primary/10 sm:min-h-0 sm:bg-transparent sm:p-0 sm:dark:bg-transparent">
+                            <Clock className="h-3.5 w-3.5 shrink-0 text-primary md:h-5 md:w-5" />
+                            <span className="min-w-0 leading-none">
+                              <span className="block leading-none">Horário</span>
+                              <span className="mt-1.5 block whitespace-nowrap text-[13px] font-black leading-tight normal-case tracking-normal text-foreground md:text-base">
                                 {formatEventTime(highlightedService.event_time)}
                               </span>
                             </span>
                           </p>
                           {highlightedService.location && (
-                            <p className="col-span-2 inline-flex min-w-0 items-start gap-1.5 text-[10px] font-medium normal-case tracking-normal text-muted-foreground sm:basis-full md:text-sm">
+                            <p className="col-span-2 mt-1.5 inline-flex min-w-0 items-start gap-1.5 text-xs font-medium normal-case tracking-normal text-muted-foreground sm:mt-0 sm:basis-full md:text-sm">
                               <MapPin className="mt-0.5 h-3 w-3 shrink-0 text-primary md:h-4 md:w-4" />
                               <span className="min-w-0 [overflow-wrap:anywhere]">
                                 <span className="block font-semibold text-foreground/85 dark:text-slate-200">
@@ -895,7 +922,7 @@ const HomePage = () => {
                         </p>
                       </div>
 
-                      <div className="space-y-3 md:space-y-6">
+                      <div className="space-y-4 md:space-y-6">
                         {day.events.map((event, eventIndex) => {
                           const churchLocation = getChurchLocation(event.location);
                           const eventDescription = hasMeaningfulText(event.description)
@@ -906,12 +933,12 @@ const HomePage = () => {
                           return (
                             <div
                               key={event.id}
-                              className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 transition-all duration-200 hover:border-primary/25 hover:bg-primary/5 dark:bg-primary/5 dark:hover:border-primary/35 ${
+                              className={`grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-4 rounded-xl border border-border/70 bg-muted/20 p-4 transition-all duration-200 hover:border-primary/25 hover:bg-primary/5 dark:bg-primary/5 dark:hover:border-primary/35 ${
                                 eventIndex > 0 ? "" : ""
                               }`}
                             >
                               <div className="min-w-0">
-                                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-2.5 py-1 text-primary dark:bg-primary/15 dark:text-blue-200">
+                                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-2.5 py-1 text-primary dark:bg-primary/15 dark:text-blue-200">
                                   <Clock className="h-3.5 w-3.5" />
                                   <span className="text-xs font-bold uppercase tracking-[0.16em]">
                                     {formatEventTime(event.event_time)}
@@ -921,7 +948,7 @@ const HomePage = () => {
                                   {event.title}
                                 </h3>
                                 {event.location && (
-                                  <p className="mt-2 inline-flex min-w-0 items-start gap-1.5 text-xs font-medium text-muted-foreground">
+                                  <p className="mt-3 inline-flex min-w-0 items-start gap-1.5 text-xs font-medium leading-relaxed text-muted-foreground">
                                     <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                                     <span className="min-w-0 [overflow-wrap:anywhere]">
                                       <span className="block font-semibold text-foreground/85 dark:text-slate-200">
@@ -936,14 +963,14 @@ const HomePage = () => {
                                   </p>
                                 )}
                                 {eventDescription && (
-                                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                                  <p className="ml-5 mt-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                                     {eventDescription}
                                   </p>
                                 )}
                               </div>
 
                               <div
-                                className={`col-span-2 grid gap-2 ${
+                                className={`col-span-2 mt-1 grid gap-2 ${
                                   churchLocation ? "grid-cols-2" : "grid-cols-1"
                                 } md:col-span-1 md:flex md:flex-col`}
                               >
