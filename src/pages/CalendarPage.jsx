@@ -934,7 +934,7 @@ const CalendarPage = () => {
       return event.time ? `Hoje às ${event.time}` : "Acontece hoje";
     }
 
-    return "Programado";
+    return "Agendado";
   };
 
   const getEventStatusStyle = (event) => {
@@ -1445,10 +1445,10 @@ const CalendarPage = () => {
   return (
     <>
       <Helmet>
-        <title>Calendário - Assembleia de Deus da Lapa</title>
+        <title>Calendário - Assembleia de Deus na Lapa</title>
         <meta
           name="description"
-          content="Consulte e organize os eventos da Assembleia de Deus da Lapa."
+          content="Consulte e organize os eventos da Assembleia de Deus na Lapa."
         />
       </Helmet>
 
@@ -1469,7 +1469,7 @@ const CalendarPage = () => {
                   </div>
                   <div>
                     <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.14em] md:tracking-[0.18em] text-primary dark:text-white">
-                      Agenda da Assembleia de Deus da Lapa
+                      Agenda da Assembleia de Deus na Lapa
                     </p>
                     <h1 className="text-xl font-bold text-foreground md:text-3xl">
                       Calendário

@@ -317,6 +317,13 @@ const HomePage = () => {
 
   const featuredFestivity = featuredFestivities[featuredFestivityIndex] || null;
   const featuredImageRatio = featuredFestivity?.imageRatio || '16 / 9';
+  const [featuredImageWidth, featuredImageHeight] = featuredImageRatio
+    .split('/')
+    .map(Number);
+  const featuredImageAspectRatio =
+    featuredImageWidth > 0 && featuredImageHeight > 0
+      ? featuredImageWidth / featuredImageHeight
+      : 16 / 9;
   const hasMultipleFeaturedFestivities = featuredFestivities.length > 1;
   const showPreviousFeaturedFestivity = () => {
     setFeaturedFestivityIndex((currentIndex) =>
@@ -397,7 +404,7 @@ const HomePage = () => {
                 <h1 className="mb-3 text-[1.7rem] font-bold leading-tight text-white min-[390px]:text-[1.9rem] sm:mb-4 sm:text-5xl md:text-6xl lg:text-7xl" style={{
                   textWrap: 'balance'
                 }}>
-                  Assembleia de Deus da Lapa
+                  Assembleia de Deus na Lapa
                 </h1>
                 <p className="mx-auto max-w-2xl text-base font-light leading-relaxed text-white/90 sm:text-lg md:text-2xl">
                   Bem-vindo à nossa comunidade de fé
@@ -464,7 +471,7 @@ const HomePage = () => {
 
         {/* FESTIVIDADE EM DESTAQUE */}
         {featuredFestivity?.active && (
-          <section ref={featuredSectionRef} className="order-2 overflow-hidden bg-[#f4f7fb] py-10 dark:bg-slate-950 md:py-20">
+          <section ref={featuredSectionRef} className="order-2 overflow-hidden bg-[#f4f7fb] py-8 dark:bg-slate-950 md:py-10">
             <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8 2xl:max-w-[1620px]">
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
@@ -475,11 +482,14 @@ const HomePage = () => {
                 onMouseLeave={() => setIsFeaturedAutoplayPaused(false)}
                 onFocusCapture={() => setIsFeaturedAutoplayPaused(true)}
                 onBlurCapture={() => setIsFeaturedAutoplayPaused(false)}
-                className="relative min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-lg md:rounded-3xl md:shadow-xl"
+                className="relative min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-lg md:rounded-3xl md:shadow-xl xl:h-[clamp(720px,calc(100svh-1rem),920px)]"
               >
-                <div className="grid min-w-0 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+                <div
+                  className="grid h-full min-w-0 bg-[#071526] xl:grid-cols-[minmax(0,min(58%,calc(clamp(720px,calc(100svh-1rem),920px)*var(--featured-image-ratio))))_minmax(0,1fr)]"
+                  style={{ '--featured-image-ratio': featuredImageAspectRatio }}
+                >
                   <div
-                    className="relative min-w-0 overflow-hidden bg-slate-950"
+                    className="relative min-w-0 overflow-hidden bg-slate-950 xl:h-full"
                     style={{ aspectRatio: featuredImageRatio }}
                   >
                     <AnimatePresence mode="wait">
@@ -537,8 +547,8 @@ const HomePage = () => {
                       </>
                     )}
 
-                    <div className="absolute bottom-3 left-3 right-3 min-w-0 rounded-xl border border-white/15 bg-slate-950/78 px-3 py-2.5 text-white shadow-[0_14px_40px_-20px_rgba(0,0,0,0.85)] backdrop-blur-xl [overflow-wrap:anywhere] sm:bottom-4 sm:left-4 sm:right-4 sm:px-4 sm:py-3 md:bottom-7 md:left-7 md:right-auto md:max-w-sm md:rounded-2xl md:bg-slate-950/74 md:p-6 md:shadow-xl">
-                      <div className="mb-3 flex items-center gap-2 md:mb-4">
+                    <div className="absolute bottom-3 left-3 right-3 min-w-0 rounded-xl border border-white/15 bg-slate-950/78 px-3 py-2.5 text-white shadow-[0_14px_40px_-20px_rgba(0,0,0,0.85)] backdrop-blur-xl [overflow-wrap:anywhere] sm:bottom-4 sm:left-4 sm:right-4 sm:px-4 sm:py-3 md:bottom-6 md:left-6 md:right-auto md:max-w-xs md:rounded-2xl md:bg-slate-950/74 md:p-4 md:shadow-xl">
+                      <div className="mb-3 flex items-center gap-2">
                         <span className="hidden h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground sm:flex md:h-10 md:w-10 md:rounded-xl">
                           <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
                         </span>
@@ -551,13 +561,13 @@ const HomePage = () => {
                           </p>
                         </div>
                       </div>
-                      <p className="text-base font-bold leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-xl md:text-3xl">
+                      <p className="text-base font-bold leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:text-xl md:text-2xl">
                         {featuredFestivity.inviteMessage || defaultFeaturedInviteMessage}
                       </p>
                     </div>
                   </div>
 
-                  <div className="relative flex min-w-0 flex-col justify-center bg-[#071526] p-5 text-white sm:p-6 md:p-10 xl:p-12">
+                  <div className="relative flex min-w-0 flex-col justify-center bg-[#071526] p-5 text-white sm:p-6 md:p-8 xl:-ml-px xl:p-9 [@media(max-height:800px)]:xl:p-7">
                     {featuredFestivityError && (
                       <div className="mb-4 rounded-xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm font-semibold text-amber-100">
                         Não foi possível atualizar o destaque agora. Exibindo uma programação sugerida.
@@ -583,19 +593,19 @@ const HomePage = () => {
                         transition={{ duration: 0.3, ease: 'easeOut' }}
                         className="min-w-0 [overflow-wrap:anywhere]"
                       >
-                    <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100 md:mb-5 md:px-4 md:py-2 md:text-xs md:tracking-[0.18em]">
+                    <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100 md:px-4 md:py-2 md:text-xs md:tracking-[0.18em]">
                       <Sparkles className="h-3.5 w-3.5 text-[#76b7ff] md:h-4 md:w-4" />
                       {featuredFestivity.eyebrow}
                     </span>
 
-                    <h2 className="max-w-xl text-2xl font-bold leading-tight sm:text-3xl md:text-5xl">
+                    <h2 className="max-w-xl text-2xl font-bold leading-tight sm:text-3xl md:text-4xl">
                       {featuredFestivity.title}
                     </h2>
-                    <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/78 sm:text-base md:mt-5 md:text-lg">
+                    <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/78 sm:text-base md:text-base">
                       {featuredFestivity.subtitle}
                     </p>
 
-                    <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:mt-8 md:gap-3">
+                    <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:mt-6 md:gap-3">
                       <div className="rounded-xl border border-white/12 bg-white/[0.07] p-3 md:p-4">
                         <Calendar className="mb-2 h-4 w-4 text-[#76b7ff] md:mb-3 md:h-5 md:w-5" />
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100 md:text-xs md:tracking-[0.16em]">
@@ -621,7 +631,7 @@ const HomePage = () => {
                       </div>
                     </div>
 
-                    <div className="mt-5 rounded-xl border border-[#76b7ff]/45 bg-[#10253d] p-4 text-white shadow-lg shadow-slate-950/20 md:mt-7 md:rounded-2xl md:p-5">
+                    <div className="mt-5 rounded-xl border border-[#76b7ff]/45 bg-[#10253d] p-4 text-white shadow-lg shadow-slate-950/20 md:mt-6 md:rounded-2xl md:p-4 [@media(max-height:800px)]:xl:hidden">
                       <div className="mb-3 flex items-center gap-2 text-white md:mb-4">
                         <Users className="h-4 w-4 text-[#93caff] md:h-5 md:w-5" />
                         <p className="text-sm font-extrabold uppercase tracking-[0.14em] md:text-base md:tracking-[0.16em]">
@@ -638,7 +648,7 @@ const HomePage = () => {
                       </div>
                     </div>
 
-                    <div className="mx-auto mt-6 flex w-full max-w-[16rem] flex-col gap-2 sm:mx-0 sm:max-w-none sm:flex-row md:mt-8 md:gap-3">
+                    <div className="mx-auto mt-6 flex w-full max-w-[16rem] flex-col gap-2 sm:mx-0 sm:max-w-none sm:flex-row md:mt-6 md:gap-3">
                       <a
                         href="#agenda"
                         onClick={(event) => {
@@ -664,13 +674,13 @@ const HomePage = () => {
                       </a>
                       <Link
                         to="/sou-novo"
-                        className="inline-flex items-center justify-center rounded-xl border border-white/15 px-4 py-2.5 text-xs font-bold text-blue-100 transition-colors hover:bg-white/10 hover:text-white sm:px-5 sm:py-3 sm:text-sm md:px-6 md:py-3.5"
+                        className="inline-flex items-center justify-center px-3 py-2.5 text-xs font-bold text-blue-100 transition-colors hover:text-white sm:px-4 sm:py-3 sm:text-sm"
                       >
                         Sou visitante
                       </Link>
                     </div>
 
-                    <p className="mt-4 text-xs leading-relaxed text-white/55 md:mt-5 md:text-sm">
+                    <p className="mt-4 text-xs leading-relaxed text-white/55 md:text-sm">
                       {featuredFestivity.address}
                     </p>
                       </motion.div>

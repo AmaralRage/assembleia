@@ -23,7 +23,7 @@ import SectionHeading from '@/components/SectionHeading.jsx';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { churchLocations } from '@/data/churchLocations';
+import { churchLocations, getChurchLocationNames } from '@/data/churchLocations';
 import { supabase } from '@/lib/supabase';
 import { useModalFocus } from '@/hooks/use-modal-focus';
 import {
@@ -110,7 +110,7 @@ const AddressesPage = () => {
       const { data, error } = await supabase
         .from('calendar_events')
         .select('id, title, event_date, event_time, category')
-        .eq('location', selectedAddress.name)
+        .in('location', getChurchLocationNames(selectedAddress))
         .gte('event_date', getTodayKey())
         .order('event_date', { ascending: true })
         .order('event_time', { ascending: true })
@@ -141,8 +141,8 @@ const AddressesPage = () => {
   return (
     <>
       <Helmet>
-        <title>Endereços - Assembleia de Deus da Lapa</title>
-        <meta name="description" content="Encontre uma Assembleia de Deus da Lapa mais próxima de você." />
+        <title>Endereços - Assembleia de Deus na Lapa</title>
+        <meta name="description" content="Encontre uma Assembleia de Deus na Lapa mais próxima de você." />
       </Helmet>
 
       <Header />

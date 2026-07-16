@@ -82,7 +82,7 @@ const ResetPasswordPage = () => {
   return (
     <>
       <Helmet>
-        <title>Redefinir senha - Assembleia de Deus da Lapa</title>
+        <title>Redefinir senha - Assembleia de Deus na Lapa</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 

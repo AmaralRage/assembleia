@@ -124,7 +124,7 @@ const AdminLoginPage = () => {
   return (
     <>
       <Helmet>
-        <title>Acesso administrativo - Assembleia de Deus da Lapa</title>
+        <title>Acesso administrativo - Assembleia de Deus na Lapa</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 

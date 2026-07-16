@@ -26,7 +26,8 @@ const getGoogleStreetViewImage = (location) => {
 export const churchLocations = [
   {
     id: "lapa-centro",
-    name: "Assembleia de Deus da Lapa",
+    name: "Assembleia de Deus na Lapa",
+    legacyNames: ["Assembleia de Deus da Lapa"],
     city: "Rio de Janeiro",
     state: "RJ",
     address: "Rua Joaquim Silva, 52 - Centro, Rio de Janeiro - RJ",
@@ -40,7 +41,8 @@ export const churchLocations = [
   },
   {
     id: "vila-nova",
-    name: "Assembleia de Deus da Lapa - Filial Vila Kennedy",
+    name: "Assembleia de Deus na Lapa - Filial Vila Kennedy",
+    legacyNames: ["Assembleia de Deus da Lapa - Filial Vila Kennedy"],
     city: "Rio de Janeiro",
     state: "RJ",
     address: "Estr. Srg. Miguel Filho, 71A, Rio de Janeiro, RJ",
@@ -98,4 +100,11 @@ export const churchLocations = [
 export const mainChurchLocation = churchLocations[0];
 
 export const getChurchLocation = (name) =>
-  churchLocations.find((location) => location.name === name);
+  churchLocations.find(
+    (location) => location.name === name || location.legacyNames?.includes(name),
+  );
+
+export const getChurchLocationNames = (location) => [
+  location.name,
+  ...(location.legacyNames || []),
+];

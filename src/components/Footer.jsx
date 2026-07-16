@@ -5,7 +5,7 @@ import { smoothScrollToElement } from '@/lib/smoothScroll';
 
 const Footer = () => {
   const socialLinks = {
-    instagram: "",
+    instagram: "https://www.instagram.com/adl.sedeoficial/",
     facebook: "https://www.facebook.com/people/Ieadlapa-Rio/100089125852506/",
     youtube: "https://www.youtube.com/@AssembleiadeDeusnaLapa",
   };
@@ -86,7 +86,7 @@ const Footer = () => {
   return (
     <footer className="bg-slate-900 text-slate-100">
       <div className="section-container py-10 md:py-12">
-        <div className="grid grid-cols-2 gap-6 md:gap-10 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-3 md:gap-10 lg:grid-cols-6">
           {footerItems.map((item) => {
             const Icon = item.icon;
 
@@ -121,7 +121,7 @@ const Footer = () => {
                 />
               </div>
 
-              <span className="font-semibold">Assembleia de Deus da Lapa</span>
+              <span className="font-semibold">Assembleia de Deus na Lapa</span>
             </div>
 
             <div className="text-center md:text-right">

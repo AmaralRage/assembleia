@@ -18,12 +18,11 @@ import Footer from "@/components/Footer.jsx";
 import SectionHeading from "@/components/SectionHeading.jsx";
 import { Button } from "@/components/ui/button";
 import { churchMedia } from "@/data/churchMedia";
-import { mainChurchLocation } from "@/data/churchLocations";
+import { getChurchLocationNames, mainChurchLocation } from "@/data/churchLocations";
 import { supabase } from "@/lib/supabase";
 import {
   formatEventDateWithWeekday,
   formatEventTime,
-  formatWeekDay,
   getTodayKey,
 } from "@/lib/calendar";
 
@@ -129,6 +128,7 @@ const formatVideoDate = (date) => {
 const WatchPage = () => {
   const [nextService, setNextService] = useState(null);
   const [youtubeNextService, setYoutubeNextService] = useState(null);
+  const [youtubeUpcomingServices, setYoutubeUpcomingServices] = useState([]);
   const [upcomingMainServices, setUpcomingMainServices] = useState([]);
   const [isLoadingNextService, setIsLoadingNextService] = useState(true);
   const [recentVideos, setRecentVideos] = useState(churchMedia.recentVideos);
@@ -144,7 +144,7 @@ const WatchPage = () => {
         .from("calendar_events")
         .select("id, title, event_date, event_time, location, description, category")
         .gte("event_date", getTodayKey())
-        .eq("location", mainChurchLocation.name)
+        .in("location", getChurchLocationNames(mainChurchLocation))
         .in("category", ["culto", "especial"])
         .order("event_date", { ascending: true })
         .order("event_time", { ascending: true })
@@ -188,6 +188,10 @@ const WatchPage = () => {
           setYoutubeNextService(cachedYoutubeData.nextStream);
         }
 
+        if (cachedYoutubeData.upcomingStreams?.length) {
+          setYoutubeUpcomingServices(cachedYoutubeData.upcomingStreams);
+        }
+
         setIsLoadingVideos(false);
         return;
       }
@@ -206,6 +210,10 @@ const WatchPage = () => {
 
       if (!error && data?.nextStream) {
         setYoutubeNextService(data.nextStream);
+      }
+
+      if (!error && data?.upcomingStreams?.length) {
+        setYoutubeUpcomingServices(data.upcomingStreams);
       }
 
       if (!error && data) {
@@ -229,38 +237,36 @@ const WatchPage = () => {
     () => isServiceLiveNow(displayedNextService),
     [displayedNextService],
   );
-  const calendarServiceTimes = useMemo(() => {
-    const groups = upcomingMainServices.reduce((items, service) => {
-      const day = formatWeekDay(service.event_date);
-      const currentGroup = items.get(day) || {
-        day,
-        label: service.title,
-        sortDate: service.event_date,
-        times: [],
-      };
+  const upcomingServiceCards = useMemo(
+    () =>
+      upcomingMainServices.slice(0, 3).map((service) => {
+        const youtubeStream = youtubeUpcomingServices.find(
+          (stream) => stream.event_date === service.event_date,
+        );
 
-      if (service.event_date < currentGroup.sortDate) {
-        currentGroup.sortDate = service.event_date;
-        currentGroup.label = service.title;
-      }
-
-      const time = formatEventTime(service.event_time, "Horário a definir");
-      if (!currentGroup.times.includes(time)) {
-        currentGroup.times.push(time);
-      }
-
-      items.set(day, currentGroup);
-      return items;
-    }, new Map());
-
-    return Array.from(groups.values())
-      .sort((first, second) => first.sortDate.localeCompare(second.sortDate))
-      .slice(0, 2);
-  }, [upcomingMainServices]);
-  const displayedServiceTimes =
-    calendarServiceTimes.length > 0
-      ? calendarServiceTimes
-      : churchMedia.serviceTimes.slice(0, 2);
+        return {
+          id: service.id,
+          date: formatEventDateWithWeekday(service.event_date),
+          title: service.title,
+          description: service.description,
+          times: [formatEventTime(service.event_time, "Horário a definir")],
+          youtubeUrl: youtubeStream?.url,
+        };
+      }),
+    [upcomingMainServices, youtubeUpcomingServices],
+  );
+  const displayedServiceCards =
+    upcomingServiceCards.length > 0
+      ? upcomingServiceCards
+      : churchMedia.serviceTimes.slice(0, 3).map((serviceTime) => ({
+          id: serviceTime.day,
+          date: serviceTime.day,
+          title: serviceTime.label,
+          description:
+            "Participe conosco deste momento de comunhão, adoração e aprendizado da Palavra de Deus.",
+          times: serviceTime.times,
+        }));
+  const hasScheduledYoutubeStream = youtubeUpcomingServices.length > 0;
   const liveWatchUrl = isLiveNow
     ? churchMedia.youtubeLiveNowUrl
     : youtubeNextService?.url || churchMedia.youtubeLiveUrl;
@@ -276,18 +282,18 @@ const WatchPage = () => {
   return (
     <>
       <Helmet>
-        <title>Assista aos cultos online - Assembleia de Deus da Lapa</title>
+        <title>Assista aos cultos online - Assembleia de Deus na Lapa</title>
         <meta
           name="description"
-          content="Assista aos cultos online da Assembleia de Deus da Lapa ao vivo, acompanhe mensagens recentes e veja os próximos horários de transmissão."
+          content="Assista aos cultos online da Assembleia de Deus na Lapa ao vivo, acompanhe mensagens recentes e veja os próximos horários de transmissão."
         />
         <meta
           property="og:title"
-          content="Assista aos cultos online - Assembleia de Deus da Lapa"
+          content="Assista aos cultos online - Assembleia de Deus na Lapa"
         />
         <meta
           property="og:description"
-          content="Acompanhe transmissões, mensagens e cultos online pelo canal oficial da Assembleia de Deus da Lapa."
+          content="Acompanhe transmissões, mensagens e cultos online pelo canal oficial da Assembleia de Deus na Lapa."
         />
         <meta property="og:image" content="https://i.imgur.com/WMVJQ9m.jpeg" />
       </Helmet>
@@ -325,7 +331,7 @@ const WatchPage = () => {
               />
               <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
                 Acompanhe transmissões, mensagens e registros dos cultos pelo
-                canal oficial da Assembleia de Deus da Lapa.
+                canal oficial da Assembleia de Deus na Lapa.
               </p>
 
               <div className="mt-6 rounded-xl border border-border bg-card p-5">
@@ -414,7 +420,7 @@ const WatchPage = () => {
                 <div className="aspect-video">
                   <iframe
                     src={churchMedia.youtubeEmbedUrl}
-                    title="Culto da Assembleia de Deus da Lapa"
+                    title="Culto da Assembleia de Deus na Lapa"
                     className="h-full w-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
@@ -502,56 +508,101 @@ const WatchPage = () => {
 
         <section className="mt-4 border-y border-border bg-muted/45 py-20">
           <div className="section-container">
-            <div className="grid gap-10 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
+            <div className="max-w-2xl">
+              <SectionHeading
+                eyebrow="Agenda"
+                title="Próximos"
+                highlight="cultos"
+                titleClassName="text-3xl md:text-5xl"
+              />
+              <p className="mt-4 text-muted-foreground">
+                Confira os próximos encontros na igreja e acompanhe quando houver
+                uma transmissão online agendada.
+              </p>
+            </div>
+
+            <div className="mt-10 grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
+              {isLoadingNextService
+                ? [0, 1, 2].map((item) => (
+                    <div
+                      key={item}
+                      className="rounded-xl border border-border bg-background p-6"
+                    >
+                      <div className="h-4 w-40 rounded bg-muted" />
+                      <div className="mt-4 h-6 w-52 rounded bg-muted" />
+                      <div className="mt-6 h-9 w-28 rounded bg-muted" />
+                    </div>
+                  ))
+                : displayedServiceCards.map((service) => (
+                    <article
+                      key={service.id}
+                      className="flex min-h-52 flex-col rounded-xl border border-border bg-background p-6"
+                    >
+                      <p className="text-sm font-semibold capitalize text-primary">
+                        {service.date}
+                      </p>
+                      <h3 className="mt-3 text-xl font-bold text-foreground">
+                        {service.title}
+                      </h3>
+                      {service.description && (
+                        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                          {service.description}
+                        </p>
+                      )}
+                      <div className="mt-auto flex flex-wrap items-center gap-2 pt-6">
+                        {service.times.map((time) => (
+                          <span
+                            key={`${service.id}-${time}`}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-2 text-sm font-semibold text-foreground"
+                          >
+                            <Clock className="h-4 w-4 text-primary" />
+                            {time}
+                          </span>
+                        ))}
+                        {service.youtubeUrl && (
+                          <a
+                            href={service.youtubeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                          >
+                            <Radio className="h-4 w-4" />
+                            Transmissão online
+                          </a>
+                        )}
+                      </div>
+                    </article>
+                  ))}
+            </div>
+
+            <div className="mt-6 flex flex-col gap-5 rounded-xl border border-border bg-background p-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <SectionHeading
-                  eyebrow="Horários"
-                  title="Cultos presenciais"
-                  highlight="e online"
-                  titleClassName="text-3xl md:text-5xl"
-                />
-                <p className="mt-4 text-muted-foreground">
-                  Confira os horários regulares e acompanhe as transmissões pelo
-                  canal oficial da igreja.
+                <p className="font-semibold text-foreground">
+                  {hasScheduledYoutubeStream
+                    ? "Há uma transmissão online agendada."
+                    : "Nenhuma transmissão online agendada no momento."}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Consulte a agenda completa ou acompanhe as novidades no canal oficial.
                 </p>
               </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                {isLoadingNextService
-                  ? [0, 1].map((item) => (
-                      <div
-                        key={item}
-                        className="rounded-xl border border-border bg-background p-5"
-                      >
-                        <div className="h-5 w-36 rounded bg-muted" />
-                        <div className="mt-3 h-4 w-52 rounded bg-muted" />
-                        <div className="mt-5 h-9 w-28 rounded bg-muted" />
-                      </div>
-                    ))
-                  : displayedServiceTimes.map((serviceTime) => (
-                      <div
-                        key={serviceTime.day}
-                        className="rounded-xl border border-border bg-background p-5"
-                      >
-                        <h3 className="text-xl font-bold text-foreground">
-                          {serviceTime.day}
-                        </h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {serviceTime.label}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {serviceTime.times.map((time) => (
-                            <span
-                              key={`${serviceTime.day}-${time}`}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-2 text-sm font-semibold text-foreground"
-                            >
-                              <Clock className="h-4 w-4 text-primary" />
-                              {time}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+              <div className="flex flex-wrap gap-3">
+                <Button asChild variant="outline" className="rounded-lg">
+                  <Link to="/calendario">
+                    <CalendarDays className="h-4 w-4" />
+                    Ver calendário
+                  </Link>
+                </Button>
+                <Button asChild className="rounded-lg">
+                  <a
+                    href={churchMedia.youtubeChannelUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Youtube className="h-4 w-4" />
+                    Acessar YouTube
+                  </a>
+                </Button>
               </div>
             </div>
           </div>
@@ -640,7 +691,7 @@ const WatchPage = () => {
                 <SectionHeading
                   eyebrow="Primeira vez online?"
                   title="Seja bem-vindo à"
-                  highlight="Assembleia de Deus da Lapa"
+                  highlight="Assembleia de Deus na Lapa"
                   titleClassName="text-2xl md:text-4xl"
                 />
                 <p className="mt-3 max-w-3xl text-muted-foreground">

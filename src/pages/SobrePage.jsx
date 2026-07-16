@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Church, Globe2, Heart, X } from "lucide-react";
+import { BookOpen, Church, Facebook, Globe2, Heart, Instagram, X } from "lucide-react";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
 import SectionHeading from "@/components/SectionHeading.jsx";
@@ -102,8 +102,8 @@ const SobrePage = () => {
                   titleClassName="text-3xl md:text-5xl"
                 />
 
-                <p className="text-base md:text-lg text-muted-foreground dark:text-slate-300 leading-relaxed mb-5">
-                  A Assembleia de Deus da Lapa é uma comunidade cristã dedicada à
+                <p className="mt-5 text-base leading-relaxed text-muted-foreground dark:text-slate-300 md:mt-6 md:text-lg mb-5">
+                  A Assembleia de Deus na Lapa é uma comunidade cristã dedicada à
                   adoração, ao ensino da Palavra de Deus e ao acolhimento de famílias.
                   Nossa missão é anunciar o evangelho, cuidar de vidas e fortalecer a fé
                   de cada membro.
@@ -350,7 +350,7 @@ const SobrePage = () => {
 
                 <div className="mt-7 md:mt-10 pt-5 md:pt-6 border-t border-border">
                   <p className="text-sm text-muted-foreground dark:text-slate-400">
-                    Assembleia de Deus da Lapa
+                    Assembleia de Deus na Lapa
                   </p>
                 </div>
               </motion.div>
@@ -423,7 +423,6 @@ const SobrePage = () => {
                   ? "Presidente atual"
                   : "Ex-presidente"}
               </p>
-
               <div className="relative mt-6 grid gap-6 md:mt-7 md:grid-cols-[1fr_0.85fr] md:gap-8">
                 <span className="pointer-events-none absolute -bottom-4 right-0 z-0 text-[5.5rem] font-extrabold leading-none text-slate-950/[0.04] sm:-bottom-8 sm:text-[8rem] md:-bottom-10 md:text-[10rem]">
                   {getMandateStartYear(selectedHistoryPresident.periodo)}
@@ -459,7 +458,41 @@ const SobrePage = () => {
                 </div>
               </div>
 
-              <div className="mt-6 border-t border-slate-200 pt-5 text-right md:mt-8">
+              <div
+                className={`mt-6 flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center md:mt-8 ${
+                  selectedHistoryPresident.instagram || selectedHistoryPresident.facebook
+                    ? "sm:justify-between"
+                    : "sm:justify-end"
+                }`}
+              >
+                {(selectedHistoryPresident.instagram || selectedHistoryPresident.facebook) && (
+                <div className="flex items-center gap-2">
+                  {selectedHistoryPresident.instagram && (
+                    <a
+                      href={selectedHistoryPresident.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Instagram de ${selectedHistoryPresident.nome}`}
+                      title="Instagram"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                    >
+                      <Instagram className="h-5 w-5" />
+                    </a>
+                  )}
+                  {selectedHistoryPresident.facebook && (
+                    <a
+                      href={selectedHistoryPresident.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Facebook de ${selectedHistoryPresident.nome}`}
+                      title="Facebook"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                    >
+                      <Facebook className="h-5 w-5" />
+                    </a>
+                  )}
+                </div>
+                )}
                 <button
                   type="button"
                   onClick={() => setSelectedHistoryPresident(null)}

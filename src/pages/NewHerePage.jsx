@@ -102,14 +102,15 @@ const NewHerePage = () => {
       return days;
     }, {}),
   );
+  const lastAgendaRowLength = agendaDays.length % 4 || 4;
 
   return (
     <>
       <Helmet>
-        <title>Sou novo por aqui - Assembleia de Deus da Lapa</title>
+        <title>Sou novo por aqui - Assembleia de Deus na Lapa</title>
         <meta
           name="description"
-          content="Seja bem-vindo à Assembleia de Deus da Lapa. Saiba como visitar nossa igreja, chegar até nós e participar dos cultos."
+          content="Seja bem-vindo à Assembleia de Deus na Lapa. Saiba como visitar nossa igreja, chegar até nós e participar dos cultos."
         />
       </Helmet>
 
@@ -134,7 +135,7 @@ const NewHerePage = () => {
               />
               <p className="mt-6 max-w-xl text-base leading-relaxed text-white/80 md:text-lg">
                 Seja muito bem-vindo! Estamos felizes que você está conhecendo a
-                Assembleia de Deus da Lapa.
+                Assembleia de Deus na Lapa.
               </p>
 
               <div className="mt-8 flex w-full max-w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -432,13 +433,57 @@ const NewHerePage = () => {
                       </div>
                     </div>
                   ))}
+                  {lastAgendaRowLength < 4 && (
+                    <div
+                      className={
+                        lastAgendaRowLength === 1
+                          ? "border-border px-6 py-6 md:col-span-1 xl:col-span-3"
+                          : lastAgendaRowLength === 2
+                            ? "border-border px-6 py-6 md:col-span-2 xl:col-span-2"
+                            : "border-border px-6 py-6 md:col-span-1 xl:col-span-1"
+                      }
+                    >
+                      <div className="flex h-full min-h-[190px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/25 p-6 text-center">
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                          Agenda completa
+                        </p>
+                        <h3 className="mt-2 text-lg font-bold text-foreground">
+                          Veja os próximos eventos
+                        </h3>
+                        <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                          Acompanhe todos os cultos, encontros e atualizações no calendário.
+                        </p>
+                        <Link
+                          to="/calendario"
+                          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                        >
+                          Calendário completo
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="px-6 py-14 text-center">
-                  <CalendarDays className="mx-auto mb-3 h-9 w-9 text-muted-foreground/50" />
-                  <p className="text-muted-foreground">
-                    Nenhum evento futuro cadastrado no momento.
-                  </p>
+                <div className="px-6 py-8">
+                  <div className="mx-auto flex min-h-[190px] max-w-xl flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/25 p-6 text-center">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                      Agenda completa
+                    </p>
+                    <h3 className="mt-2 text-lg font-bold text-foreground">
+                      Veja os próximos eventos
+                    </h3>
+                    <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                      Nenhum evento futuro cadastrado no momento. Consulte o calendário para acompanhar as atualizações.
+                    </p>
+                    <Link
+                      to="/calendario"
+                      className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                      Calendário completo
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -518,7 +563,7 @@ const NewHerePage = () => {
                     highlightClassName="bg-none text-white"
                   />
                   <p className="mt-4 max-w-2xl text-white/80">
-                    Venha conhecer a Assembleia de Deus da Lapa e participar de um
+                    Venha conhecer a Assembleia de Deus na Lapa e participar de um
                     culto conosco.
                   </p>
                 </div>

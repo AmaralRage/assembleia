@@ -6,16 +6,19 @@ import pastorMarcosOliveiraImage from "@/assets/leadership/pastor-marcos-oliveir
 export const leadershipPlaceholderImage = "https://i.imgur.com/SA53Yxc.png";
 
 export const presidenteAtual = {
-  nome: "Pastor Charles",
+  nome: "Charles Oliveira Brito",
   cargo: "Presidente",
   periodo: "2020 - Atual",
   foto: pastorCharlesImage,
+  instagram: "https://www.instagram.com/prcharlesbrito/",
+  facebook:
+    "https://www.facebook.com/people/Charles-Oliveira-Brito/100076163015553/",
   resumo:
     "Conduz a igreja em direção a novos tempos, fortalecendo a presença digital, os projetos sociais e o compromisso com a comunidade.",
   historia:
     "Sua trajetória na igreja foi construída por meio do serviço, do cuidado com as famílias e da dedicação aos diferentes ministérios. Ao longo dos anos, participou de momentos importantes da comunidade e contribuiu para aproximar a liderança de seus membros.",
   atuacao:
-    "Hoje, à frente da presidência, busca preservar os valores e a história da Assembleia de Deus da Lapa enquanto incentiva novas formas de evangelização, comunhão e atuação social.",
+    "Hoje, à frente da presidência, busca preservar os valores e a história da Assembleia de Deus na Lapa enquanto incentiva novas formas de evangelização, comunhão e atuação social.",
   destaques: [
     "Fortalecimento da presença digital da igreja.",
     "Continuidade dos projetos sociais e ministeriais.",
@@ -36,7 +39,7 @@ export const exPresidentes = [
     destaques: [
       "Acompanhou os primeiros anos de crescimento da congregação.",
       "Incentivou a participação das famílias nas atividades da igreja.",
-      "Ajudou a consolidar a base comunitária da Assembleia de Deus da Lapa.",
+      "Ajudou a consolidar a base comunitária da Assembleia de Deus na Lapa.",
     ],
   },
   {

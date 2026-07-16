@@ -189,7 +189,7 @@ const Header = () => {
               />
             </div>
             <span className="hidden text-lg font-bold text-foreground sm:block md:text-xl">
-              Assembleia de Deus da Lapa
+              Assembleia de Deus na Lapa
             </span>
           </Link>
 

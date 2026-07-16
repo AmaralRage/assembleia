@@ -22,14 +22,14 @@ const PageLoadingFallback = () => (
         <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white p-1.5 shadow-2xl shadow-primary/20">
           <img
             src="https://i.imgur.com/SA53Yxc.png"
-            alt="Assembleia de Deus da Lapa"
+            alt="Assembleia de Deus na Lapa"
             className="h-full w-full rounded-full object-cover"
           />
         </div>
       </div>
 
       <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">
-        Assembleia de Deus da Lapa
+        Assembleia de Deus na Lapa
       </p>
       <p className="mt-3 text-lg font-bold text-white">
         Preparando a página
