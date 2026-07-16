@@ -126,8 +126,17 @@ const Header = () => {
     '/calendario': CalendarDays,
   };
 
-  const handleNavClick = (e, link) => {
+  const handleNavClick = (e, link, { mobile = false } = {}) => {
     e.preventDefault();
+
+    if (mobile && link.href === '/#agenda') {
+      if (location.pathname === '/') {
+        smoothScrollTo(0);
+      } else {
+        navigate('/');
+      }
+      return;
+    }
     
     if (link.isAnchor) {
       const targetId = link.href.split('#')[1];
@@ -146,8 +155,11 @@ const Header = () => {
         }
       }
     } else {
-      navigate(link.href);
-      smoothScrollTo(0);
+      if (location.pathname === link.href) {
+        smoothScrollTo(0);
+      } else {
+        navigate(link.href);
+      }
     }
   };
 
@@ -177,7 +189,9 @@ const Header = () => {
         <div className="flex h-16 items-center justify-between md:h-20">
           <Link 
             to="/" 
-            onClick={() => smoothScrollTo(0)}
+            onClick={() => {
+              if (location.pathname === '/') smoothScrollTo(0);
+            }}
             className="flex items-center gap-3 group"
           >
             <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary transition-transform duration-200 group-hover:scale-105 md:h-12 md:w-12">
@@ -252,7 +266,7 @@ const Header = () => {
             <a
               key={link.href}
               href={link.href}
-              onClick={(event) => handleNavClick(event, link)}
+              onClick={(event) => handleNavClick(event, link, { mobile: true })}
               className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-1 py-2 text-[9px] font-semibold transition-colors ${
                 isActive(link)
                   ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-blue-300'

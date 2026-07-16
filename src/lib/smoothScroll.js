@@ -5,13 +5,17 @@ const easeInOutCubic = (progress) =>
 
 let activeScrollFrame = null;
 
-export const smoothScrollTo = (targetTop, { duration = 650 } = {}) => {
-  if (typeof window === 'undefined') return;
-
+export const cancelSmoothScroll = () => {
   if (activeScrollFrame) {
     window.cancelAnimationFrame(activeScrollFrame);
     activeScrollFrame = null;
   }
+};
+
+export const smoothScrollTo = (targetTop, { duration = 650 } = {}) => {
+  if (typeof window === 'undefined') return;
+
+  cancelSmoothScroll();
 
   const prefersReducedMotion = window.matchMedia(
     '(prefers-reduced-motion: reduce)',

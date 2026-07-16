@@ -85,14 +85,14 @@ const Footer = () => {
 
   return (
     <footer className="bg-slate-900 text-slate-100">
-      <div className="section-container py-10 md:py-12">
+      <div className="section-container pb-28 pt-10 md:py-12">
         <div className="grid grid-cols-2 gap-6 md:grid-cols-3 md:gap-10 lg:grid-cols-6">
           {footerItems.map((item) => {
             const Icon = item.icon;
 
             return (
-              <div key={item.title}>
-                <div className="flex items-center gap-2 mb-4">
+              <div key={item.title} className="min-w-0">
+                <div className="mb-2 flex min-h-11 items-center gap-2 md:mb-4">
                   <Icon className="w-5 h-5 text-secondary" />
                   <h3 className="font-semibold text-lg">{item.title}</h3>
                 </div>
@@ -101,7 +101,7 @@ const Footer = () => {
                   onClick={item.internal ? (e) => handleNavClick(e, item.href) : undefined}
                   target={item.internal ? undefined : "_blank"}
                   rel={item.internal ? undefined : "noopener noreferrer"}
-                  className="inline-block text-sm md:text-base text-slate-300 hover:text-secondary hover:scale-105 transition-all duration-200"
+                  className="inline-flex min-h-11 items-center py-2 text-base text-slate-200 transition-all duration-200 hover:scale-105 hover:text-secondary"
                 >
                   {item.label}
                 </a>
