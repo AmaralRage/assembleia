@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import {
   Accessibility,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Copy,
   Home,
@@ -40,6 +42,8 @@ const categoryLabels = {
   reuniao: 'Reunião',
 };
 
+const ADDRESSES_PER_PAGE = 8;
+
 const hasUsefulInfo = (value) => {
   if (!value) return false;
   return !value.trim().toLowerCase().includes('informado');
@@ -48,6 +52,7 @@ const hasUsefulInfo = (value) => {
 const AddressesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('todos');
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [upcomingServices, setUpcomingServices] = useState([]);
   const [isLoadingServices, setIsLoadingServices] = useState(false);
@@ -78,6 +83,20 @@ const AddressesPage = () => {
 
     return matchesCity && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredAddresses.length / ADDRESSES_PER_PAGE);
+  const paginatedAddresses = filteredAddresses.slice(
+    (currentPage - 1) * ADDRESSES_PER_PAGE,
+    currentPage * ADDRESSES_PER_PAGE,
+  );
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    document.getElementById('address-list')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  };
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text);
@@ -190,7 +209,10 @@ const AddressesPage = () => {
                 type="text"
                 placeholder="Busque por cidade, estado ou nome da igreja..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 text-base shadow-none bg-transparent"
               />
               <Button
@@ -198,6 +220,7 @@ const AddressesPage = () => {
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedCity('todos');
+                  setCurrentPage(1);
                 }}
                 disabled={!searchQuery && selectedCity === 'todos'}
                 className="rounded-lg px-6 transition-all duration-300 hover:scale-110 hover:shadow-lg disabled:hover:scale-100 disabled:hover:shadow-none"
@@ -218,7 +241,10 @@ const AddressesPage = () => {
                 <button
                   key={city}
                   type="button"
-                  onClick={() => setSelectedCity(city)}
+                  onClick={() => {
+                    setSelectedCity(city);
+                    setCurrentPage(1);
+                  }}
                   className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                     selectedCity === city
                       ? 'border-primary bg-primary text-primary-foreground'
@@ -236,6 +262,7 @@ const AddressesPage = () => {
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedCity('todos');
+                  setCurrentPage(1);
                 }}
                 className="text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
               >
@@ -247,7 +274,7 @@ const AddressesPage = () => {
           </div>
         </section>
 
-        <section className="bg-background pb-24 pt-16 dark:bg-[#111827]">
+        <section id="address-list" className="scroll-mt-20 bg-background pb-24 pt-16 dark:bg-[#111827]">
           <div className="section-container">
           <div>
             <div className="mb-8">
@@ -262,25 +289,25 @@ const AddressesPage = () => {
             </div>
 
             {filteredAddresses.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {filteredAddresses.map((address, index) => (
+              <div className="-mx-2 grid grid-cols-2 gap-2 sm:mx-0 sm:gap-5 md:gap-8">
+                {paginatedAddresses.map((address, index) => (
                   <motion.div
                     key={address.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.1 * index }}
-                    className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full dark:border-slate-800 dark:bg-[#0b1220]"
+                    className="flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-[#0b1220]"
                   >
-                    <div className="h-48 w-full overflow-hidden relative">
+                    <div className="relative h-32 w-full overflow-hidden sm:h-40 md:h-48">
                       <img
                         src={address.image}
                         alt={address.name}
                         loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                       />
-                      <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
-                        <MapPin className="w-4 h-4 text-primary" />
-                        <span className="text-xs font-semibold text-foreground">
+                      <div className="absolute left-2 top-2 flex max-w-[calc(100%-1rem)] items-center gap-1 rounded-full bg-background/90 px-2 py-1 shadow-sm backdrop-blur-sm sm:left-4 sm:top-4 sm:gap-1.5 sm:px-3 sm:py-1.5">
+                        <MapPin className="h-3 w-3 shrink-0 text-primary sm:h-4 sm:w-4" />
+                        <span className="truncate text-[9px] font-semibold text-foreground sm:text-xs">
                           {address.city}, {address.state}
                         </span>
                       </div>
@@ -291,41 +318,47 @@ const AddressesPage = () => {
                       )}
                     </div>
 
-                    <div className="p-6 flex flex-col flex-grow">
-                      <h3 className="text-xl font-bold text-card-foreground mb-2">
+                    <div className="flex flex-grow flex-col p-3.5 sm:p-5 md:p-6">
+                      <h3 className="mb-1.5 text-[15px] font-bold leading-tight text-card-foreground sm:mb-2 sm:text-lg md:text-xl">
                         {address.name}
                       </h3>
-                      <p className="text-muted-foreground flex-grow mb-6">
+                      <p className="mb-3.5 line-clamp-3 flex-grow text-[13px] leading-snug text-muted-foreground sm:mb-5 sm:text-sm md:mb-6 md:text-base">
                         {address.fullAddress}
                       </p>
 
-                      <div className="grid grid-cols-3 gap-3 mt-auto">
+                      <div className="mt-auto grid grid-cols-3 gap-1 sm:gap-2 md:gap-3">
                         <Button
+                          type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => handleCopy(address.fullAddress)}
-                          className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border hover:scale-105 transition-all duration-200"
+                          aria-label={`Copiar endereço de ${address.name}`}
+                          className="flex h-10 min-w-0 flex-col gap-1 border-transparent bg-muted/50 p-0 transition-all duration-200 hover:scale-105 hover:border-border hover:bg-muted sm:h-auto sm:gap-1.5 sm:py-3"
                         >
                           <Copy className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-medium text-foreground">Copiar</span>
+                          <span className="hidden text-xs font-medium text-foreground sm:inline">Copiar</span>
                         </Button>
                         <Button
+                          type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(address.mapUrl, '_blank')}
-                          className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border hover:scale-105 transition-all duration-200"
+                          aria-label={`Abrir ${address.name} no mapa`}
+                          className="flex h-10 min-w-0 flex-col gap-1 border-transparent bg-muted/50 p-0 transition-all duration-200 hover:scale-105 hover:border-border hover:bg-muted sm:h-auto sm:gap-1.5 sm:py-3"
                         >
                           <Map className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-medium text-foreground">Mapa</span>
+                          <span className="hidden text-xs font-medium text-foreground sm:inline">Mapa</span>
                         </Button>
                         <Button
+                          type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => setSelectedAddress(address)}
-                          className="flex flex-col gap-1.5 h-auto py-3 bg-muted/50 hover:bg-muted border-transparent hover:border-border hover:scale-105 transition-all duration-200"
+                          aria-label={`Ver informações de ${address.name}`}
+                          className="flex h-10 min-w-0 flex-col gap-1 border-transparent bg-muted/50 p-0 transition-all duration-200 hover:scale-105 hover:border-border hover:bg-muted sm:h-auto sm:gap-1.5 sm:py-3"
                         >
                           <Info className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-medium text-foreground">Info</span>
+                          <span className="hidden text-xs font-medium text-foreground sm:inline">Info</span>
                         </Button>
                       </div>
                     </div>
@@ -338,6 +371,52 @@ const AddressesPage = () => {
                 <h3 className="text-lg font-medium text-foreground mb-1">Nenhum endereço encontrado</h3>
                 <p className="text-muted-foreground">Tente buscar por outra cidade ou nome de igreja.</p>
               </div>
+            )}
+
+            {totalPages > 1 && (
+              <nav
+                aria-label="Paginação dos endereços"
+                className="mt-10 flex flex-wrap items-center justify-center gap-2"
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="h-10 gap-1.5 px-3"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Anterior</span>
+                </Button>
+
+                {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                  <Button
+                    key={page}
+                    type="button"
+                    variant={currentPage === page ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    aria-label={`Ir para a página ${page}`}
+                    aria-current={currentPage === page ? 'page' : undefined}
+                    className="h-10 w-10 p-0"
+                  >
+                    {page}
+                  </Button>
+                ))}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="h-10 gap-1.5 px-3"
+                >
+                  <span className="hidden sm:inline">Próxima</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </nav>
             )}
           </div>
           </div>
