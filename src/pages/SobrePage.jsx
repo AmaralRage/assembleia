@@ -82,18 +82,18 @@ const SobrePage = () => {
 
   return (
     <MotionConfig reducedMotion="user">
-    <>
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden">
       <Header />
 
       <main className="min-w-0 w-full max-w-full overflow-x-hidden">
         <section className="bg-background pb-10 pt-24 md:pb-24 md:pt-32">
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 items-center gap-6 md:gap-8 lg:grid-cols-[1.6fr_1fr] lg:gap-12">
+            <div className="grid min-w-0 grid-cols-1 items-center gap-6 md:gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-12">
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
-                className="rounded-xl md:rounded-3xl overflow-hidden shadow-xl border border-border"
+                className="min-w-0 rounded-xl md:rounded-3xl overflow-hidden shadow-xl border border-border"
               >
                 <img
                   src="https://lh5.googleusercontent.com/p/AF1QipNzF-PyrzUoPL4X3E26Y-6AJVsKusMgypL1cRvz=w650-h486-k-no"
@@ -106,6 +106,7 @@ const SobrePage = () => {
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
+                className="min-w-0"
               >
                 <SectionHeading
                   eyebrow="Nossa história"
@@ -551,7 +552,7 @@ const SobrePage = () => {
       )}
 
       <Footer />
-    </>
+    </div>
     </MotionConfig>
   );
 };
