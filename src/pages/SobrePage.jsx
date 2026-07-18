@@ -10,6 +10,23 @@ import { smoothScrollToElement } from "@/lib/smoothScroll";
 
 const getMandateStartYear = (periodo) => periodo.split("-")[0].trim();
 
+const renderHighlightedBiographyText = (text, highlights = []) => {
+  if (!highlights.length) return text;
+
+  const escapedHighlights = highlights.map((highlight) =>
+    highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+  );
+  const highlightPattern = new RegExp(`(${escapedHighlights.join("|")})`, "g");
+
+  return text.split(highlightPattern).map((part, index) =>
+    highlights.includes(part) ? (
+      <strong key={`${part}-${index}`} className="font-bold text-slate-800">
+        {part}
+      </strong>
+    ) : part,
+  );
+};
+
 const SobrePage = () => {
   const [selectedHistoryPresident, setSelectedHistoryPresident] = useState(null);
   const [showFullLeadership, setShowFullLeadership] = useState(false);
@@ -17,8 +34,10 @@ const SobrePage = () => {
 
   const historyPresidentCardsSource = [
     presidenteAtual,
-    exPresidentes[3],
+    exPresidentes[5],
+    exPresidentes[4],
     exPresidentes[2],
+    exPresidentes[3],
     exPresidentes[1],
     exPresidentes[0],
   ];
@@ -31,24 +50,34 @@ const SobrePage = () => {
           "Preserva a história da igreja enquanto conduz novos passos de comunhão e serviço.",
       },
       {
-        label: "Presença digital",
+        label: "Antecessor da gestão atual",
         summary:
-          "Ampliou os canais digitais e manteve os projetos da igreja conectados ao presente.",
+          "Presidiu a Assembleia de Deus da Lapa durante o período de 2010 a 2018.",
       },
       {
-        label: "Cuidado pastoral",
+        label: "Nova etapa",
         summary:
-          "Aproximou a igreja da comunidade por meio de projetos sociais e ações de acolhimento.",
+          "Presidiu a Assembleia de Deus da Lapa durante o período de 2006 a 2010.",
       },
       {
-        label: "Ensino bíblico",
+        label: "Continuidade",
         summary:
-          "Marcou sua gestão pelo ensino bíblico, evangelização e formação de novas lideranças.",
+          "Deu continuidade à história da igreja durante sua presidência, entre 1974 e 1980.",
+      },
+      {
+        label: "26 anos de liderança",
+        summary:
+          "Conduziu a Assembleia de Deus da Lapa durante o período de 1980 a 2006.",
+      },
+      {
+        label: "Emancipação",
+        summary:
+          "Foi o primeiro presidente após a emancipação e conduziu a igreja de 1959 a 1974.",
       },
       {
         label: "Presidente fundador",
         summary:
-          "Liderou os primeiros anos da igreja, fortalecendo a comunhão e a participação das famílias.",
+          "Liderou o período de fundação da igreja até a emancipação ocorrida em 1959.",
       },
     ];
 
@@ -124,15 +153,18 @@ const SobrePage = () => {
                 </p>
 
                 <p className="text-base md:text-lg text-muted-foreground dark:text-slate-300 leading-relaxed">
-                  Fundada em 1998, a igreja nasceu do desejo de reunir pessoas em um
-                  ambiente de fé, comunhão e serviço. Ao longo dos anos, cresceu como
-                  uma família espiritual, mantendo seu compromisso com Deus e com a
-                  comunidade local.
+                  Desde seu período de fundação, a igreja reúne pessoas em um ambiente
+                  de fé, comunhão e serviço. Em 1959 ocorreu sua emancipação, iniciando
+                  uma nova etapa de sua história sem perder o compromisso com Deus e
+                  com a comunidade local.
                 </p>
               </motion.div>
             </div>
 
-            <nav aria-label="Navegação desta página" className="mt-7 flex gap-2 overflow-x-auto pb-1 md:mt-10 md:flex-wrap">
+            <nav
+              aria-label="Navegação desta página"
+              className="-mx-2 mt-5 flex gap-2 overflow-x-auto px-2 py-2 md:mt-8 md:flex-wrap"
+            >
               {[
                 ["#historia", "História"],
                 ["#lideranca", "Liderança"],
@@ -152,7 +184,7 @@ const SobrePage = () => {
         </section>
 
         <section id="historia" className="scroll-mt-20 border-y border-border bg-[#e8eef5] py-11 dark:bg-muted md:py-24">
-          <div className="mx-auto max-w-[1050px] px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[960px] px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -169,16 +201,17 @@ const SobrePage = () => {
               />
             </motion.div>
 
-            <div id="biografias" className="grid scroll-mt-20 gap-3 sm:gap-4 lg:grid-cols-[2fr_1fr]">
-              <div className="grid gap-4 lg:grid-rows-[310px_165px]">
+            <div id="biografias" className="grid scroll-mt-20 gap-3 lg:grid-cols-[2fr_1fr]">
+              <div className="grid gap-3 lg:grid-rows-[280px_190px]">
                 <motion.button
                   type="button"
                   initial={{ opacity: 0, y: 22 }}
                   whileInView={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.018, y: -4 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.45 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
                   onClick={() => setSelectedHistoryPresident(historyPresidentCards[0])}
-                  className="group relative flex min-h-[230px] overflow-hidden rounded-[1.5rem] border-4 border-[#c3d3e4] bg-[#101c40] p-6 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-h-[260px] sm:rounded-[2rem] sm:p-8 lg:min-h-0"
+                  className="group relative flex min-h-[220px] transform-gpu overflow-hidden rounded-[1.5rem] border-[3px] border-[#c3d3e4] bg-[#101c40] p-5 text-left text-white shadow-sm transition-all duration-500 ease-out hover:z-10 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-h-[240px] sm:rounded-[1.75rem] sm:p-6 lg:min-h-0"
                 >
                   <span className="absolute -bottom-7 right-0 text-[8.2rem] font-extrabold leading-none text-white/[0.045]">
                     {getMandateStartYear(historyPresidentCards[0].periodo)}
@@ -190,27 +223,28 @@ const SobrePage = () => {
                     <span className="mb-6 inline-flex w-fit rounded-full bg-[#4e8fc4] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-white">
                       {historyPresidentCards[0].label}
                     </span>
-                    <h2 className="text-2xl font-bold leading-tight sm:text-3xl md:text-4xl">
+                    <h2 className="text-2xl font-bold leading-tight sm:text-3xl">
                       {historyPresidentCards[0].title}
                     </h2>
-                    <p className="mt-5 max-w-[520px] text-sm leading-relaxed text-white/85 sm:text-base md:text-lg">
+                    <p className="mt-4 max-w-[520px] text-sm leading-relaxed text-white/85 sm:text-base">
                       {historyPresidentCards[0].summary}
                     </p>
-                    <span className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-blue-200 transition-all duration-300 sm:mt-8 sm:translate-y-2 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
-                      Ver biografia →
+                    <span className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-blue-200 transition-all duration-200 sm:mt-8 sm:translate-y-2 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100">
+                      Ler biografia →
                     </span>
                   </div>
                 </motion.button>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2">
                   <motion.button
                     type="button"
                     initial={{ opacity: 0, y: 22 }}
                     whileInView={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.018, y: -4 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.45, delay: 0.18 }}
+                    transition={{ duration: 0.16, delay: 0.18, ease: "easeOut" }}
                     onClick={() => setSelectedHistoryPresident(historyPresidentCards[3])}
-                    className="group relative flex min-h-[190px] flex-col justify-center overflow-hidden rounded-[1.5rem] bg-[#4178aa] p-5 pb-12 pr-16 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-h-[165px] sm:p-6 sm:pb-10 sm:pr-16"
+                    className="group relative flex min-h-[190px] transform-gpu flex-col justify-center overflow-hidden rounded-[1.35rem] bg-[#4178aa] p-5 pb-14 pr-14 text-left text-white shadow-sm transition-all duration-500 ease-out hover:z-10 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <span className="pointer-events-none absolute -bottom-12 -right-10 z-0 h-28 w-28 rounded-full bg-white/10" />
                     <span className="pointer-events-none absolute -bottom-5 right-16 z-0 h-12 w-12 rounded-full border border-white/15" />
@@ -227,8 +261,8 @@ const SobrePage = () => {
                     <p className="mt-2 max-w-[220px] text-xs leading-snug text-white/80 sm:text-[13px]">
                       {historyPresidentCards[3].summary}
                     </p>
-                    <span className="absolute bottom-5 left-5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-100 transition-all duration-300 sm:left-6 sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
-                      Ver biografia →
+                    <span className="absolute bottom-5 left-5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-100 transition-all duration-200 sm:left-6 sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100">
+                      Ler biografia →
                     </span>
                   </motion.button>
 
@@ -236,10 +270,11 @@ const SobrePage = () => {
                     type="button"
                     initial={{ opacity: 0, y: 22 }}
                     whileInView={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.018, y: -4 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.45, delay: 0.24 }}
+                    transition={{ duration: 0.16, delay: 0.24, ease: "easeOut" }}
                     onClick={() => setSelectedHistoryPresident(historyPresidentCards[4])}
-                    className="group relative flex min-h-[190px] flex-col justify-center overflow-hidden rounded-[1.5rem] bg-[#101c40] p-5 pb-12 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-h-[165px] sm:p-6 sm:pb-10"
+                    className="group relative flex min-h-[190px] transform-gpu flex-col justify-center overflow-hidden rounded-[1.35rem] bg-[#17345f] p-5 pb-14 text-left text-white shadow-sm transition-all duration-500 ease-out hover:z-10 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <span className="pointer-events-none absolute -bottom-14 -right-12 h-32 w-32 rounded-full bg-white/[0.055]" />
                     <span className="pointer-events-none absolute right-8 top-6 h-10 w-10 rounded-full border border-white/10" />
@@ -254,22 +289,23 @@ const SobrePage = () => {
                     <p className="mt-2 max-w-[260px] text-xs leading-snug text-white/65 sm:text-[13px]">
                       {historyPresidentCards[4].summary}
                     </p>
-                    <span className="absolute bottom-5 left-5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200 transition-all duration-300 sm:left-6 sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
-                      Ver biografia →
+                    <span className="absolute bottom-5 left-5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200 transition-all duration-200 sm:left-6 sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100">
+                      Ler biografia →
                     </span>
                   </motion.button>
                 </div>
               </div>
 
-              <div className="grid gap-4 lg:grid-rows-[165px_310px]">
+              <div className="grid gap-3 lg:grid-rows-[190px_280px]">
                 <motion.button
                   type="button"
                   initial={{ opacity: 0, y: 22 }}
                   whileInView={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.018, y: -4 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.45, delay: 0.08 }}
+                  transition={{ duration: 0.16, delay: 0.08, ease: "easeOut" }}
                   onClick={() => setSelectedHistoryPresident(historyPresidentCards[1])}
-                  className="group relative flex min-h-[190px] flex-col justify-center overflow-hidden rounded-[1.5rem] bg-[#254870] p-5 pb-12 pr-14 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-h-[165px] sm:p-6 sm:pb-10 sm:pr-16"
+                  className="group relative flex min-h-[190px] transform-gpu flex-col justify-center overflow-hidden rounded-[1.35rem] bg-[#254870] p-5 pb-14 pr-14 text-left text-white shadow-sm transition-all duration-500 ease-out hover:z-10 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   <span className="pointer-events-none absolute -right-10 -top-10 z-0 h-28 w-28 rounded-full bg-white/[0.055]" />
                   <span className="pointer-events-none absolute -bottom-9 left-8 z-0 h-20 w-20 rounded-full border border-white/10" />
@@ -288,8 +324,8 @@ const SobrePage = () => {
                       {historyPresidentCards[1].summary}
                     </p>
                   </div>
-                  <span className="absolute bottom-5 left-5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200 transition-all duration-300 sm:left-6 sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
-                    Ver biografia →
+                  <span className="absolute bottom-5 left-5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200 transition-all duration-200 sm:left-6 sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100">
+                    Ler biografia →
                   </span>
                 </motion.button>
 
@@ -297,10 +333,11 @@ const SobrePage = () => {
                   type="button"
                   initial={{ opacity: 0, y: 22 }}
                   whileInView={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.018, y: -4 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.45, delay: 0.14 }}
+                  transition={{ duration: 0.16, delay: 0.14, ease: "easeOut" }}
                   onClick={() => setSelectedHistoryPresident(historyPresidentCards[2])}
-                  className="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[1.5rem] border border-border/70 bg-white p-6 text-left text-slate-950 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-h-[260px] sm:p-8 lg:min-h-[310px]"
+                  className="group relative flex min-h-[220px] transform-gpu flex-col justify-between overflow-hidden rounded-[1.35rem] border border-border/70 bg-white p-5 text-left text-slate-950 shadow-sm transition-all duration-500 ease-out hover:z-10 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-h-[240px] sm:p-6 lg:min-h-[280px]"
                 >
                   <Heart className="h-10 w-10 text-[#2f6fa9]" />
                   <div>
@@ -313,8 +350,8 @@ const SobrePage = () => {
                     <p className="mt-4 text-sm leading-relaxed text-slate-700">
                       {historyPresidentCards[2].summary}
                     </p>
-                    <span className="mt-5 inline-block text-[10px] font-bold uppercase tracking-[0.18em] text-[#2f6fa9] transition-all duration-300 sm:translate-y-2 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
-                      Ver biografia →
+                    <span className="mt-5 inline-block text-[10px] font-bold uppercase tracking-[0.18em] text-[#2f6fa9] transition-all duration-200 sm:translate-y-2 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100">
+                      Ler biografia →
                     </span>
                   </div>
                   <span className="absolute -bottom-16 -right-12 h-36 w-36 rounded-full bg-[#d8e6f3]/80" />
@@ -322,6 +359,54 @@ const SobrePage = () => {
                 </motion.button>
               </div>
             </div>
+
+            {historyPresidentCards.length > 5 && (
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                {historyPresidentCards.slice(5).map((president, index) => (
+                  <motion.button
+                    key={president.nome}
+                    type="button"
+                    initial={{ opacity: 0, y: 18 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.012, y: -3 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.16, delay: index * 0.05, ease: "easeOut" }}
+                    onClick={() => setSelectedHistoryPresident(president)}
+                    className={`group relative flex w-full transform-gpu items-center overflow-hidden rounded-[1.35rem] border-2 p-5 text-left text-white shadow-sm transition-shadow hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6 ${
+                      index === 0
+                        ? "border-[#7fb0d2] bg-[#315f89]"
+                        : "border-[#6f9fc5] bg-[#243f5f]"
+                    }`}
+                  >
+                    <span className={`pointer-events-none absolute h-48 w-48 rounded-full border ${
+                      index === 0
+                        ? "-right-8 -top-16 border-white/15 bg-[#69a4c9]/10"
+                        : "-bottom-20 -right-5 border-[#78b1d5]/25 bg-[#78b1d5]/[0.07]"
+                    }`} />
+                    <Church className={`pointer-events-none absolute h-14 w-14 text-white/[0.08] ${
+                      index === 0
+                        ? "right-8 top-1/2 -translate-y-1/2"
+                        : "bottom-7 right-9"
+                    }`} />
+                    <div className="relative z-10 max-w-xl pr-12">
+                      <span className={`mb-3 inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] ${
+                        index === 0
+                          ? "bg-[#78b1d5] text-[#10243d]"
+                          : "bg-[#5b9bd5] text-white"
+                      }`}>
+                        {president.label}
+                      </span>
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-200">{president.periodo}</p>
+                      <h3 className="mt-2 text-xl font-bold sm:text-2xl">{president.title}</h3>
+                      <p className="mt-3 text-sm leading-relaxed text-white/75">{president.summary}</p>
+                      <span className="mt-5 inline-block text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200 transition-all duration-200 sm:translate-y-2 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-focus-visible:translate-y-0 sm:group-focus-visible:opacity-100">
+                        Ler biografia →
+                      </span>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -390,7 +475,7 @@ const SobrePage = () => {
                   className={`${showFullLeadership ? "block" : "hidden"} mt-4 space-y-4 text-base leading-relaxed text-muted-foreground dark:text-slate-300 md:mt-6 md:block md:space-y-5 md:text-lg`}
                 >
                   <p>{presidenteAtual.historia}</p>
-                  <p>{presidenteAtual.atuacao}</p>
+                  {presidenteAtual.atuacao && <p>{presidenteAtual.atuacao}</p>}
                 </div>
 
                 <div className="mt-7 md:mt-10 pt-5 md:pt-6 border-t border-border">
@@ -476,10 +561,18 @@ const SobrePage = () => {
                   <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-primary">
                     Biografia
                   </p>
-                  <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
-                    {selectedHistoryPresident.historia ||
-                      selectedHistoryPresident.resumo}
-                  </p>
+                  <div className="space-y-4 text-sm leading-relaxed text-slate-600 sm:text-base">
+                    {(selectedHistoryPresident.biografia || [
+                      selectedHistoryPresident.historia || selectedHistoryPresident.resumo,
+                    ]).map((paragrafo) => (
+                      <p key={paragrafo}>
+                        {renderHighlightedBiographyText(
+                          paragrafo,
+                          selectedHistoryPresident.biografiaDestaques,
+                        )}
+                      </p>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="relative z-10">

@@ -12,6 +12,13 @@ import {
   LogOut,
   ImageIcon,
   MapPin,
+  Search,
+  Share2,
+  Download,
+  Navigation,
+  Copy,
+  List,
+  LayoutDashboard,
   Plus,
   Save,
   Trash2,
@@ -36,6 +43,13 @@ import {
   isPastDate,
   toDateKey,
 } from "@/lib/calendar";
+import {
+  buildRecurrenceDates,
+  copyEventLink,
+  downloadEventIcs,
+  getEventLocation,
+  shareCalendarEvent,
+} from "@/lib/calendarEventActions";
 
 const MAX_DESCRIPTION_LENGTH = 180;
 const MAX_BANNER_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -44,6 +58,7 @@ const featuredInviteMessagePresets = [
   "Venha viver uma noite de fé com a gente.",
   "Prepare-se para uma noite especial de comunhão e Palavra.",
   "Traga sua família e participe desse momento especial.",
+  "Uma igreja vivendo em união.",
 ];
 const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const monthNames = [
@@ -504,9 +519,15 @@ const CalendarPage = () => {
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
+  const [publicSearch, setPublicSearch] = useState("");
+  const [publicCategory, setPublicCategory] = useState("all");
+  const [publicLocation, setPublicLocation] = useState("all");
+  const [showAgendaList, setShowAgendaList] = useState(false);
   const [recurrence, setRecurrence] = useState({
     enabled: false,
-    weeks: 4,
+    frequency: "weekly",
+    occurrences: 4,
+    endDate: "",
   });
   const [form, setForm] = useState(() => emptyForm(selectedDate));
 
@@ -839,7 +860,24 @@ const CalendarPage = () => {
     });
   };
 
+  const normalizedPublicSearch = publicSearch.trim().toLocaleLowerCase("pt-BR");
+  const filteredEvents = events.filter((event) => {
+    const matchesText = !normalizedPublicSearch || `${event.title} ${event.description} ${event.location}`
+      .toLocaleLowerCase("pt-BR").includes(normalizedPublicSearch);
+    const matchesCategory = publicCategory === "all" || event.category === publicCategory;
+    const matchesLocation = publicLocation === "all" || event.location === publicLocation;
+    return matchesText && matchesCategory && matchesLocation;
+  });
+  const activePublicFilterCount = [normalizedPublicSearch, publicCategory !== "all", publicLocation !== "all"].filter(Boolean).length;
   const selectedEvent = events.find((event) => event.id === selectedEventId);
+  const selectedEventLocation = selectedEvent
+    ? churchLocations.find((location) =>
+        location.name === selectedEvent.location || location.legacyNames?.includes(selectedEvent.location),
+      )
+    : null;
+  const selectedEventWithAddress = selectedEvent
+    ? { ...selectedEvent, address: selectedEventLocation?.address }
+    : null;
   const selectedEventIsPast = selectedEvent
     ? hasEventTimePassed(selectedEvent, currentDateTime)
     : false;
@@ -857,7 +895,7 @@ const CalendarPage = () => {
   const selectedDateEndedEvents = selectedDateEvents.filter((event) =>
     hasEventTimePassed(event, currentDateTime),
   );
-  const visibleMonthEvents = events.filter((event) => {
+  const visibleMonthEvents = filteredEvents.filter((event) => {
     const [eventYear, eventMonth] = event.date.split("-").map(Number);
     return eventYear === year && eventMonth === month + 1;
   });
@@ -900,6 +938,17 @@ const CalendarPage = () => {
     .filter((event) => !hasEventTimePassed(event, currentDateTime))
     .sort(compareCalendarEvents)
     .slice(0, 3);
+  const publicUpcomingEvents = filteredEvents
+    .filter((event) => !hasEventTimePassed(event, currentDateTime))
+    .sort(compareCalendarEvents)
+    .slice(0, 12);
+  const uniquePublicLocations = [...new Set(events.map((event) => event.location).filter(Boolean))].sort();
+  const adminSummary = {
+    upcoming: events.filter((event) => !hasEventTimePassed(event, currentDateTime)).length,
+    incomplete: events.filter((event) => !hasEventTimePassed(event, currentDateTime) && (!event.description || !event.location || !event.time)).length,
+    highlightsExpiring: events.filter((event) => event.highlightHome && event.highlightUntil && event.highlightUntil >= getTodayKey() && event.highlightUntil <= addDaysToDateKey(getTodayKey(), 7)).length,
+    recent: [...events].sort((a, b) => (b.updatedAt || b.createdAt || "").localeCompare(a.updatedAt || a.createdAt || ""))[0],
+  };
   const mobileCalendarDays = useMemo(() => {
     let lastCurrentMonthIndex = calendarDays.length - 1;
 
@@ -1178,7 +1227,7 @@ const CalendarPage = () => {
 
     setSelectedEventId(null);
     setForm(emptyForm(date));
-    setRecurrence({ enabled: false, weeks: 4 });
+    setRecurrence({ enabled: false, frequency: "weekly", occurrences: 4, endDate: "" });
     setIsEditing(true);
     scrollToEventEditorOnMobile();
   };
@@ -1211,7 +1260,7 @@ const CalendarPage = () => {
       highlightImageUrl: "",
       highlightSummary: "",
     });
-    setRecurrence({ enabled: false, weeks: 4 });
+    setRecurrence({ enabled: false, frequency: "weekly", occurrences: 4, endDate: "" });
     setIsEditing(true);
     scrollToEventEditorOnMobile();
   };
@@ -1320,9 +1369,10 @@ const CalendarPage = () => {
       );
       toast.success("Evento atualizado.");
     } else if (recurrence.enabled) {
-      const recurringEvents = Array.from({ length: recurrence.weeks }, (_, index) => ({
+      const recurrenceDates = buildRecurrenceDates(form.date, recurrence);
+      const recurringEvents = recurrenceDates.map((eventDate) => ({
         ...databaseEvent,
-        event_date: addDaysToDateKey(form.date, index * 7),
+        event_date: eventDate,
         highlight_home: false,
         highlight_until: null,
         highlight_image_url: "",
@@ -1548,7 +1598,55 @@ const CalendarPage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="border-b border-border bg-muted/10 p-4 md:p-6">
+              <div className="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_220px_240px_auto]">
+                <label className="relative block">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={publicSearch} onChange={(event) => setPublicSearch(event.target.value)} placeholder="Buscar evento, descrição ou local..." className="h-11 rounded-xl bg-background pl-10" />
+                </label>
+                <select value={publicCategory} onChange={(event) => setPublicCategory(event.target.value)} className="h-11 rounded-xl border border-input bg-background px-3 text-sm font-semibold">
+                  <option value="all">Todas as categorias</option>
+                  {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+                <select value={publicLocation} onChange={(event) => setPublicLocation(event.target.value)} className="h-11 rounded-xl border border-input bg-background px-3 text-sm font-semibold">
+                  <option value="all">Todas as congregações</option>
+                  {uniquePublicLocations.map((location) => <option key={location} value={location}>{location}</option>)}
+                </select>
+                <Button type="button" variant={showAgendaList ? "default" : "outline"} onClick={() => setShowAgendaList((current) => !current)} className="h-11 rounded-xl">
+                  <List className="mr-2 h-4 w-4" />{showAgendaList ? "Ver calendário" : "Ver em lista"}
+                </Button>
+              </div>
+              {activePublicFilterCount > 0 && (
+                <div className="mt-3 flex items-center justify-between gap-3 text-xs font-semibold text-muted-foreground">
+                  <span>{filteredEvents.length} resultado(s) · {activePublicFilterCount} filtro(s) ativo(s)</span>
+                  <button type="button" className="text-primary hover:underline" onClick={() => { setPublicSearch(""); setPublicCategory("all"); setPublicLocation("all"); }}>Limpar filtros</button>
+                </div>
+              )}
+            </div>
+
+            {isAdmin && (
+              <div className="border-b border-border bg-primary/5 p-4 md:p-6">
+                <div className="mb-3 flex items-center gap-2"><LayoutDashboard className="h-5 w-5 text-primary" /><h2 className="font-bold text-foreground">Resumo administrativo</h2></div>
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <div className="rounded-xl border border-border bg-background p-3"><p className="text-2xl font-black text-primary">{adminSummary.upcoming}</p><p className="text-xs text-muted-foreground">Próximos eventos</p></div>
+                  <div className="rounded-xl border border-border bg-background p-3"><p className="text-2xl font-black text-amber-600">{adminSummary.incomplete}</p><p className="text-xs text-muted-foreground">Com dados incompletos</p></div>
+                  <div className="rounded-xl border border-border bg-background p-3"><p className="text-2xl font-black text-violet-600">{adminSummary.highlightsExpiring}</p><p className="text-xs text-muted-foreground">Destaques vencendo em 7 dias</p></div>
+                  <div className="rounded-xl border border-border bg-background p-3"><p className="truncate text-sm font-black text-foreground">{adminSummary.recent?.title || "Nenhum"}</p><p className="mt-1 text-xs text-muted-foreground">Alteração mais recente</p></div>
+                </div>
+              </div>
+            )}
+
+            {showAgendaList ? (
+              <div className="p-4 md:p-8">
+                <div className="mb-5 flex items-center gap-3"><List className="h-5 w-5 text-primary" /><div><h2 className="font-bold text-foreground">Próximos eventos</h2><p className="text-sm text-muted-foreground">Agenda em ordem cronológica</p></div></div>
+                {publicUpcomingEvents.length ? <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{publicUpcomingEvents.map((event) => (
+                  <button key={`agenda-${event.id}`} type="button" onClick={() => { selectEvent(event); setShowAgendaList(false); }} className="rounded-2xl border border-border bg-background p-4 text-left shadow-sm transition-colors hover:border-primary/50 hover:bg-primary/5">
+                    <div className="mb-2 flex items-center justify-between gap-2"><span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{formatShortDate(event.date)}</span><span className="text-xs font-black text-muted-foreground">{event.time || "A definir"}</span></div>
+                    <p className="font-bold text-foreground">{event.title}</p><p className="mt-1 truncate text-xs text-muted-foreground">{event.location || categoryLabels[event.category]}</p>
+                  </button>
+                ))}</div> : <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Nenhum próximo evento corresponde aos filtros.</div>}
+              </div>
+            ) : <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
               <div className="border-b border-border bg-muted/20 p-4 md:hidden">
                 {isAdmin && (
                   <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-950/35 dark:text-emerald-100">
@@ -1602,7 +1700,7 @@ const CalendarPage = () => {
                       const isSelected = selectedDate === day.dateKey;
                       const isToday = day.dateKey === getTodayKey();
                       const isPastDay = isPastDate(day.dateKey) && !isToday;
-                      const mobileDayEvents = events.filter(
+                      const mobileDayEvents = filteredEvents.filter(
                         (event) => event.date === day.dateKey,
                       );
                       const hasMobileDayEvents = mobileDayEvents.length > 0;
@@ -2008,7 +2106,7 @@ const CalendarPage = () => {
                     className="grid grid-cols-7 gap-2"
                   >
                     {calendarDays.map((day) => {
-                      const dayEvents = events.filter(
+                      const dayEvents = filteredEvents.filter(
                         (event) => event.date === day.dateKey,
                       );
                       const isSelected = selectedDate === day.dateKey;
@@ -2409,7 +2507,7 @@ const CalendarPage = () => {
                                 Recorrência
                               </span>
                               <span className="block text-xs text-muted-foreground">
-                                Repita este evento semanalmente se precisar.
+                                Defina frequência, quantidade e data final.
                               </span>
                             </span>
                             <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
@@ -2418,10 +2516,10 @@ const CalendarPage = () => {
                           <label className="flex cursor-pointer items-center justify-between gap-3">
                             <span>
                               <span className="block text-sm font-bold text-foreground">
-                                Repetir semanalmente
+                                Repetir este evento
                               </span>
                               <span className="block text-xs text-muted-foreground">
-                                Cria cópias nas próximas semanas.
+                                Cria automaticamente as próximas ocorrências.
                               </span>
                             </span>
                             <input
@@ -2437,26 +2535,22 @@ const CalendarPage = () => {
                             />
                           </label>
                           {recurrence.enabled && (
-                            <div className="mt-3 grid grid-cols-3 gap-2">
-                              {[4, 8, 12].map((weeks) => (
-                                <button
-                                  key={weeks}
-                                  type="button"
-                                  onClick={() =>
-                                    setRecurrence({
-                                      ...recurrence,
-                                      weeks,
-                                    })
-                                  }
-                                  className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
-                                    recurrence.weeks === weeks
-                                      ? "border-primary bg-primary text-primary-foreground"
-                                      : "border-border bg-muted/30 text-foreground hover:border-primary/40"
-                                  }`}
-                                >
-                                  {weeks} semanas
-                                </button>
-                              ))}
+                            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                              <label className="text-xs font-bold text-muted-foreground">Frequência
+                                <select value={recurrence.frequency} onChange={(event) => setRecurrence({ ...recurrence, frequency: event.target.value })} className="mt-1.5 h-10 w-full rounded-lg border border-input bg-background px-2 text-sm text-foreground">
+                                  <option value="weekly">Toda semana</option>
+                                  <option value="biweekly">A cada 2 semanas</option>
+                                  <option value="monthly">Todo mês, no mesmo dia</option>
+                                  <option value="first-sunday">Primeiro domingo do mês</option>
+                                </select>
+                              </label>
+                              <label className="text-xs font-bold text-muted-foreground">Ocorrências
+                                <Input type="number" min="2" max="52" value={recurrence.occurrences} onChange={(event) => setRecurrence({ ...recurrence, occurrences: Math.min(52, Math.max(2, Number(event.target.value))) })} className="mt-1.5 h-10 bg-background" />
+                              </label>
+                              <label className="text-xs font-bold text-muted-foreground">Repetir até (opcional)
+                                <Input type="date" min={form.date} value={recurrence.endDate} onChange={(event) => setRecurrence({ ...recurrence, endDate: event.target.value })} className="mt-1.5 h-10 bg-background" />
+                              </label>
+                              <p className="text-xs text-muted-foreground sm:col-span-3">Serão criadas até {recurrence.occurrences} ocorrências. A data final pode limitar essa quantidade.</p>
                             </div>
                           )}
                           </div>
@@ -3091,6 +3185,30 @@ const CalendarPage = () => {
                       {selectedEvent.description || "Sem descrição adicional."}
                     </p>
 
+                    {!selectedEventIsPast && (
+                      <div className="mb-6">
+                        <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-primary">Participar e compartilhar</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => downloadEventIcs(selectedEventWithAddress)}>
+                            <Download className="mr-2 h-4 w-4" />Agenda
+                          </Button>
+                          <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => shareCalendarEvent(selectedEventWithAddress).catch(() => {})}>
+                            <Share2 className="mr-2 h-4 w-4" />Compartilhar
+                          </Button>
+                          <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => copyEventLink(selectedEvent).then(() => toast.success("Link do evento copiado.")).catch(() => toast.error("Não foi possível copiar o link."))}>
+                            <Copy className="mr-2 h-4 w-4" />Copiar link
+                          </Button>
+                          {getEventLocation(selectedEventWithAddress) && (
+                            <Button type="button" variant="outline" className="h-11 rounded-xl" asChild>
+                              <a href={selectedEventLocation?.mapUrl || `https://maps.google.com/?q=${encodeURIComponent(getEventLocation(selectedEventWithAddress))}`} target="_blank" rel="noreferrer">
+                                <Navigation className="mr-2 h-4 w-4" />Como chegar
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {isAdmin && (
                       <div className="space-y-3">
                         <div className="grid grid-cols-3 gap-2 md:hidden">
@@ -3296,7 +3414,7 @@ const CalendarPage = () => {
                   </div>
                 )}
               </aside>
-            </div>
+            </div>}
           </motion.div>
         </div>
       </main>
