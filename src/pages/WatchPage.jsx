@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
   CalendarDays,
@@ -128,12 +128,22 @@ const formatVideoDate = (date) => {
 
 const WatchPage = () => {
   const [nextService, setNextService] = useState(null);
+  const [youtubeLiveService, setYoutubeLiveService] = useState(null);
   const [youtubeNextService, setYoutubeNextService] = useState(null);
   const [youtubeUpcomingServices, setYoutubeUpcomingServices] = useState([]);
   const [upcomingMainServices, setUpcomingMainServices] = useState([]);
   const [isLoadingNextService, setIsLoadingNextService] = useState(true);
   const [recentVideos, setRecentVideos] = useState(churchMedia.recentVideos);
   const [isLoadingVideos, setIsLoadingVideos] = useState(true);
+  const [liveStatusTick, setLiveStatusTick] = useState(0);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setLiveStatusTick((current) => current + 1);
+    }, 30000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -194,10 +204,9 @@ const WatchPage = () => {
         }
 
         setIsLoadingVideos(false);
-        return;
       }
 
-      setIsLoadingVideos(true);
+      if (!cachedYoutubeData) setIsLoadingVideos(true);
 
       const { data, error } = await supabase.functions.invoke(
         "youtube-latest-videos",
@@ -207,6 +216,10 @@ const WatchPage = () => {
 
       if (!error && data?.videos?.length) {
         setRecentVideos(data.videos);
+      }
+
+      if (!error && data) {
+        setYoutubeLiveService(data.liveStream || null);
       }
 
       if (!error && data?.nextStream) {
@@ -225,19 +238,26 @@ const WatchPage = () => {
     };
 
     loadRecentVideos();
+    const refreshIntervalId = window.setInterval(loadRecentVideos, 60000);
 
     return () => {
       isCurrentRequest = false;
+      window.clearInterval(refreshIntervalId);
     };
   }, []);
 
-  const displayedNextService = youtubeNextService || nextService;
-  const isLoadingDisplayedService =
-    isLoadingNextService || (isLoadingVideos && !youtubeNextService);
-  const isLiveNow = useMemo(
-    () => isServiceLiveNow(displayedNextService),
-    [displayedNextService],
+  const liveService = useMemo(
+    () =>
+      youtubeLiveService ||
+      youtubeUpcomingServices.find(isServiceLiveNow) ||
+      upcomingMainServices.find(isServiceLiveNow) ||
+      (isServiceLiveNow(nextService) ? nextService : null),
+    [liveStatusTick, nextService, upcomingMainServices, youtubeLiveService, youtubeUpcomingServices],
   );
+  const displayedNextService = liveService || youtubeNextService || nextService;
+  const isLoadingDisplayedService =
+    !liveService && (isLoadingNextService || (isLoadingVideos && !youtubeNextService));
+  const isLiveNow = Boolean(liveService);
   const upcomingServiceCards = useMemo(
     () =>
       upcomingMainServices.slice(0, 3).map((service) => {
@@ -269,12 +289,12 @@ const WatchPage = () => {
         }));
   const hasScheduledYoutubeStream = youtubeUpcomingServices.length > 0;
   const liveWatchUrl = isLiveNow
-    ? churchMedia.youtubeLiveNowUrl
+    ? liveService?.url || churchMedia.youtubeLiveNowUrl
     : youtubeNextService?.url || churchMedia.youtubeLiveUrl;
   const featuredVideo = recentVideos[0];
   const featuredMediaImage =
-    isLiveNow && featuredVideo
-      ? getVideoThumbnail(featuredVideo)
+    isLiveNow && (liveService?.thumbnail || featuredVideo)
+      ? getVideoThumbnail(liveService?.thumbnail ? liveService : featuredVideo)
       : "https://i.imgur.com/WMVJQ9m.jpeg";
   const featuredMediaTitle = isLiveNow
     ? displayedNextService?.title || featuredVideo?.title || "Culto ao vivo"
@@ -307,7 +327,7 @@ const WatchPage = () => {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_460px] lg:items-center"
+            className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_500px] lg:items-center"
           >
             <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground">
@@ -360,14 +380,18 @@ const WatchPage = () => {
                           {displayedNextService.title}
                         </h2>
                         <div className="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
-                          <span className="inline-flex items-center gap-1.5 capitalize">
-                            <CalendarDays className="h-4 w-4 text-primary" />
-                            {formatEventDateWithWeekday(displayedNextService.event_date)}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5">
-                            <Clock className="h-4 w-4 text-primary" />
-                            {formatEventTime(displayedNextService.event_time, "Horário a definir")}
-                          </span>
+                          {displayedNextService.event_date && (
+                            <span className="inline-flex items-center gap-1.5 capitalize">
+                              <CalendarDays className="h-4 w-4 text-primary" />
+                              {formatEventDateWithWeekday(displayedNextService.event_date)}
+                            </span>
+                          )}
+                          {displayedNextService.event_time && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <Clock className="h-4 w-4 text-primary" />
+                              {formatEventTime(displayedNextService.event_time, "Horário a definir")}
+                            </span>
+                          )}
                           {displayedNextService.location && (
                             <span className="inline-flex items-center gap-1.5">
                               <MapPin className="h-4 w-4 text-primary" />
@@ -410,13 +434,20 @@ const WatchPage = () => {
               </div>
             </div>
 
-            <div
-              className={`overflow-hidden rounded-xl bg-slate-950 shadow-xl ${
+            <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={isLiveNow ? `live-${liveService?.videoId || "stream"}` : "offline"}
+              initial={{ opacity: 0, scale: 0.96, y: 14 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: -8 }}
+              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              className={`rounded-xl bg-slate-950 shadow-xl ${
                 isLiveNow
-                  ? "border-2 border-red-500 shadow-red-950/30"
+                  ? "live-card-border p-[2px] shadow-red-950/40"
                   : "border border-border"
               }`}
             >
+              <div className="relative z-10 overflow-hidden rounded-[10px] bg-slate-950">
               {churchMedia.youtubeEmbedUrl ? (
                 <div className="aspect-video">
                   <iframe
@@ -443,29 +474,26 @@ const WatchPage = () => {
                     href={liveWatchUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center text-white"
+                    className="group absolute inset-0 flex flex-col items-center justify-center gap-3 px-8 text-center text-white"
                   >
                     {isLiveNow && (
-                      <span className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg">
-                        <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-white shadow-lg sm:left-4 sm:top-4 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-[10px] sm:tracking-[0.14em]">
+                        <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
                         Ao vivo
                       </span>
                     )}
-                    <span className="flex h-14 w-20 items-center justify-center rounded-2xl bg-red-600 text-white shadow-2xl ring-4 ring-white/20 transition-transform duration-300 group-hover:scale-110">
-                      <Play className="ml-0.5 h-7 w-7 fill-current" strokeWidth={2.5} />
+                    <span className="flex h-10 w-14 items-center justify-center rounded-xl bg-red-600 text-white shadow-2xl transition-transform duration-300 group-hover:scale-110 sm:h-14 sm:w-20 sm:rounded-2xl">
+                      <Play className="ml-0.5 h-5 w-5 fill-current sm:h-7 sm:w-7" strokeWidth={2.5} />
                     </span>
-                    <span className="max-w-sm text-xl font-bold">
+                    <span className="max-w-[17rem] text-sm font-bold leading-snug sm:max-w-md sm:text-lg">
                       {featuredMediaTitle}
                     </span>
-                    {isLiveNow && (
-                      <span className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-red-600">
-                        Assistir agora no YouTube
-                      </span>
-                    )}
                   </a>
                 </div>
               )}
-            </div>
+              </div>
+            </motion.div>
+            </AnimatePresence>
           </motion.div>
 
           <div className="mb-12 mt-10 grid gap-4 md:grid-cols-3">
@@ -663,7 +691,7 @@ const WatchPage = () => {
                     YouTube
                   </span>
                   <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex h-11 w-16 items-center justify-center rounded-xl bg-red-600 text-white shadow-lg ring-4 ring-white/20 transition-transform group-hover:scale-105">
+                    <span className="flex h-11 w-16 items-center justify-center rounded-xl bg-red-600 text-white shadow-lg transition-transform group-hover:scale-105">
                       <Play className="ml-0.5 h-6 w-6 fill-current" strokeWidth={2.5} />
                     </span>
                   </span>

@@ -11,7 +11,7 @@ const jsonResponse = (body: unknown, status = 200) =>
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=43200",
+      "Cache-Control": "public, max-age=60",
     },
   });
 
@@ -260,6 +260,82 @@ const parseUpcomingStreams = (htmlText: string, maxResults: number) => {
     .slice(0, maxResults);
 };
 
+const decodeYoutubeJsonText = (value = "") => {
+  try {
+    return JSON.parse(`"${value}"`);
+  } catch {
+    return value.replace(/\\u0026/g, "&").replace(/\\"/g, '"');
+  }
+};
+
+const parseLiveStream = (htmlText: string) => {
+  const videoMatches = Array.from(
+    htmlText.matchAll(/"videoId":"([0-9A-Za-z_-]{11})"/g),
+  );
+
+  for (const match of videoMatches) {
+    const blockStart = Math.max(0, (match.index || 0) - 600);
+    const blockEnd = Math.min(htmlText.length, (match.index || 0) + 7000);
+    const block = htmlText.slice(blockStart, blockEnd);
+    const isLive =
+      /"style":"LIVE"/.test(block) ||
+      /"label":"(?:AO VIVO|LIVE NOW|LIVE)"/i.test(block) ||
+      /BADGE_STYLE_TYPE_LIVE_NOW/.test(block);
+
+    if (!isLive) continue;
+
+    const videoId = match[1];
+    const titleMatch =
+      block.match(/"title":\{"runs":\[\{"text":"((?:\\.|[^"])*)"/) ||
+      block.match(/"title":\{"simpleText":"((?:\\.|[^"])*)"/);
+    const thumbnail =
+      block
+        .match(/"url":"(https:\/\/i\.ytimg\.com\/vi\/[^\"]+)"/)?.[1]
+        ?.replace(/\\u0026/g, "&") || getYoutubeThumbnail(videoId);
+
+    return {
+      videoId,
+      title: decodeYoutubeJsonText(titleMatch?.[1] || "Culto ao vivo"),
+      url: getYoutubeUrl(videoId),
+      thumbnail,
+      isLive: true,
+    };
+  }
+
+  return null;
+};
+
+const findLiveVideoFromFeed = async (
+  videos: Array<{ videoId: string; title: string; date: string; url: string; thumbnail: string }>,
+) => {
+  for (const video of videos.slice(0, 2)) {
+    try {
+      const videoHtml = await fetchText(video.url);
+      if (/"isLive(?:Now)?":true/.test(videoHtml)) {
+        return { ...video, isLive: true };
+      }
+    } catch (error) {
+      console.warn(`Não foi possível verificar o vídeo ${video.videoId}.`, error);
+    }
+  }
+
+  const latestVideo = videos[0];
+  const publishedAt = latestVideo?.date ? new Date(latestVideo.date).getTime() : 0;
+  const ageInMilliseconds = Date.now() - publishedAt;
+  const recentLiveWindow = 3 * 60 * 60 * 1000;
+
+  if (
+    latestVideo &&
+    publishedAt > 0 &&
+    ageInMilliseconds >= 0 &&
+    ageInMilliseconds <= recentLiveWindow
+  ) {
+    return { ...latestVideo, isLive: true, inferredFromRecentPublish: true };
+  }
+
+  return null;
+};
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -302,13 +378,17 @@ Deno.serve(async (request) => {
     const upcomingStreams = streamsHtml
       ? parseUpcomingStreams(streamsHtml, maxResults)
       : [];
+    const liveStream =
+      (streamsHtml ? parseLiveStream(streamsHtml) : null) ||
+      (await findLiveVideoFromFeed(videos));
 
     return jsonResponse({
       channelId,
       videos,
+      liveStream,
       upcomingStreams,
       nextStream: upcomingStreams[0] || null,
-      cachedForSeconds: 43200,
+      cachedForSeconds: 60,
     });
   } catch (error) {
     console.error(error);

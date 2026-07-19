@@ -4,6 +4,44 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes live-card-border-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(1turn);
+  }
+}
+
+.live-card-border {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.live-card-border::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  width: 160%;
+  aspect-ratio: 1;
+  content: "";
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 245deg,
+    rgb(239 68 68) 285deg,
+    rgb(255 125 125) 320deg,
+    transparent 360deg
+  );
+  animation: live-card-border-spin 2.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-card-border::before {
+    animation: none;
+    background: rgb(239 68 68);
+  }
+}
+
 body {
   font-family: "Outfit", sans-serif;
   overflow-x: clip;

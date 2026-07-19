@@ -851,7 +851,7 @@ const HomePage = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-slate-950/10" />
                   <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex h-12 w-[4.25rem] items-center justify-center rounded-[0.9rem] bg-red-600 text-white shadow-2xl ring-4 ring-white/20 transition-transform duration-300 group-hover:scale-110 md:h-14 md:w-20 md:rounded-2xl">
+                    <span className="flex h-12 w-[4.25rem] items-center justify-center rounded-[0.9rem] bg-red-600 text-white shadow-2xl transition-transform duration-300 group-hover:scale-110 md:h-14 md:w-20 md:rounded-2xl">
                       <Play className="ml-0.5 h-6 w-6 fill-current md:h-7 md:w-7" strokeWidth={2.5} />
                     </span>
                   </span>
