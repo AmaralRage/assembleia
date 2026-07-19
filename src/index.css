@@ -12,6 +12,59 @@ body {
   transition: background-color 200ms ease, color 200ms ease;
 }
 
+.history-section {
+  background-color: #f7f9fc !important;
+}
+
+.dark .history-section {
+  background-color: #07101f !important;
+}
+
+.calendar-page-background {
+  background-color: #f7f9fc !important;
+}
+
+.dark .calendar-page-background {
+  background-color: #07101f !important;
+}
+
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+}
+
+html.theme-switching::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: #020617;
+  animation: theme-light-switch 320ms ease-in-out both;
+}
+
+@keyframes theme-light-switch {
+  0% {
+    opacity: 0;
+  }
+  36% {
+    opacity: 0.26;
+  }
+  46% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-switching::after {
+    animation: none;
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }

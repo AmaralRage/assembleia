@@ -1503,7 +1503,7 @@ const CalendarPage = () => {
       </Helmet>
 
       <Header />
-      <main className="min-h-screen bg-muted pb-14 pt-28 md:pb-20 md:pt-28">
+      <main className="calendar-page-background min-h-screen pb-14 pt-28 md:pb-20 md:pt-28">
         <div className="section-container">
           <motion.div
             initial={{ opacity: 0, y: 18 }}

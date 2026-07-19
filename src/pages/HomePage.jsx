@@ -1220,7 +1220,7 @@ const HomePage = () => {
                                       <Link
                                         to="/calendario"
                                         aria-label={`Ver ${event.title} no calendário`}
-                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
                                       >
                                         <Calendar className="h-4 w-4" />
                                       </Link>
@@ -1230,7 +1230,7 @@ const HomePage = () => {
                                           target="_blank"
                                           rel="noopener noreferrer"
                                           aria-label={`Como chegar em ${event.location}`}
-                                          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+                                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
                                         >
                                           <MapPin className="h-4 w-4" />
                                         </a>

@@ -183,7 +183,7 @@ const SobrePage = () => {
           </div>
         </section>
 
-        <section id="historia" className="scroll-mt-20 border-y border-border bg-[#e8eef5] py-11 dark:bg-muted md:py-24">
+        <section id="historia" className="history-section scroll-mt-20 border-y border-border py-11 md:py-24">
           <div className="mx-auto max-w-[960px] px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
