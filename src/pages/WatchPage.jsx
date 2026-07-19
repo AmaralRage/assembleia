@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Loader2,
   MapPin,
+  Play,
   PlayCircle,
   Radio,
   Youtube,
@@ -442,7 +443,7 @@ const WatchPage = () => {
                     href={liveWatchUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center text-white"
+                    className="group absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center text-white"
                   >
                     {isLiveNow && (
                       <span className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg">
@@ -450,8 +451,8 @@ const WatchPage = () => {
                         Ao vivo
                       </span>
                     )}
-                    <span className="flex h-20 w-20 items-center justify-center rounded-full bg-red-600 shadow-2xl transition-transform hover:scale-105">
-                      <PlayCircle className="h-10 w-10" />
+                    <span className="flex h-14 w-20 items-center justify-center rounded-2xl bg-red-600 text-white shadow-2xl ring-4 ring-white/20 transition-transform duration-300 group-hover:scale-110">
+                      <Play className="ml-0.5 h-7 w-7 fill-current" strokeWidth={2.5} />
                     </span>
                     <span className="max-w-sm text-xl font-bold">
                       {featuredMediaTitle}
@@ -662,8 +663,8 @@ const WatchPage = () => {
                     YouTube
                   </span>
                   <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 text-red-600 shadow-lg transition-transform group-hover:scale-105">
-                      <PlayCircle className="h-8 w-8" />
+                    <span className="flex h-11 w-16 items-center justify-center rounded-xl bg-red-600 text-white shadow-lg ring-4 ring-white/20 transition-transform group-hover:scale-105">
+                      <Play className="ml-0.5 h-6 w-6 fill-current" strokeWidth={2.5} />
                     </span>
                   </span>
                 </div>

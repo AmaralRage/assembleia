@@ -50,7 +50,7 @@ const SobrePage = () => {
           "Preserva a história da igreja enquanto conduz novos passos de comunhão e serviço.",
       },
       {
-        label: "Antecessor da gestão atual",
+        label: "Gestão anterior",
         summary:
           "Presidiu a Assembleia de Deus da Lapa durante o período de 2010 a 2018.",
       },
@@ -252,6 +252,10 @@ const SobrePage = () => {
                     <div className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white sm:h-12 sm:w-12">
                       <Globe2 className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
+                    <span className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-100">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-200" />
+                      {historyPresidentCards[3].label}
+                    </span>
                     <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-100">
                       {getMandateStartYear(historyPresidentCards[3].periodo)}
                     </p>
@@ -283,7 +287,7 @@ const SobrePage = () => {
                       <span className="h-1.5 w-1.5 rounded-full bg-[#4e8fc4]" />
                       {historyPresidentCards[4].label}
                     </span>
-                    <h3 className="text-lg font-bold uppercase leading-tight sm:text-xl">
+                    <h3 className="text-lg font-bold leading-tight sm:text-xl">
                       {historyPresidentCards[4].title}
                     </h3>
                     <p className="mt-2 max-w-[260px] text-xs leading-snug text-white/65 sm:text-[13px]">
@@ -314,10 +318,14 @@ const SobrePage = () => {
                     <BookOpen className="h-8 w-8" />
                   </div>
                   <div className="relative z-10">
+                    <span className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#4e8fc4]" />
+                      {historyPresidentCards[1].label}
+                    </span>
                     <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
                       {getMandateStartYear(historyPresidentCards[1].periodo)}
                     </p>
-                    <h3 className="max-w-[190px] text-base font-bold uppercase leading-tight sm:text-lg">
+                    <h3 className="max-w-[190px] text-base font-bold leading-tight sm:text-lg">
                       {historyPresidentCards[1].title}
                     </h3>
                     <p className="mt-2 max-w-[220px] text-xs leading-snug text-white/75">
@@ -341,6 +349,10 @@ const SobrePage = () => {
                 >
                   <Heart className="h-10 w-10 text-[#2f6fa9]" />
                   <div>
+                    <span className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#2f6fa9]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#2f6fa9]" />
+                      {historyPresidentCards[2].label}
+                    </span>
                     <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-[#2f6fa9]">
                       {getMandateStartYear(historyPresidentCards[2].periodo)}
                     </p>

@@ -3275,16 +3275,15 @@ const CalendarPage = () => {
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={duplicateSelectedEvent}
+                            className="col-start-1 w-full rounded-xl"
+                          >
+                            Duplicar evento
+                          </Button>
                         </div>
-
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={duplicateSelectedEvent}
-                          className="w-full rounded-xl"
-                        >
-                          Duplicar evento
-                        </Button>
 
                         {selectedDateEvents.length > 1 && (
                           <Button

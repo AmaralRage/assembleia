@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from "react-helmet-async";
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, Clock, ArrowRight, MapPin, Youtube, Sparkles, Users, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, MapPin, Youtube, Sparkles, Users, Settings, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
@@ -9,7 +9,7 @@ import SectionHeading from '@/components/SectionHeading.jsx';
 import { supabase } from '@/lib/supabase';
 import { smoothScrollToElement } from '@/lib/smoothScroll';
 import { churchLocations, getChurchLocation, mainChurchLocation } from '@/data/churchLocations';
-import { homeLeadershipCards } from '@/data/churchLeadership';
+import { churchMedia } from '@/data/churchMedia';
 import { featuredFestivity as fallbackFestivity } from '@/data/churchHighlights';
 import { dateKeyToDate, dateKeyToUtcNoon, formatEventDate, formatEventTime, formatWeekDay, getTodayKey } from '@/lib/calendar';
 import { isAdminSessionFresh } from '@/lib/adminDevice';
@@ -35,6 +35,54 @@ const getImageRatio = (imageUrl) =>
   });
 
 const defaultFeaturedInviteMessage = 'Venha viver uma noite de fé com a gente.';
+
+const youtubeCacheKey = 'assembleia-youtube-media-cache-v2';
+const youtubeCacheTtlMs = 12 * 60 * 60 * 1000;
+
+const getYoutubeVideoId = (video) => {
+  if (video?.videoId) return video.videoId;
+
+  try {
+    const url = new URL(video?.url);
+    return url.searchParams.get('v');
+  } catch {
+    return null;
+  }
+};
+
+const getVideoThumbnail = (video) => {
+  const videoId = getYoutubeVideoId(video);
+  return videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : (video?.thumbnail || 'https://i.imgur.com/WMVJQ9m.jpeg');
+};
+
+const handleVideoThumbnailError = (event, video) => {
+  const videoId = getYoutubeVideoId(video);
+  const fallbackThumbnail = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : 'https://i.imgur.com/WMVJQ9m.jpeg';
+
+  if (event.currentTarget.src !== fallbackThumbnail) {
+    event.currentTarget.src = fallbackThumbnail;
+    return;
+  }
+
+  event.currentTarget.onerror = null;
+  event.currentTarget.src = 'https://i.imgur.com/WMVJQ9m.jpeg';
+};
+
+const getVideoSpeaker = (title = '') => {
+  const speakerPattern = /(?:^|[|•—–-]\s*)(Pr\.?|Pra\.?|Pastor(?:a)?|Pb\.?|Ev\.?)\s+([^|•—–-]+)/i;
+  const match = title.match(speakerPattern);
+  return match ? `${match[1]} ${match[2]}`.trim() : '';
+};
+
+const formatVideoDate = (date) => {
+  if (!date || !date.includes('-')) return date || 'Mensagem recente';
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(date));
+};
 
 const hasMeaningfulText = (value) => /[\p{L}\p{N}]/u.test(value || '');
 
@@ -143,7 +191,56 @@ const HomePage = () => {
   const [isFeaturedAutoplayPaused, setIsFeaturedAutoplayPaused] = useState(false);
   const [isFeaturedSectionBeingRead, setIsFeaturedSectionBeingRead] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [latestMessage, setLatestMessage] = useState(churchMedia.recentVideos[0]);
+  const [isLatestMessageLoading, setIsLatestMessageLoading] = useState(true);
   const featuredSectionRef = useRef(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadLatestMessage = async () => {
+      try {
+        const cachedValue = window.localStorage.getItem(youtubeCacheKey);
+        const cached = cachedValue ? JSON.parse(cachedValue) : null;
+        const cacheIsFresh = cached?.savedAt && Date.now() - cached.savedAt <= youtubeCacheTtlMs;
+        const cachedVideo = cacheIsFresh ? cached?.data?.videos?.[0] : null;
+
+        if (cachedVideo) {
+          setLatestMessage(cachedVideo);
+          setIsLatestMessageLoading(false);
+          return;
+        }
+      } catch {
+        // Continue with a fresh request when the local cache is unavailable.
+      }
+
+      const { data, error } = await supabase.functions.invoke('youtube-latest-videos');
+      if (!isMounted) return;
+
+      if (error || !data?.videos?.[0]) {
+        setIsLatestMessageLoading(false);
+        return;
+      }
+
+      setLatestMessage(data.videos[0]);
+      setIsLatestMessageLoading(false);
+
+      try {
+        window.localStorage.setItem(
+          youtubeCacheKey,
+          JSON.stringify({ savedAt: Date.now(), data }),
+        );
+      } catch {
+        // The message still renders when cache storage is unavailable.
+      }
+    };
+
+    loadLatestMessage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -363,16 +460,38 @@ const HomePage = () => {
       return days;
     }, {})
   );
+  const mobileAgendaEventLimit = 3;
+  const mobileAgendaEvents = agendaListEvents.slice(0, mobileAgendaEventLimit);
+  const mobileAgendaDays = Object.values(
+    mobileAgendaEvents.reduce((days, event) => {
+      if (!days[event.event_date]) {
+        days[event.event_date] = {
+          date: event.event_date,
+          label: formatWeekDay(event.event_date),
+          dateLabel: formatEventDate(event.event_date),
+          events: [],
+        };
+      }
+
+      days[event.event_date].events.push(event);
+      return days;
+    }, {}),
+  );
+  const hiddenMobileAgendaEventsCount = Math.max(
+    agendaListEvents.length - mobileAgendaEvents.length,
+    0,
+  );
   const agendaDesktopRows = [];
   for (let index = 0; index < agendaDays.length; index += 4) {
     agendaDesktopRows.push(agendaDays.slice(index, index + 4));
   }
+  const latestMessageSpeaker = getVideoSpeaker(latestMessage.title);
 
   return (
     <>
       <Helmet>
         <title>Assembleia de Deus - Bem-vindo à nossa comunidade de fé</title>
-        <meta name="description" content="Junte-se à nossa comunidade de fé. Confira nossa agenda, conheça nossas congregações e nossa liderança." />
+        <meta name="description" content="Junte-se à nossa comunidade de fé. Confira nossa agenda, conheça nossas congregações e assista às mensagens mais recentes." />
       </Helmet>
 
       <Header />
@@ -692,68 +811,82 @@ const HomePage = () => {
           </section>
         )}
 
-        {/* LIDERANÇA SECTION */}
-        <section id="sobre" className="order-5 py-14 md:py-24 bg-background">
+        {/* ÚLTIMA MENSAGEM SECTION */}
+        <section id="mensagem" className="order-5 bg-background py-14 md:py-20">
           <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-10 md:mb-16"
-            >
-              <SectionHeading
-                eyebrow="Nossa igreja"
-                title="Liderança e"
-                highlight="memória"
-                description="Conheça pessoas que fazem parte da caminhada e da história da nossa comunidade"
-                align="center"
-                titleClassName="text-3xl md:text-5xl"
-              />
-            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mx-auto max-w-6xl">
+              <div className="mb-8 md:mb-10">
+                <SectionHeading
+                  eyebrow="Palavra e comunhão"
+                  title="Uma mensagem para"
+                  highlight="sua semana"
+                  description="Assista à mensagem mais recente e acompanhe os cultos no nosso canal oficial."
+                  titleClassName="text-3xl md:text-5xl"
+                />
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 md:gap-8 max-w-7xl mx-auto">
-              {homeLeadershipCards.map((lider) => (
-                <motion.div
-                  key={lider.nome}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  whileHover={{
-                    y: -8,
-                    scale: 1.03
-                  }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-card border border-border rounded-xl md:rounded-2xl overflow-hidden shadow-md"
-                >
-                  <img
-                    src={lider.foto}
-                    alt={lider.nome}
-                    loading="lazy"
-                    style={lider.fotoPosition ? { objectPosition: lider.fotoPosition } : undefined}
-                    className={`w-full h-64 md:h-72 ${
-                      lider.fotoPlaceholder
-                        ? "bg-muted object-contain p-8"
-                        : "object-cover"
-                    }`}
-                  />
-
-                  <div className="p-5 md:p-6">
-                    <p className="inline-block bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full mb-3">
-                      {lider.cargo}
-                    </p>
-
-                    <h3 className="text-foreground text-xl md:text-2xl font-bold mb-3">
-                      {lider.nome}
-                    </h3>
-
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                      {lider.descricao}
-                    </p>
+              <div
+                className="relative grid overflow-hidden rounded-2xl border border-border bg-card shadow-lg md:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] md:rounded-3xl"
+                aria-busy={isLatestMessageLoading}
+              >
+                {isLatestMessageLoading && (
+                  <div className="absolute inset-0 z-20 grid bg-card md:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]" aria-label="Carregando mensagem mais recente">
+                    <div className="aspect-video animate-pulse bg-muted md:aspect-auto md:min-h-[360px]" />
+                    <div className="flex flex-col justify-center gap-4 p-6 md:p-9 lg:p-10">
+                      <span className="h-7 w-36 animate-pulse rounded-full bg-muted" />
+                      <span className="h-4 w-28 animate-pulse rounded bg-muted" />
+                      <span className="h-8 w-full animate-pulse rounded bg-muted" />
+                      <span className="h-8 w-4/5 animate-pulse rounded bg-muted" />
+                      <span className="mt-3 h-11 w-40 animate-pulse rounded-xl bg-muted" />
+                    </div>
                   </div>
-                </motion.div>
-              ))}
-            </div>
+                )}
+                <a href={latestMessage.url} target="_blank" rel="noopener noreferrer" aria-label={`Assistir ${latestMessage.title} no YouTube`} className="group relative aspect-video overflow-hidden bg-slate-950 md:aspect-auto md:min-h-[360px]">
+                  <img
+                    src={getVideoThumbnail(latestMessage)}
+                    alt=""
+                    loading="lazy"
+                    onError={(event) => handleVideoThumbnailError(event, latestMessage)}
+                    className="h-full w-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-slate-950/10" />
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="flex h-12 w-[4.25rem] items-center justify-center rounded-[0.9rem] bg-red-600 text-white shadow-2xl ring-4 ring-white/20 transition-transform duration-300 group-hover:scale-110 md:h-14 md:w-20 md:rounded-2xl">
+                      <Play className="ml-0.5 h-6 w-6 fill-current md:h-7 md:w-7" strokeWidth={2.5} />
+                    </span>
+                  </span>
+                </a>
+
+                <div className="flex min-w-0 flex-col justify-center p-6 md:p-8 lg:p-10">
+                  <span className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-red-500/25 bg-red-500/15 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-red-500 shadow-sm">
+                    <Youtube className="h-4 w-4" />
+                    Última mensagem
+                  </span>
+                  <p className="text-sm font-semibold text-primary">
+                    {latestMessage.date?.includes('-')
+                      ? `Publicado em ${formatVideoDate(latestMessage.date)}`
+                      : formatVideoDate(latestMessage.date)}
+                  </p>
+                  <h3 className="mt-3 text-2xl font-bold leading-[1.15] text-foreground [text-wrap:balance] md:text-[1.65rem] lg:text-3xl">
+                    {latestMessage.title}
+                  </h3>
+                  {latestMessageSpeaker && (
+                    <p className="mt-3 text-sm font-medium text-muted-foreground">
+                      Ministração: {latestMessageSpeaker}
+                    </p>
+                  )}
+                  <div className="mt-7 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-1 xl:grid-cols-2">
+                    <a href={latestMessage.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md">
+                      Assistir agora
+                      <ArrowRight className="h-4 w-4" />
+                    </a>
+                    <Link to="/assistir" className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-xl border border-border px-4 py-3 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:text-primary hover:shadow-sm">
+                      Ver todas as mensagens
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </section>
 
@@ -895,21 +1028,21 @@ const HomePage = () => {
                       </div>
                       </div>
 
-                      <div className="grid gap-2 sm:grid-cols-2 md:w-44 md:grid-cols-1 md:gap-3">
+                      <div className={`grid gap-2 md:w-44 md:grid-cols-1 md:gap-3 ${highlightedServiceLocation ? "grid-cols-2" : "grid-cols-1"}`}>
                         {highlightedServiceLocation && (
                           <a
                             href={highlightedServiceLocation.mapUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-[10px] font-bold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md md:gap-2 md:px-5 md:py-3 md:text-sm"
+                            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-[11px] font-bold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md md:min-h-11 md:gap-2 md:px-5 md:py-3 md:text-sm"
                           >
-                            <MapPin className="h-3 w-3 md:h-4 md:w-4" />
+                            <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
                             Ver Rota
                           </a>
                         )}
                         <Link
                           to="/calendario"
-                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-[10px] font-bold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary hover:shadow-sm dark:bg-slate-950/50 dark:hover:border-primary/50 md:px-5 md:py-3 md:text-sm"
+                          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2.5 text-[11px] font-bold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary hover:shadow-sm dark:bg-slate-950/50 dark:hover:border-primary/50 md:min-h-11 md:gap-2 md:px-5 md:py-3 md:text-sm"
                         >
                           Agenda Completa
                         </Link>
@@ -921,7 +1054,7 @@ const HomePage = () => {
                 {agendaDays.length > 0 ? (
                 <>
                 <div className="space-y-4 p-4 md:hidden">
-                  {agendaDays.map((day, dayIndex) => (
+                  {mobileAgendaDays.map((day) => (
                     <div key={day.date} className="rounded-2xl border border-border bg-background p-4 shadow-sm dark:border-border/70 dark:bg-slate-950/35">
                       <div className="mb-4 flex items-baseline justify-between gap-3 md:mb-8 md:block">
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary md:mb-2 md:tracking-[0.22em]">
@@ -1011,6 +1144,25 @@ const HomePage = () => {
                       </div>
                     </div>
                   ))}
+
+                  {hiddenMobileAgendaEventsCount > 0 && (
+                    <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-5 text-center">
+                      <p className="text-sm font-semibold text-foreground">
+                        Mais {hiddenMobileAgendaEventsCount}{' '}
+                        {hiddenMobileAgendaEventsCount === 1 ? 'evento disponível' : 'eventos disponíveis'}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        Consulte datas, horários e atualizações na agenda completa.
+                      </p>
+                      <Link
+                        to="/calendario"
+                        className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                      >
+                        Ver agenda completa
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  )}
                 </div>
 
                 <div className="hidden md:block">

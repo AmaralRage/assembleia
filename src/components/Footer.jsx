@@ -126,7 +126,7 @@ const Footer = () => {
 
             <div className="text-center md:text-right">
               <p className="text-slate-400 text-sm">
-                © {new Date().getFullYear()} Assembleia de Deus. Todos os direitos reservados.
+                © {new Date().getFullYear()} Assembleia de Deus na Lapa. Todos os direitos reservados.
               </p>
             </div>
           </div>

@@ -1,10 +1,10 @@
 import pastorCharlesImage from "@/assets/leadership/Charles.jpg";
-import presidenteFundadorImage from "@/assets/leadership/fundador.jpg.png";
-import melchiadesImage from "@/assets/leadership/melchiades.jpg.jpg";
-import darioRodriguesImage from "@/assets/leadership/dario.jpg.jpg";
-import edmundoAlvesPereiraImage from "@/assets/leadership/edmundo.jpg.png";
-import franciscoVitorCavalcanteImage from "@/assets/leadership/francisco.jpg.png";
-import itamirGeraldoCardosoImage from "@/assets/leadership/itamir.jpg.png";
+import presidenteFundadorImage from "@/assets/leadership/fundador-optimized.jpg";
+import melchiadesImage from "@/assets/leadership/melchiades-optimized.jpg";
+import darioRodriguesImage from "@/assets/leadership/dario-optimized.jpg";
+import edmundoAlvesPereiraImage from "@/assets/leadership/edmundo-optimized.jpg";
+import franciscoVitorCavalcanteImage from "@/assets/leadership/francisco-optimized.jpg";
+import itamirGeraldoCardosoImage from "@/assets/leadership/itamir-optimized.jpg";
 
 export const leadershipPlaceholderImage = "https://i.imgur.com/SA53Yxc.png";
 
