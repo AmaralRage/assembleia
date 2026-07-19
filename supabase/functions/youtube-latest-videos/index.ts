@@ -319,20 +319,6 @@ const findLiveVideoFromFeed = async (
     }
   }
 
-  const latestVideo = videos[0];
-  const publishedAt = latestVideo?.date ? new Date(latestVideo.date).getTime() : 0;
-  const ageInMilliseconds = Date.now() - publishedAt;
-  const recentLiveWindow = 3 * 60 * 60 * 1000;
-
-  if (
-    latestVideo &&
-    publishedAt > 0 &&
-    ageInMilliseconds >= 0 &&
-    ageInMilliseconds <= recentLiveWindow
-  ) {
-    return { ...latestVideo, isLive: true, inferredFromRecentPublish: true };
-  }
-
   return null;
 };
 

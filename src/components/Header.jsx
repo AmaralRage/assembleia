@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarDays, Info, MapPin, Moon, PlayCircle, Sun } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { getPreferredTheme, saveTheme } from '@/lib/theme';
@@ -11,11 +12,31 @@ const Header = () => {
   const [activeSection, setActiveSection] = useState('');
   const [theme, setTheme] = useState(() => getPreferredTheme());
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isYouTubeLive, setIsYouTubeLive] = useState(false);
   const scrollFrameRef = useRef(null);
   const isScrolledRef = useRef(false);
   const activeSectionRef = useRef('');
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let isCurrentRequest = true;
+
+    const checkYouTubeLiveStatus = async () => {
+      const { data, error } = await supabase.functions.invoke('youtube-latest-videos');
+      if (isCurrentRequest && !error) {
+        setIsYouTubeLive(Boolean(data?.liveStream));
+      }
+    };
+
+    checkYouTubeLiveStatus();
+    const intervalId = window.setInterval(checkYouTubeLiveStatus, 60000);
+
+    return () => {
+      isCurrentRequest = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   useEffect(() => {
     const updateScrollState = () => {
@@ -213,13 +234,35 @@ const Header = () => {
                   key={link.href}
                   href={link.href}
                   onClick={(e) => handleNavClick(e, link)}
-                  className={`font-medium transition-all duration-200 relative ${
+                  className={`relative font-medium transition-all duration-200 hover:scale-105 ${
                     isActive(link)
                       ? 'text-primary'
                       : 'text-foreground/70 hover:text-primary'
                   }`}
                 >
-                  {link.name}
+                  <span className="inline-flex items-center gap-1.5">
+                    {link.name}
+                    {link.href === '/assistir' && (
+                      <AnimatePresence>
+                        {isYouTubeLive && (
+                          <motion.span
+                            initial={{ opacity: 0, scale: 0.25 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.25 }}
+                            transition={{
+                              opacity: { duration: 0.3 },
+                              scale: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+                            }}
+                            className="relative flex h-2.5 w-2.5"
+                            aria-label="Culto ao vivo"
+                          >
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-70" />
+                            <span className="header-live-pulse relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    )}
+                  </span>
                   {isActive(link) && (
                     <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full" />
                   )}
@@ -273,7 +316,28 @@ const Header = () => {
                   : 'text-muted-foreground hover:bg-muted hover:text-primary dark:text-blue-300/65 dark:hover:bg-primary/10 dark:hover:text-blue-200'
               }`}
             >
-              <Icon className="h-4 w-4" />
+              <span className="relative">
+                <Icon className="h-4 w-4" />
+                {link.href === '/assistir' && (
+                  <AnimatePresence>
+                    {isYouTubeLive && (
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.25 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.25 }}
+                        transition={{
+                          opacity: { duration: 0.3 },
+                          scale: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+                        }}
+                        className="absolute -right-2 -top-1 flex h-2.5 w-2.5"
+                      >
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-70" />
+                        <span className="header-live-pulse relative inline-flex h-2.5 w-2.5 rounded-full border border-background bg-red-500" />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                )}
+              </span>
               <span className="max-w-full truncate">{mobileLabel}</span>
             </a>
           );

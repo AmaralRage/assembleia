@@ -42,6 +42,24 @@
   }
 }
 
+@keyframes header-live-breathe {
+  0%,
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgb(239 68 68 / 55%);
+  }
+
+  50% {
+    transform: scale(1.45);
+    box-shadow: 0 0 0 5px rgb(239 68 68 / 12%);
+  }
+}
+
+.header-live-pulse {
+  transform-origin: center;
+  animation: header-live-breathe 1.35s ease-in-out infinite;
+}
+
 body {
   font-family: "Outfit", sans-serif;
   overflow-x: clip;
