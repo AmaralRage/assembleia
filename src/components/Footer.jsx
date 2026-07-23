@@ -85,23 +85,23 @@ const Footer = () => {
 
   return (
     <footer className="bg-slate-900 text-slate-100">
-      <div className="section-container pb-28 pt-10 md:py-12">
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-3 md:gap-10 lg:grid-cols-6">
+      <div className="section-container pb-24 pt-8 md:py-12">
+        <div className="grid grid-cols-2 gap-x-5 gap-y-4 md:grid-cols-3 md:gap-10 lg:grid-cols-6">
           {footerItems.map((item) => {
             const Icon = item.icon;
 
             return (
               <div key={item.title} className="min-w-0">
-                <div className="mb-2 flex min-h-11 items-center gap-2 md:mb-4">
-                  <Icon className="w-5 h-5 text-secondary" />
-                  <h3 className="font-semibold text-lg">{item.title}</h3>
+                <div className="mb-1 flex min-h-9 items-center gap-2 md:mb-4 md:min-h-11">
+                  <Icon className="h-4 w-4 text-secondary md:h-5 md:w-5" />
+                  <h3 className="text-base font-semibold md:text-lg">{item.title}</h3>
                 </div>
                 <a
                   href={item.href}
                   onClick={item.internal ? (e) => handleNavClick(e, item.href) : undefined}
                   target={item.internal ? undefined : "_blank"}
                   rel={item.internal ? undefined : "noopener noreferrer"}
-                  className="inline-flex min-h-11 items-center py-2 text-base text-slate-200 transition-all duration-200 hover:scale-105 hover:text-secondary"
+                  className="inline-flex min-h-9 items-center py-1 text-sm text-slate-200 transition-all duration-200 hover:scale-105 hover:text-secondary md:min-h-11 md:py-2 md:text-base"
                 >
                   {item.label}
                 </a>
@@ -110,10 +110,10 @@ const Footer = () => {
           })}
         </div>
 
-        <div className="mt-8 md:mt-10 pt-6 border-t border-slate-700">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mt-6 border-t border-slate-700 pt-5 md:mt-10 md:pt-6">
+          <div className="flex flex-col items-center justify-between gap-3 md:flex-row md:gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden">
+              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white md:h-12 md:w-12">
                 <img
                   src="https://i.imgur.com/SA53Yxc.png"
                   alt="Logo da Assembleia de Deus"
@@ -121,11 +121,11 @@ const Footer = () => {
                 />
               </div>
 
-              <span className="font-semibold">Assembleia de Deus na Lapa</span>
+              <span className="text-sm font-semibold md:text-base">Assembleia de Deus na Lapa</span>
             </div>
 
             <div className="text-center md:text-right">
-              <p className="text-slate-400 text-sm">
+              <p className="text-xs leading-relaxed text-slate-400 md:text-sm">
                 © {new Date().getFullYear()} Assembleia de Deus na Lapa. Todos os direitos reservados.
               </p>
             </div>
