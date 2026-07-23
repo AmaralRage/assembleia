@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { CheckCircle2, KeyRound, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header.jsx";
+import Seo from "@/components/Seo.jsx";
 import Footer from "@/components/Footer.jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,10 +81,12 @@ const ResetPasswordPage = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Redefinir senha - Assembleia de Deus na Lapa</title>
-        <meta name="robots" content="noindex, nofollow" />
-      </Helmet>
+      <Seo
+        title="Redefinir senha - Assembleia de Deus na Lapa"
+        description="Redefinição de senha da área administrativa da Assembleia de Deus na Lapa."
+        noIndex
+        noFollow
+      />
 
       <Header />
       <main className="min-h-screen bg-muted px-4 pb-20 pt-32">

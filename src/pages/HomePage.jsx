@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Helmet } from "react-helmet-async";
 import { AnimatePresence, motion } from 'framer-motion';
 import { Calendar, Clock, ArrowRight, MapPin, Youtube, Sparkles, Users, Settings, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import SectionHeading from '@/components/SectionHeading.jsx';
+import Seo, { getSiteUrl } from '@/components/Seo.jsx';
 import { supabase } from '@/lib/supabase';
 import { smoothScrollToElement } from '@/lib/smoothScroll';
 import { churchLocations, getChurchLocation, mainChurchLocation } from '@/data/churchLocations';
@@ -413,6 +413,44 @@ const HomePage = () => {
   }, [featuredFestivities.length, isFeaturedAutoplayPaused, isFeaturedSectionBeingRead]);
 
   const featuredFestivity = featuredFestivities[featuredFestivityIndex] || null;
+  const siteUrl = getSiteUrl();
+  const churchStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Church',
+    '@id': `${siteUrl}/#church`,
+    name: 'Assembleia de Deus na Lapa',
+    url: siteUrl,
+    logo: `${siteUrl}/logo.png`,
+    image: `${siteUrl}/logo.png`,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Rua Joaquim Silva, 52',
+      addressLocality: 'Rio de Janeiro',
+      addressRegion: 'RJ',
+      addressCountry: 'BR',
+    },
+    sameAs: [
+      churchMedia.youtubeChannelUrl,
+      'https://www.instagram.com/adl.sedeoficial/',
+      'https://www.facebook.com/people/Ieadlapa-Rio/100089125852506/',
+    ],
+    event: upcomingEvents.slice(0, 8).map((event) => ({
+      '@type': 'Event',
+      name: event.title,
+      startDate: event.event_time
+        ? `${event.event_date}T${event.event_time.slice(0, 5)}:00-03:00`
+        : event.event_date,
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      eventStatus: 'https://schema.org/EventScheduled',
+      location: {
+        '@type': 'Place',
+        name: event.location || mainChurchLocation.name,
+        address: event.location || mainChurchLocation.address,
+      },
+      description: event.description || getEventFallbackDescription(event),
+      url: `${siteUrl}/calendario`,
+    })),
+  };
   const featuredImageRatio = featuredFestivity?.imageRatio || '16 / 9';
   const [featuredImageWidth, featuredImageHeight] = featuredImageRatio
     .split('/')
@@ -489,10 +527,11 @@ const HomePage = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Assembleia de Deus - Bem-vindo à nossa comunidade de fé</title>
-        <meta name="description" content="Junte-se à nossa comunidade de fé. Confira nossa agenda, conheça nossas congregações e assista às mensagens mais recentes." />
-      </Helmet>
+      <Seo
+        title="Assembleia de Deus na Lapa - Uma comunidade de fé"
+        description="Junte-se à nossa comunidade de fé. Confira nossa agenda, conheça nossas congregações e assista às mensagens mais recentes."
+        structuredData={churchStructuredData}
+      />
 
       <Header />
 
@@ -1172,7 +1211,7 @@ const HomePage = () => {
                       className={`grid md:grid-cols-2 xl:grid-cols-4 ${columnIndex > 0 ? "border-t border-border" : ""}`}
                     >
                       <div className="contents">
-                        {columnDays.map((day, dayIndex) => (
+                        {columnDays.map((day) => (
                           <div key={`desktop-${day.date}`} className="border-border px-6 py-6 md:[&:not(:nth-child(2n))]:border-r xl:[&:not(:nth-child(4n))]:border-r">
                             <div className="mb-5">
                               <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-primary">

@@ -4,6 +4,7 @@ import { BookOpen, ChevronDown, Church, Facebook, Globe2, Heart, Instagram, X } 
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
 import SectionHeading from "@/components/SectionHeading.jsx";
+import Seo from "@/components/Seo.jsx";
 import { exPresidentes, presidenteAtual } from "@/data/churchLeadership";
 import { useModalFocus } from "@/hooks/use-modal-focus";
 import { smoothScrollToElement } from "@/lib/smoothScroll";
@@ -112,6 +113,10 @@ const SobrePage = () => {
   return (
     <MotionConfig reducedMotion="user">
     <div className="w-full min-w-0 max-w-full overflow-x-hidden">
+      <Seo
+        title="Nossa história e liderança - Assembleia de Deus na Lapa"
+        description="Conheça a história, os valores e a liderança da Assembleia de Deus na Lapa desde sua fundação."
+      />
       <Header />
 
       <main className="min-w-0 w-full max-w-full overflow-x-hidden">
@@ -518,9 +523,9 @@ const SobrePage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
             onClick={(event) => event.stopPropagation()}
-            className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-xl sm:max-h-[90vh]"
+            className="relative flex max-h-[82dvh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl sm:max-h-[86vh] md:max-h-[90vh]"
           >
-            <div className="relative bg-[#071526] px-5 pb-6 pt-8 text-white sm:px-6 sm:pb-8 sm:pt-10 md:px-9">
+            <div className="relative shrink-0 bg-[#071526] px-5 pb-6 pt-8 text-white sm:px-6 sm:pb-8 sm:pt-10 md:px-9">
               <button
                 type="button"
                 onClick={() => setSelectedHistoryPresident(null)}
@@ -553,7 +558,7 @@ const SobrePage = () => {
               </div>
             </div>
 
-            <div className="relative px-5 py-6 sm:px-6 sm:py-8 md:px-9 md:py-10">
+            <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 [scrollbar-gutter:stable] sm:px-6 sm:py-8 md:px-9 md:py-10">
               <h2
                 id="history-president-title"
                 className="text-2xl font-bold leading-tight text-slate-950 sm:text-3xl md:text-4xl"

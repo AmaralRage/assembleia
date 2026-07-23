@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -11,6 +10,7 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import SectionHeading from '@/components/SectionHeading.jsx';
+import Seo from '@/components/Seo.jsx';
 import { getChurchLocation, mainChurchLocation } from '@/data/churchLocations';
 import { supabase } from '@/lib/supabase';
 import { formatEventDate, formatEventTime, formatWeekDay, getTodayKey } from '@/lib/calendar';
@@ -106,13 +106,10 @@ const NewHerePage = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Sou novo por aqui - Assembleia de Deus na Lapa</title>
-        <meta
-          name="description"
-          content="Seja bem-vindo à Assembleia de Deus na Lapa. Saiba como visitar nossa igreja, chegar até nós e participar dos cultos."
-        />
-      </Helmet>
+      <Seo
+        title="Sou novo por aqui - Assembleia de Deus na Lapa"
+        description="Seja bem-vindo à Assembleia de Deus na Lapa. Saiba como visitar nossa igreja, chegar até nós e participar dos cultos."
+      />
 
       <Header />
 

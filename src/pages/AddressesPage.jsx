@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Helmet } from "react-helmet-async";
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -22,6 +21,7 @@ import {
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import SectionHeading from '@/components/SectionHeading.jsx';
+import Seo, { getSiteUrl } from '@/components/Seo.jsx';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -50,6 +50,7 @@ const hasUsefulInfo = (value) => {
 };
 
 const AddressesPage = () => {
+  const siteUrl = getSiteUrl();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
@@ -159,10 +160,26 @@ const AddressesPage = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Endereços - Assembleia de Deus na Lapa</title>
-        <meta name="description" content="Encontre uma Assembleia de Deus na Lapa mais próxima de você." />
-      </Helmet>
+      <Seo
+        title="Endereços e congregações - Assembleia de Deus na Lapa"
+        description="Encontre a congregação da Assembleia de Deus na Lapa mais próxima de você, consulte o endereço e veja como chegar."
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: 'Congregações da Assembleia de Deus na Lapa',
+          itemListElement: churchLocations.map((location, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            item: {
+              '@type': 'Church',
+              name: location.name,
+              url: `${siteUrl}/enderecos#${location.id}`,
+              image: location.image,
+              address: location.address,
+            },
+          })),
+        }}
+      />
 
       <Header />
       <main className="min-h-screen bg-background dark:bg-[#0b1220]">
@@ -457,7 +474,7 @@ const AddressesPage = () => {
                 type="button"
                 onClick={() => setSelectedAddress(null)}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/50 text-foreground transition-colors hover:border-primary/40 hover:text-primary"
-                aria-label="Fechar informaÃ§Ãµes"
+                aria-label="Fechar informações"
               >
                 <X className="h-5 w-5" />
               </button>

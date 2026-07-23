@@ -357,7 +357,7 @@ Deno.serve(async (request) => {
     try {
       streamsHtml = await fetchText(streamsUrl);
     } catch (error) {
-      console.warn("NÃ£o foi possÃ­vel carregar a aba de transmissÃµes.", error);
+      console.warn("Não foi possível carregar a aba de transmissões.", error);
     }
 
     const videos = parseYoutubeFeed(feedXml, maxResults);

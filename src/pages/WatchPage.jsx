@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -15,6 +14,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header.jsx";
+import Seo from "@/components/Seo.jsx";
 import Footer from "@/components/Footer.jsx";
 import SectionHeading from "@/components/SectionHeading.jsx";
 import { Button } from "@/components/ui/button";
@@ -246,14 +246,14 @@ const WatchPage = () => {
     };
   }, []);
 
-  const liveService = useMemo(
-    () =>
-      youtubeLiveService ||
+  const liveService = useMemo(() => {
+    // Reevaluate time-sensitive service status whenever the minute tick changes.
+    void liveStatusTick;
+    return youtubeLiveService ||
       youtubeUpcomingServices.find(isServiceLiveNow) ||
       upcomingMainServices.find(isServiceLiveNow) ||
-      (isServiceLiveNow(nextService) ? nextService : null),
-    [liveStatusTick, nextService, upcomingMainServices, youtubeLiveService, youtubeUpcomingServices],
-  );
+      (isServiceLiveNow(nextService) ? nextService : null);
+  }, [liveStatusTick, nextService, upcomingMainServices, youtubeLiveService, youtubeUpcomingServices]);
   const displayedNextService = liveService || youtubeNextService || nextService;
   const isLoadingDisplayedService =
     !liveService && (isLoadingNextService || (isLoadingVideos && !youtubeNextService));
@@ -302,22 +302,10 @@ const WatchPage = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Assista aos cultos online - Assembleia de Deus na Lapa</title>
-        <meta
-          name="description"
-          content="Assista aos cultos online da Assembleia de Deus na Lapa ao vivo, acompanhe mensagens recentes e veja os próximos horários de transmissão."
-        />
-        <meta
-          property="og:title"
-          content="Assista aos cultos online - Assembleia de Deus na Lapa"
-        />
-        <meta
-          property="og:description"
-          content="Acompanhe transmissões, mensagens e cultos online pelo canal oficial da Assembleia de Deus na Lapa."
-        />
-        <meta property="og:image" content="https://i.imgur.com/WMVJQ9m.jpeg" />
-      </Helmet>
+      <Seo
+        title="Assista aos cultos online - Assembleia de Deus na Lapa"
+        description="Assista aos cultos online da Assembleia de Deus na Lapa ao vivo, acompanhe mensagens recentes e veja os próximos horários de transmissão."
+      />
 
       <Header />
 

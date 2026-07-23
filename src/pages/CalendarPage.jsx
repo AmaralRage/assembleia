@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarDays,
@@ -26,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import Header from "@/components/Header.jsx";
+import Seo from "@/components/Seo.jsx";
 import Footer from "@/components/Footer.jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -393,7 +393,7 @@ const DatePickerField = ({
               size="icon"
               className="h-8 w-8 rounded-xl sm:h-9 sm:w-9"
               onClick={() => changePickerMonth(-1)}
-              aria-label="MÃªs anterior"
+              aria-label="Mês anterior"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -406,7 +406,7 @@ const DatePickerField = ({
               size="icon"
               className="h-8 w-8 rounded-xl sm:h-9 sm:w-9"
               onClick={() => changePickerMonth(1)}
-              aria-label="PrÃ³ximo mÃªs"
+              aria-label="Próximo mês"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -1189,7 +1189,14 @@ const CalendarPage = () => {
     }
 
     if (typeof window !== "undefined" && !window.matchMedia("(min-width: 768px)").matches) {
-      scrollToMonthDayOnMobile(day.dateKey);
+      const dayHasVisibleEvents = filteredEvents.some(
+        (event) => event.date === day.dateKey,
+      );
+
+      if (dayHasVisibleEvents) {
+        scrollToMonthDayOnMobile(day.dateKey);
+      }
+
       return;
     }
 
@@ -1494,31 +1501,28 @@ const CalendarPage = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Calendário - Assembleia de Deus na Lapa</title>
-        <meta
-          name="description"
-          content="Consulte e organize os eventos da Assembleia de Deus na Lapa."
-        />
-      </Helmet>
+      <Seo
+        title="Calendário de cultos e eventos - Assembleia de Deus na Lapa"
+        description="Consulte as datas, horários e locais dos próximos cultos e eventos da Assembleia de Deus na Lapa."
+      />
 
       <Header />
-      <main className="calendar-page-background min-h-screen pb-14 pt-28 md:pb-20 md:pt-28">
-        <div className="section-container">
+      <main className="calendar-page-background min-h-screen min-w-0 overflow-x-hidden pb-14 pt-28 md:pb-20 md:pt-28">
+        <div className="section-container min-w-0 max-w-full">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-background border border-border rounded-xl md:rounded-3xl shadow-xl overflow-hidden"
+            className="min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-background shadow-xl md:rounded-3xl"
           >
             <div className="flex flex-col gap-4 border-b border-border bg-background/95 p-4 backdrop-blur md:gap-5 md:p-8 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 md:h-11 md:w-11">
                     <CalendarDays className="h-5 w-5 text-primary md:h-6 md:w-6" />
                   </div>
-                  <div>
-                    <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.14em] md:tracking-[0.18em] text-primary dark:text-white">
+                  <div className="min-w-0">
+                    <p className="break-words text-xs font-semibold uppercase tracking-[0.1em] text-primary dark:text-white md:text-sm md:tracking-[0.18em]">
                       Agenda da Assembleia de Deus na Lapa
                     </p>
                     <h1 className="text-xl font-bold text-foreground md:text-3xl">
@@ -1528,7 +1532,7 @@ const CalendarPage = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <div className="flex w-full items-center justify-between rounded-xl border border-border bg-muted p-1 sm:w-auto">
                   <Button
                     type="button"
@@ -1598,21 +1602,21 @@ const CalendarPage = () => {
               </div>
             </div>
 
-            <div className="border-b border-border bg-muted/10 p-4 md:p-6">
-              <div className="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_220px_240px_auto]">
-                <label className="relative block">
+            <div className="min-w-0 border-b border-border bg-muted/10 p-3 sm:p-4 md:p-6">
+              <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(240px,1fr)_220px_240px_auto]">
+                <label className="relative block min-w-0">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={publicSearch} onChange={(event) => setPublicSearch(event.target.value)} placeholder="Buscar evento, descrição ou local..." className="h-11 rounded-xl bg-background pl-10" />
+                  <Input value={publicSearch} onChange={(event) => setPublicSearch(event.target.value)} placeholder="Buscar evento, descrição ou local..." className="h-11 min-w-0 w-full rounded-xl bg-background pl-10" />
                 </label>
-                <select value={publicCategory} onChange={(event) => setPublicCategory(event.target.value)} className="h-11 rounded-xl border border-input bg-background px-3 text-sm font-semibold">
+                <select value={publicCategory} onChange={(event) => setPublicCategory(event.target.value)} className="h-11 min-w-0 w-full max-w-full rounded-xl border border-input bg-background px-3 text-sm font-semibold">
                   <option value="all">Todas as categorias</option>
                   {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
-                <select value={publicLocation} onChange={(event) => setPublicLocation(event.target.value)} className="h-11 rounded-xl border border-input bg-background px-3 text-sm font-semibold">
+                <select value={publicLocation} onChange={(event) => setPublicLocation(event.target.value)} className="h-11 min-w-0 w-full max-w-full rounded-xl border border-input bg-background px-3 text-sm font-semibold">
                   <option value="all">Todas as congregações</option>
                   {uniquePublicLocations.map((location) => <option key={location} value={location}>{location}</option>)}
                 </select>
-                <Button type="button" variant={showAgendaList ? "default" : "outline"} onClick={() => setShowAgendaList((current) => !current)} className="h-11 rounded-xl">
+                <Button type="button" variant={showAgendaList ? "default" : "outline"} onClick={() => setShowAgendaList((current) => !current)} className="h-11 min-w-0 w-full rounded-xl">
                   <List className="mr-2 h-4 w-4" />{showAgendaList ? "Ver calendário" : "Ver em lista"}
                 </Button>
               </div>
@@ -1646,8 +1650,8 @@ const CalendarPage = () => {
                   </button>
                 ))}</div> : <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Nenhum próximo evento corresponde aos filtros.</div>}
               </div>
-            ) : <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="border-b border-border bg-muted/20 p-4 md:hidden">
+            ) : <div className="grid min-w-0 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="min-w-0 border-b border-border bg-muted/20 p-3 sm:p-4 md:hidden">
                 {isAdmin && (
                   <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-950/35 dark:text-emerald-100">
                     <div className="flex items-start justify-between gap-3">
@@ -1674,7 +1678,7 @@ const CalendarPage = () => {
                   </span>
                 </div>
 
-                <div className="mb-4 rounded-2xl border border-border bg-background p-3 shadow-sm">
+                <div className="mb-4 min-w-0 max-w-full rounded-2xl border border-border bg-background p-2 shadow-sm sm:p-3">
                   <div className="mb-2 grid grid-cols-7 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                     {weekDays.map((weekDay, index) => (
                       <span
@@ -1685,7 +1689,7 @@ const CalendarPage = () => {
                       </span>
                     ))}
                   </div>
-                  <div className="grid grid-cols-7 gap-1">
+                  <div className="grid min-w-0 grid-cols-7 gap-0.5 sm:gap-1">
                     {mobileCalendarDays.map((day) => {
                       if (!day.isCurrentMonth) {
                         return (
@@ -1710,16 +1714,16 @@ const CalendarPage = () => {
                           key={`mobile-${day.dateKey}`}
                           type="button"
                           onClick={() => selectDay(day)}
-                          className={`relative flex h-14 flex-col items-center justify-center gap-1 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                          className={`relative flex h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg text-xs font-bold transition-all active:scale-95 sm:h-14 sm:gap-1 sm:rounded-xl sm:text-sm ${
                             isSelected
                               ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
                               : isToday
-                                ? "border border-primary/40 bg-primary/10 text-primary"
+                                ? "border border-primary/50 bg-blue-100 text-primary dark:bg-primary/10"
                                 : hasMobileDayEvents
-                                  ? "border border-primary/25 bg-primary/5 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.08)]"
+                                  ? "border border-blue-200 bg-blue-50 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.08)] dark:border-primary/25 dark:bg-primary/5"
                                 : isPastDay
-                                  ? "bg-muted/30 text-muted-foreground/60"
-                                  : "bg-muted/50 text-foreground"
+                                  ? "bg-slate-100/70 text-muted-foreground/70 dark:bg-muted/30 dark:text-muted-foreground/60"
+                                  : "bg-slate-100 text-foreground hover:bg-slate-200 dark:bg-muted/50 dark:hover:bg-muted/70"
                           }`}
                         >
                           <span

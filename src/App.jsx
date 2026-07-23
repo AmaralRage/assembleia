@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Route, Routes, BrowserRouter as Router } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop.jsx';
 import NotificationToaster from "./components/NotificationToaster.jsx";
@@ -11,37 +11,50 @@ const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage.jsx'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage.jsx'));
 const WatchPage = lazy(() => import('./pages/WatchPage.jsx'));
 const NewHerePage = lazy(() => import('./pages/NewHerePage.jsx'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage.jsx'));
 
-const PageLoadingFallback = () => (
-  <div className="flex min-h-screen items-center justify-center bg-[#071526] px-6 text-white">
-    <div className="flex flex-col items-center text-center">
-      <div className="relative mb-6">
-        <span className="absolute inset-0 rounded-full border-2 border-primary/20" />
-        <span className="absolute inset-[-8px] rounded-full border border-primary/20" />
-        <span className="absolute inset-[-8px] rounded-full border-t-primary animate-spin border border-transparent" />
-        <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white p-1.5 shadow-2xl shadow-primary/20">
-          <img
-            src="https://i.imgur.com/SA53Yxc.png"
-            alt="Assembleia de Deus na Lapa"
-            className="h-full w-full rounded-full object-cover"
-          />
+const BrandIntro = ({ leaving = false, overlay = false }) => (
+  <div
+    className={`brand-intro ${overlay ? 'fixed inset-0 z-[100]' : 'min-h-screen'} ${leaving ? 'brand-intro--leaving' : ''}`}
+    role="status"
+    aria-label="Carregando Assembleia de Deus na Lapa"
+  >
+    <div className="brand-intro__glow" aria-hidden="true" />
+    <div className="brand-intro__content">
+      <div className="brand-intro__mark">
+        <span className="brand-intro__orbit brand-intro__orbit--outer" aria-hidden="true" />
+        <span className="brand-intro__orbit brand-intro__orbit--inner" aria-hidden="true" />
+        <span className="brand-intro__halo" aria-hidden="true" />
+        <div className="brand-intro__logo-wrap">
+          <img src="/logo.png" alt="" className="brand-intro__logo" />
         </div>
       </div>
 
-      <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">
-        Assembleia de Deus na Lapa
-      </p>
-      <p className="mt-3 text-lg font-bold text-white">
-        Preparando a página
-      </p>
-      <p className="mt-2 text-sm font-medium text-white/60">
-        Carregando sua experiência...
-      </p>
+      <div className="brand-intro__copy">
+        <span className="brand-intro__eyebrow">Bem-vindo à</span>
+        <strong className="brand-intro__name">Assembleia de Deus na Lapa</strong>
+        <span className="brand-intro__line" aria-hidden="true" />
+        <span className="brand-intro__message">Uma comunidade de fé</span>
+      </div>
     </div>
   </div>
 );
 
+const PageLoadingFallback = () => <BrandIntro />;
+
 function App() {
+  const [introPhase, setIntroPhase] = useState('visible');
+
+  useEffect(() => {
+    const leaveTimer = window.setTimeout(() => setIntroPhase('leaving'), 1200);
+    const finishTimer = window.setTimeout(() => setIntroPhase('finished'), 1600);
+
+    return () => {
+      window.clearTimeout(leaveTimer);
+      window.clearTimeout(finishTimer);
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined' || typeof navigator === 'undefined') return undefined;
     if (!('vibrate' in navigator)) return undefined;
@@ -79,8 +92,12 @@ function App() {
           <Route path="/calendario" element={<CalendarPage />} />
           <Route path="/administracao" element={<AdminLoginPage />} />
           <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
+      {introPhase !== 'finished' && (
+        <BrandIntro overlay leaving={introPhase === 'leaving'} />
+      )}
     </Router>
   );
 }

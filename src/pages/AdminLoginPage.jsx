@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header.jsx";
+import Seo from "@/components/Seo.jsx";
 import Footer from "@/components/Footer.jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,10 +123,12 @@ const AdminLoginPage = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Acesso administrativo - Assembleia de Deus na Lapa</title>
-        <meta name="robots" content="noindex, nofollow" />
-      </Helmet>
+      <Seo
+        title="Acesso administrativo - Assembleia de Deus na Lapa"
+        description="Área restrita para administração do calendário da Assembleia de Deus na Lapa."
+        noIndex
+        noFollow
+      />
 
       <Header />
       <main className="min-h-screen bg-muted px-4 pb-20 pt-32">
