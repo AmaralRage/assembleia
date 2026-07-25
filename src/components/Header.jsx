@@ -215,11 +215,11 @@ const Header = () => {
             }}
             className="flex items-center gap-3 group"
           >
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary transition-transform duration-200 group-hover:scale-105 md:h-12 md:w-12">
+            <div className="header-brand-logo-wrap flex h-10 w-10 items-center justify-center overflow-hidden rounded-full transition-transform duration-200 group-hover:scale-105 md:h-12 md:w-12">
               <img 
-                src="https://i.imgur.com/SA53Yxc.png"
+                src="/logo.png"
                 alt="Logo da Assembleia de Deus"
-                className="w-full h-full rounded-full object-cover"
+                className="header-brand-logo h-full w-full rounded-full object-cover"
               />
             </div>
             <span className="hidden text-lg font-bold text-foreground sm:block md:text-xl">

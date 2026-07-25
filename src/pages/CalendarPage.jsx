@@ -1508,14 +1508,14 @@ const CalendarPage = () => {
 
       <Header />
       <main className="calendar-page-background min-h-screen min-w-0 overflow-x-hidden pb-14 pt-28 md:pb-20 md:pt-28">
-        <div className="section-container min-w-0 max-w-full">
+        <div className="calendar-desktop-shell section-container min-w-0 w-full">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-background shadow-xl md:rounded-3xl"
           >
-            <div className="flex flex-col gap-4 border-b border-border bg-background/95 p-4 backdrop-blur md:gap-5 md:p-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-4 border-b border-border bg-background/95 p-4 backdrop-blur md:gap-5 md:p-8 lg:flex-row lg:items-center lg:justify-between lg:p-6">
               <div>
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 md:h-11 md:w-11">
@@ -1602,7 +1602,7 @@ const CalendarPage = () => {
               </div>
             </div>
 
-            <div className="min-w-0 border-b border-border bg-muted/10 p-3 sm:p-4 md:p-6">
+            <div className="min-w-0 border-b border-border bg-muted/10 p-3 sm:p-4 md:p-6 lg:p-5">
               <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(240px,1fr)_220px_240px_auto]">
                 <label className="relative block min-w-0">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1650,7 +1650,7 @@ const CalendarPage = () => {
                   </button>
                 ))}</div> : <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Nenhum próximo evento corresponde aos filtros.</div>}
               </div>
-            ) : <div className="grid min-w-0 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
+            ) : <div className="grid min-w-0 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_310px]">
               <div className="min-w-0 border-b border-border bg-muted/20 p-3 sm:p-4 md:hidden">
                 {isAdmin && (
                   <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-950/35 dark:text-emerald-100">
@@ -2072,7 +2072,7 @@ const CalendarPage = () => {
                 )}
               </div>
 
-              <div className="hidden overflow-x-auto p-3 md:block md:p-8">
+              <div className="hidden overflow-x-auto p-3 md:block md:p-8 lg:p-6">
                 <div className="min-w-[620px] md:min-w-[720px]">
                   <div className="grid grid-cols-7 mb-3">
                     {weekDays.map((day, index) => (
@@ -2131,7 +2131,7 @@ const CalendarPage = () => {
                           onClick={() => selectDay(day)}
                           whileTap={{ scale: 0.985 }}
                           transition={{ duration: 0.18 }}
-                          className={`min-h-28 md:min-h-32 rounded-xl md:rounded-2xl border p-2 text-left align-top transition-all hover:border-primary/50 hover:shadow-md ${
+                          className={`min-h-28 md:min-h-32 lg:min-h-28 rounded-xl md:rounded-2xl border p-2 text-left align-top transition-all hover:border-primary/50 hover:shadow-md ${
                             isSelected
                               ? "border-primary bg-primary/5 ring-2 ring-primary/15 dark:bg-primary/10 dark:ring-primary/30"
                               : isPastDay
@@ -2209,7 +2209,7 @@ const CalendarPage = () => {
                 </div>
               </div>
 
-              <aside ref={eventEditorRef} className="scroll-mt-24 border-t border-border bg-background p-4 md:p-7 xl:border-l xl:border-t-0 xl:bg-muted/35">
+              <aside ref={eventEditorRef} className="scroll-mt-24 border-t border-border bg-background p-4 md:p-7 xl:border-l xl:border-t-0 xl:bg-muted/35 xl:p-6">
                 {isEditing ? (
                   <div>
                     <div className="flex items-start justify-between gap-4 mb-6">
