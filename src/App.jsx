@@ -46,8 +46,8 @@ function App() {
   const [introPhase, setIntroPhase] = useState('visible');
 
   useEffect(() => {
-    const leaveTimer = window.setTimeout(() => setIntroPhase('leaving'), 1200);
-    const finishTimer = window.setTimeout(() => setIntroPhase('finished'), 1600);
+    const leaveTimer = window.setTimeout(() => setIntroPhase('leaving'), 2100);
+    const finishTimer = window.setTimeout(() => setIntroPhase('finished'), 2550);
 
     return () => {
       window.clearTimeout(leaveTimer);
