@@ -42,18 +42,38 @@ const BrandIntro = ({ leaving = false, overlay = false }) => (
 
 const PageLoadingFallback = () => <BrandIntro />;
 
+const INTRO_SESSION_KEY = 'assembleia-brand-intro-seen';
+
+const shouldShowBrandIntro = () => {
+  try {
+    return window.sessionStorage.getItem(INTRO_SESSION_KEY) !== 'true';
+  } catch {
+    return true;
+  }
+};
+
 function App() {
-  const [introPhase, setIntroPhase] = useState('visible');
+  const [introPhase, setIntroPhase] = useState(() => (
+    shouldShowBrandIntro() ? 'visible' : 'finished'
+  ));
 
   useEffect(() => {
-    const leaveTimer = window.setTimeout(() => setIntroPhase('leaving'), 2100);
-    const finishTimer = window.setTimeout(() => setIntroPhase('finished'), 2550);
+    if (introPhase !== 'visible') return undefined;
+
+    try {
+      window.sessionStorage.setItem(INTRO_SESSION_KEY, 'true');
+    } catch {
+      // Keep showing the intro when browser storage is unavailable.
+    }
+
+    const leaveTimer = window.setTimeout(() => setIntroPhase('leaving'), 4100);
+    const finishTimer = window.setTimeout(() => setIntroPhase('finished'), 4550);
 
     return () => {
       window.clearTimeout(leaveTimer);
       window.clearTimeout(finishTimer);
     };
-  }, []);
+  }, [introPhase]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof navigator === 'undefined') return undefined;
