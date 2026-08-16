@@ -1,5 +1,101 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
+/* Feedback discreto no ícone do botão de agenda. */
+.new-here-cta__letter {
+  display: inline-block;
+}
+
+.new-here-cta:hover .new-here-cta__letter,
+.new-here-cta:focus-visible .new-here-cta__letter {
+  animation: new-here-text-form 430ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--letter-index) * 24ms);
+}
+
+@keyframes new-here-text-form {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateY(0.45em) scale(0.82);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+.agenda-cta-icon {
+  display: inline-flex;
+  width: 1rem;
+  height: 1rem;
+}
+
+.agenda-cta-icon svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+@media (min-width: 640px) {
+  .agenda-cta-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+.agenda-cta-icon svg > * {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.agenda-cta:hover .agenda-cta-icon,
+.agenda-cta:focus-visible .agenda-cta-icon {
+  transform: none;
+}
+
+.agenda-cta:hover .agenda-cta-icon svg > *,
+.agenda-cta:focus-visible .agenda-cta-icon svg > * {
+  animation: agenda-icon-draw 440ms ease-out both;
+}
+
+.agenda-cta:hover .agenda-cta-icon__outline,
+.agenda-cta:focus-visible .agenda-cta-icon__outline {
+  animation-delay: 20ms;
+}
+
+.agenda-cta:hover .agenda-cta-icon__binding,
+.agenda-cta:focus-visible .agenda-cta-icon__binding {
+  animation-delay: 105ms;
+}
+
+.agenda-cta:hover .agenda-cta-icon__divider,
+.agenda-cta:focus-visible .agenda-cta-icon__divider {
+  animation-delay: 185ms;
+}
+
+.agenda-cta:hover .agenda-cta-icon__days,
+.agenda-cta:focus-visible .agenda-cta-icon__days {
+  animation-delay: 260ms;
+}
+
+@keyframes agenda-icon-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-here-cta__letter,
+  .agenda-cta-icon svg > * {
+    animation: none !important;
+  }
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

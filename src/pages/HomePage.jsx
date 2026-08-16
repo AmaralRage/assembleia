@@ -584,9 +584,16 @@ const HomePage = () => {
               }} className="w-full max-w-[16rem] sm:w-auto sm:max-w-none">
                 <Link
                   to="/sou-novo"
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all duration-200 hover:bg-primary/90 hover:shadow-xl active:scale-[0.98] sm:w-auto sm:px-7 sm:py-3.5 sm:text-base md:px-8 md:py-4"
+                  aria-label="Sou novo por aqui"
+                  className="new-here-cta inline-flex w-full items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all duration-200 hover:bg-primary/90 hover:shadow-xl active:scale-[0.98] sm:w-auto sm:px-7 sm:py-3.5 sm:text-base md:px-8 md:py-4"
                 >
-                  Sou novo por aqui
+                  <span aria-hidden="true">
+                    {'Sou novo por aqui'.split('').map((character, index) => (
+                      <span className="new-here-cta__letter" style={{ '--letter-index': index }} key={`${character}-${index}`}>
+                        {character === ' ' ? '\u00A0' : character}
+                      </span>
+                    ))}
+                  </span>
                 </Link>
               </motion.div>
                 <motion.div initial={{
@@ -618,8 +625,15 @@ const HomePage = () => {
                 }} transition={{
                   delay: 0.7,
                   duration: 0.8
-                }} className="inline-flex w-full max-w-[16rem] items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-primary shadow-lg transition-all duration-200 hover:bg-white/90 hover:text-primary active:scale-[0.98] sm:w-auto sm:max-w-none sm:px-7 sm:py-3.5 sm:text-base md:px-8 md:py-4">
-                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                }} className="agenda-cta group inline-flex w-full max-w-[16rem] items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-primary shadow-lg transition-all duration-200 hover:bg-white/90 hover:text-primary active:scale-[0.98] sm:w-auto sm:max-w-none sm:px-7 sm:py-3.5 sm:text-base md:px-8 md:py-4">
+                  <span className="agenda-cta-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect className="agenda-cta-icon__outline" x="3" y="4" width="18" height="17" rx="2" pathLength="1" />
+                      <path className="agenda-cta-icon__binding" d="M8 2v4M16 2v4" pathLength="1" />
+                      <path className="agenda-cta-icon__divider" d="M3 10h18" pathLength="1" />
+                      <path className="agenda-cta-icon__days" d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01M16 17h.01" pathLength="1" />
+                    </svg>
+                  </span>
                   Ver agenda
                 </motion.a>
             </div>
