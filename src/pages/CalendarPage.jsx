@@ -1573,11 +1573,11 @@ const CalendarPage = () => {
                       onClick={startNewEvent}
                       className="rounded-xl shadow-md"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
                       <span className="md:hidden">
                         Novo em {formatShortDate(selectedDate)}
                       </span>
                       <span className="hidden md:inline">Novo evento</span>
+                      <Plus className="ml-1 h-4 w-4" />
                     </Button>
                     <Button
                       type="button"
@@ -1585,8 +1585,8 @@ const CalendarPage = () => {
                       onClick={() => setShowLogoutWarning(true)}
                       className="rounded-xl"
                     >
-                      <LogOut className="w-4 h-4 mr-2" />
                       Sair
+                      <LogOut className="ml-1 h-4 w-4" />
                     </Button>
                   </>
                 )}
@@ -1617,7 +1617,7 @@ const CalendarPage = () => {
                   {uniquePublicLocations.map((location) => <option key={location} value={location}>{location}</option>)}
                 </select>
                 <Button type="button" variant={showAgendaList ? "default" : "outline"} onClick={() => setShowAgendaList((current) => !current)} className="h-11 min-w-0 w-full rounded-xl">
-                  <List className="mr-2 h-4 w-4" />{showAgendaList ? "Ver calendário" : "Ver em lista"}
+                  {showAgendaList ? "Ver calendário" : "Ver em lista"}<List className="ml-1 h-4 w-4" />
                 </Button>
               </div>
               {activePublicFilterCount > 0 && (
